@@ -114,6 +114,7 @@ Rozwiązanie zastosowane w teście:
 | E. Dopływ powierzchniowy (p. 2.7) | Q0 (bez sieci), Q1, Q2, Q3 w wariantach: naiwny, `SLOT`, zalecany; Q2 zalecany z `Δt_c` = 5 s i z krokiem SWMM 0,5 i 0,25 s |
 | G. Wymiana półniejawna (p. 3.8) | S2, S3, Q2, Q3 z pojemnością węzła stałą i mierzoną; wariant mierzony także z `Δt_c` = 5 s |
 | H. Sam krok SWMM 0,5 s (p. 3.8) | S2, S3, Q2, Q3 z `SLOT` bez relaksacji; S2, S3 zalecane z krokiem SWMM 0,5 s |
+| I. Wrażliwość (p. 3.9) | jeden czynnik naraz wokół Q2 z zalecaną stabilizacją (`V_*`): średnica, liczba węzłów, głębokość sieci, natężenie dopływu, krok wymiany, krok SWMM, powierzchnia i współczynniki wpustu; sieć swobodna (`V1_*`) dla wpustu, dopływu i liczby węzłów; cofka (`V3_*`) dla kroku wymiany |
 | F. Wzory v1 dla porównania (p. 2.8) | S1, S2/S3 `SLOT`, S2/S3 zalecany, Q1–Q3 w wariantach `SLOT` i zalecanym, z sufiksem `_v1` |
 
 ### 2.7 Wariant z dopływem powierzchniowym
@@ -371,6 +372,63 @@ Wnioski:
    ok. 1,2 m², a J3 przy cofce osiąga górną granicę 10⁴ m². Pomiar działa zgodnie
    z intuicją, choć nie przełożył się na lepsze tłumienie.
 
+### 3.9 Wrażliwość: średnice, węzły, głębokość, kroki czasowe, wpust
+
+45 przebiegów, jeden czynnik naraz. Przypadek bazowy to Q2: dopływ powierzchniowy,
+sieć przeciążona, stabilizacja zalecana (wzory v2, `SLOT`, relaksacja 0,1, krok SWMM
+0,5 s, wymiana co 1 s). Wpust, natężenie dopływu i liczbę węzłów sprawdzono też dla
+sieci swobodnej (Q1), a krok wymiany dla cofki (Q3). „Głębokość” to dwa czynniki:
+posadowienie sieci pod terenem oraz głębokość wody na powierzchni (mnożnik dopływu).
+Pełna tabela: `results/sensitivity.md`.
+
+![Wrażliwość](figures/fig7_sensitivity.png)
+
+**Interfejs sprzężenia jest dokładny we wszystkich 45 przebiegach.** Błąd po stronie
+powierzchni wynosi −0,045 m³ (przy innym dopływie proporcjonalnie: +0,003 i −0,089 m³).
+
+**Co decyduje o wymianie (suma w stanie ustalonym, ostatni stopień):**
+
+| Czynnik | Sieć przeciążona (Q2) | Sieć swobodna (Q1) |
+|---|---|---|
+| średnica ostatniego przewodu 0,10 → 0,30 m | 0,012 → 0,095 m³/s (×8) | – |
+| głębokość posadowienia 1 → 4 m | 0,024 → 0,051 m³/s | – |
+| liczba węzłów 3 → 12 | 0,034 → 0,058 m³/s | 0,095 → 0,150 m³/s (cały dopływ) |
+| mnożnik dopływu 0,5 → 2 | 0,034 → 0,035 m³/s (bez wpływu) | 0,059 → 0,138 m³/s |
+| współczynniki wpustu ×0,5 → ×2 | bez wpływu | 0,079 → 0,108 m³/s (−17% / +14%) |
+| powierzchnia wpustu 0,5 → 2 m² | bez wpływu | 0,086 → 0,100 m³/s (−10% / +6%) |
+| krok wymiany 1 → 10 s | 0,0343 → 0,0339 m³/s (−1%) | – |
+| krok SWMM 0,25 → 1 s | bez wpływu na średnią | – |
+
+Wniosek: **to, która niepewność ma znaczenie, zależy od stanu sieci.** Gdy sieć jest
+przeciążona, wymianę ograniczają przewody (średnica, głębokość, liczba węzłów), a opis
+wpustu i natężenie opadu nie mają znaczenia. Gdy sieć jest swobodna, wymianę ogranicza
+wpust, a jego współczynniki zmieniają wynik o kilkanaście procent. Reakcja na
+współczynniki jest słabsza niż proporcjonalna, bo większy wpust obniża wodę nad sobą.
+Przy cofce krok wymiany ≥ 5 s zwiększa wypływ z sieci o ok. 5%.
+
+**Odporność zalecanej stabilizacji (maks. odchylenie wymiany w stanie ustalonym):**
+
+- **bez oscylacji (σ = 0):** wszystkie średnice, głębokość posadowienia (σ ≤ 0,0001),
+  dopływ ×2, krok wymiany ≤ 2 s, krok SWMM ≤ 0,5 s, mniejszy wpust i współczynniki,
+  **wszystkie przypadki z siecią swobodną**;
+- **resztkowe oscylacje:** więcej węzłów (σ ≈ 0,003 przy 6 i 12 węzłach; przy 12
+  węzłach to porównywalnie z wymianą pojedynczego węzła), krok wymiany ≥ 5 s
+  (σ 0,005–0,016, także przy cofce), krok SWMM 1 s (0,010), sztywniejszy wpust
+  (powierzchnia 2 m²: 0,009; współczynniki ×2: 0,016), mały dopływ ×0,5 (0,002).
+
+Wniosek: **wartości w = 0,1 i krok SWMM 0,5 s nie są uniwersalne.** Gęstsza sieć
+i bardziej przepustowe wpusty wymagają silniejszego tłumienia albo krótszego kroku
+SWMM. W Hydrauliku potrzebne jest automatyczne wykrywanie oscylacji (zmiany znaku
+wymiany w węźle pod ciśnieniem) i ich korekta, np. skrócenie kroku SWMM albo
+zmniejszenie w, zamiast stałych ustawień.
+
+**Błąd ciągłości SWMM rośnie z zasięgiem przepływu ciśnieniowego:** 2,8% w bazie, 6,1%
+przy sieci na głębokości 4 m, 9,6% przy 12 węzłach. W sieciach swobodnych wynosi od −0,3
+do −1%. Związek z objętością wody wybijającej z węzłów jest słaby (r = 0,54; sieć
+przeciążona bez wybicia też ma 2,2%). Hipoteza o ujemnym wpływie bocznym się więc nie
+potwierdziła; bardziej prawdopodobne źródło to przepływ ciśnieniowy w metodzie `SLOT`.
+**To jest teraz główny otwarty problem** przy dłuższych symulacjach i większych sieciach.
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian
@@ -409,7 +467,9 @@ Wnioski:
 - Tylko Linux; kompilacja `libsfincs.so` na Windows i macOS niesprawdzona.
 - Czas obliczeń zmierzony na bardzo małej domenie, niereprezentatywny.
 - Przegląd literatury nie był systematyczny. Przed tezą o nowości trzeba go wykonać.
-- Błąd ciągłości SWMM przy długotrwałym przeciążeniu (ok. 3%) ma niewyjaśnioną przyczynę.
+- Błąd ciągłości SWMM przy przepływie ciśnieniowym (2,8% w bazie, do 9,6% przy 12
+  węzłach) ma niewyjaśnioną przyczynę (p. 3.9).
+- Ustawienia stabilizacji (w = 0,1, krok SWMM 0,5 s) nie są uniwersalne (p. 3.9).
 - Odpływ swobodny w wariancie z dopływem jest konstrukcją koordynatora (odbiór wody
   z ostatniej kolumny), a nie natywnym brzegiem SFINCS-a.
 

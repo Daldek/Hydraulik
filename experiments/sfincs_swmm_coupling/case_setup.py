@@ -108,6 +108,18 @@ class Scenario:
     exchange_law : str
         "continuous" (v2: Rubinato et al. 2017 coefficients, Villemonte
         submergence, linearised orifice) or "legacy" (v1: discontinuous).
+    node_count : int
+        Number of exchange nodes on the drainage line (3 = J1-J3 at 51, 101 and
+        151 m; otherwise evenly spaced). Pipe diameters for other counts are
+        set by ``pipe_diameters_m`` with keys C1..C<n>.
+    node_depth_m : float
+        Depth of node inverts (and of the outfall) below the surface.
+    inflow_scale : float
+        Factor on the surface inflow hydrograph (controls surface water depth).
+    inlet_area_m2 : float
+        Reference area A of the exchange law v2 (perimeter P = 2*sqrt(pi*A)).
+    inlet_coefficient_scale : float
+        Factor on both Rubinato et al. (2017) coefficients of the law v2.
     semi_implicit : str or None
         Semi-implicit exchange (one linearised backward-Euler step) with the
         node storage area "fixed" (SWMM MIN_SURFAREA) or "measured" from the
@@ -130,6 +142,11 @@ class Scenario:
     swmm_routing_step_s: float = float(SWMM_ROUTING_STEP_S)
     exchange_law: str = "continuous"
     semi_implicit: str | None = None
+    node_count: int = 3
+    node_depth_m: float = NODE_DEPTH_BELOW_SURFACE_M
+    inflow_scale: float = 1.0
+    inlet_area_m2: float = NODE_SURFACE_AREA_M2
+    inlet_coefficient_scale: float = 1.0
 
 
 BOTTLENECK = {"C1": 0.3, "C2": 0.3, "C3": 0.15}
@@ -317,6 +334,95 @@ for _base in ["S2_rec_dt1", "S3_rec_dt1"]:
         swmm_routing_step_s=0.5,
     )
 
+
+def chain_diameters(count: int, bottleneck: bool) -> dict[str, float]:
+    """Diameters for a chain of ``count`` nodes, like CASES: 0.3 m with a
+    0.15 m last pipe (bottleneck) or 0.6 m everywhere."""
+    if not bottleneck:
+        return {f"C{i}": 0.6 for i in range(1, count + 1)}
+    diameters = {f"C{i}": 0.3 for i in range(1, count + 1)}
+    diameters[f"C{count}"] = 0.15
+    return diameters
+
+
+# Sensitivity (I): one factor at a time around the recommended scheme on the
+# surcharged inflow case (Q2: v2 law, slot, w = 0.1, SWMM step 0.5 s, 1 s
+# exchange). Backwater (Q3) base for the exchange interval only.
+SENSITIVITY_BASE = replace(
+    SCENARIOS["Q2_rec_rs05"], name="V_base", description="Sensitivity base (Q2)"
+)
+SENSITIVITY_FACTORS = {
+    "d3": ("last pipe diameter [m]", [0.10, 0.15, 0.20, 0.30]),
+    "nodes": ("number of exchange nodes", [3, 6, 12]),
+    "depth": ("node depth below surface [m]", [1.0, 2.0, 4.0]),
+    "inflow": ("inflow scale [-]", [0.5, 1.0, 2.0]),
+    "dtc": ("exchange interval [s]", [1, 2, 5, 10]),
+    "swmm": ("SWMM routing step [s]", [0.25, 0.5, 1.0]),
+    "area": ("inlet reference area [m2]", [0.5, NODE_SURFACE_AREA_M2, 2.0]),
+    "coef": ("inlet coefficient scale [-]", [0.5, 1.0, 2.0]),
+}
+
+
+def _sensitivity_variant(base: Scenario, prefix: str, factor: str, value) -> Scenario:
+    changes = {
+        "d3": lambda v: {"pipe_diameters_m": {**base.pipe_diameters_m, "C3": v}},
+        "nodes": lambda v: {
+            "node_count": int(v),
+            "pipe_diameters_m": chain_diameters(int(v), bottleneck=True),
+        },
+        "depth": lambda v: {"node_depth_m": float(v)},
+        "inflow": lambda v: {"inflow_scale": float(v)},
+        "dtc": lambda v: {"exchange_interval_s": float(v)},
+        "swmm": lambda v: {"swmm_routing_step_s": float(v)},
+        "area": lambda v: {"inlet_area_m2": float(v)},
+        "coef": lambda v: {"inlet_coefficient_scale": float(v)},
+    }[factor](value)
+    name = f"{prefix}_{factor}_{value:g}"
+    label = SENSITIVITY_FACTORS[factor][0]
+    return replace(
+        base,
+        name=name,
+        description=f"{base.description}: {label} = {value:g}",
+        **changes,
+    )
+
+
+SENSITIVITY_RUNS = {"V_base": SENSITIVITY_BASE}
+for _factor, (_label, _values) in SENSITIVITY_FACTORS.items():
+    for _value in _values:
+        _scenario = _sensitivity_variant(SENSITIVITY_BASE, "V", _factor, _value)
+        SENSITIVITY_RUNS[_scenario.name] = _scenario
+_backwater_base = replace(
+    SENSITIVITY_BASE,
+    name="V3_base",
+    description="Sensitivity base (Q3, backwater)",
+    pipe_diameters_m={"C1": 0.6, "C2": 0.6, "C3": 0.6},
+    outfall_stage=BACKWATER_STAGE,
+)
+SENSITIVITY_RUNS["V3_base"] = _backwater_base
+for _value in SENSITIVITY_FACTORS["dtc"][1]:
+    _scenario = _sensitivity_variant(_backwater_base, "V3", "dtc", _value)
+    SENSITIVITY_RUNS[_scenario.name] = _scenario
+# Free network (Q1 settings): the inlet, not the pipes, limits the exchange.
+_free_base = replace(
+    SENSITIVITY_BASE,
+    name="V1_base",
+    description="Sensitivity base (Q1, free network)",
+    pipe_diameters_m={"C1": 0.6, "C2": 0.6, "C3": 0.6},
+)
+SENSITIVITY_RUNS["V1_base"] = _free_base
+for _factor in ("area", "coef", "inflow", "nodes"):
+    for _value in SENSITIVITY_FACTORS[_factor][1]:
+        _scenario = _sensitivity_variant(_free_base, "V1", _factor, _value)
+        if _factor == "nodes":
+            _scenario = replace(
+                _scenario,
+                pipe_diameters_m=chain_diameters(int(_value), bottleneck=False),
+            )
+        SENSITIVITY_RUNS[_scenario.name] = _scenario
+SCENARIOS.update(SENSITIVITY_RUNS)
+
+
 # Legacy (v1) exchange law for a subset, to quantify the effect of the
 # continuous formulation (v2) that all other scenarios use.
 LEGACY_COMPARISON = [
@@ -364,7 +470,7 @@ def write_sfincs_case(run_dir: Path, scenario: Scenario) -> None:
     (run_dir / "sfincs.msk").write_text((mask_row + "\n") * N_CELLS_Y)
 
     if scenario.forcing == "inflow":
-        _write_inflow(run_dir)
+        _write_inflow(run_dir, scenario)
         rain_lines = {}
     else:
         rain_lines = {"precipfile": "sfincs.prcp"}
@@ -420,6 +526,29 @@ def write_sfincs_case(run_dir: Path, scenario: Scenario) -> None:
     )
 
 
+def exchange_nodes(scenario: Scenario) -> dict[str, tuple[float, float]]:
+    """Exchange nodes J1..Jn on the drainage line, on cell centres."""
+    if scenario.node_count == 3:
+        return dict(EXCHANGE_NODES_XY)
+    length = N_CELLS_X * CELL_SIZE_M
+    nodes = {}
+    for i in range(1, scenario.node_count + 1):
+        index = int(length * i / (scenario.node_count + 1) // CELL_SIZE_M)
+        nodes[f"J{i}"] = (cell_centre(index), DRAINAGE_LINE_Y_M)
+    return nodes
+
+
+def pipes(scenario: Scenario) -> list[tuple[str, str, str]]:
+    """Conduits C1..Cn chaining J1 -> ... -> Jn -> OUT."""
+    names = list(exchange_nodes(scenario)) + ["OUT"]
+    return [(f"C{i + 1}", a, b) for i, (a, b) in enumerate(zip(names, names[1:]))]
+
+
+def inflow_hydrograph(scenario: Scenario) -> list[tuple[float, float]]:
+    """Surface inflow hydrograph of the scenario (scaled base hydrograph)."""
+    return [(t, q * scenario.inflow_scale) for t, q in INFLOW_HYDROGRAPH_M3S]
+
+
 def inflow_points() -> list[tuple[float, float]]:
     """Discharge points on the upstream edge, one per cell row."""
     return [(cell_centre(0), cell_centre(j)) for j in range(N_CELLS_Y)]
@@ -430,7 +559,7 @@ def outflow_points() -> list[tuple[float, float]]:
     return [(cell_centre(N_CELLS_X - 1), cell_centre(j)) for j in range(N_CELLS_Y)]
 
 
-def _write_inflow(run_dir: Path) -> None:
+def _write_inflow(run_dir: Path, scenario: Scenario) -> None:
     """Write the SFINCS discharge points and their (equal) discharge series."""
     points = inflow_points()
     (run_dir / "sfincs.src").write_text(
@@ -440,24 +569,22 @@ def _write_inflow(run_dir: Path) -> None:
     (run_dir / "sfincs.dis").write_text(
         "".join(
             f"{t:.1f} " + " ".join(f"{q * share:.6f}" for _ in points) + "\n"
-            for t, q in INFLOW_HYDROGRAPH_M3S
+            for t, q in inflow_hydrograph(scenario)
         )
     )
 
 
 def write_swmm_case(run_dir: Path, scenario: Scenario) -> Path:
     """Write the SWMM input file and return its path."""
-    ground = {
-        name: surface_elevation_m(x, y) for name, (x, y) in EXCHANGE_NODES_XY.items()
-    }
-    outfall_invert = (
-        surface_elevation_m(OUTFALL_X_M, DRAINAGE_LINE_Y_M) - NODE_DEPTH_BELOW_SURFACE_M
-    )
+    nodes = exchange_nodes(scenario)
+    depth = scenario.node_depth_m
+    ground = {name: surface_elevation_m(x, y) for name, (x, y) in nodes.items()}
+    outfall_invert = surface_elevation_m(OUTFALL_X_M, DRAINAGE_LINE_Y_M) - depth
 
     junctions = "".join(
-        f"{name:<6} {ground[name] - NODE_DEPTH_BELOW_SURFACE_M:.4f} "
-        f"{NODE_DEPTH_BELOW_SURFACE_M:.2f} 0 {NODE_SURCHARGE_DEPTH_M:.1f} 0\n"
-        for name in EXCHANGE_NODES_XY
+        f"{name:<6} {ground[name] - depth:.4f} "
+        f"{depth:.2f} 0 {NODE_SURCHARGE_DEPTH_M:.1f} 0\n"
+        for name in nodes
     )
     if scenario.outfall_stage is None:
         outfall = f"OUT    {outfall_invert:.4f} FREE NO\n"
@@ -470,9 +597,9 @@ def write_swmm_case(run_dir: Path, scenario: Scenario) -> Path:
             for t, stage in scenario.outfall_stage
         )
 
-    x = {name: xy[0] for name, xy in EXCHANGE_NODES_XY.items()}
+    x = {name: xy[0] for name, xy in nodes.items()}
     x["OUT"] = OUTFALL_X_M
-    links = [("C1", "J1", "J2"), ("C2", "J2", "J3"), ("C3", "J3", "OUT")]
+    links = pipes(scenario)
     conduits = "".join(
         f"{c:<4} {a:<4} {b:<4} {x[b] - x[a]:.1f} {PIPE_MANNING_N} 0 0 0 0\n"
         for c, a, b in links
