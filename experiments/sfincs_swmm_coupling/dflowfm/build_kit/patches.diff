@@ -1,0 +1,1042 @@
+# Part 1: modifications to the Delft3D clone (commit 54e33a7), apply with: git apply patches.diff  (from the repo root)
+diff --git a/src/cmake/compiler_options/gnu.cmake b/src/cmake/compiler_options/gnu.cmake
+index 0cb36699..ef09343c 100644
+--- a/src/cmake/compiler_options/gnu.cmake
++++ b/src/cmake/compiler_options/gnu.cmake
+@@ -12,7 +12,8 @@ if (UNIX)
+ 
+     set(CMAKE_CXX_FLAGS_RELEASE      "-O2 -fPIC -fopenmp")
+     set(CMAKE_C_FLAGS_RELEASE        "-O2 -fPIC -fopenmp")
+-    set(CMAKE_Fortran_FLAGS          "-O2 -fPIC -fopenmp -ffixed-line-length-132 -ffree-line-length-512 -fallow-argument-mismatch")
++    # -D__linux__: Intel fpp predefines __linux__ on Linux, gfortran's cpp does not (system_utils.F90 relies on it)
++    set(CMAKE_Fortran_FLAGS          "-O2 -fPIC -fopenmp -ffixed-line-length-132 -ffree-line-length-none -fallow-argument-mismatch -D__linux__")
+     set(CMAKE_CXX_FLAGS_DEBUG        "-g -O0 -fPIC -fopenmp")
+     set(CMAKE_C_FLAGS_DEBUG          "-g -O0 -fPIC -fopenmp")
+     
+@@ -23,6 +24,15 @@ if (UNIX)
+     set(file_preprocessor_flag       "-cpp")
+     set(traceback_flag               "-fbacktrace")
+ 
++    # GNU equivalents of flag variables that only intel.cmake defined (used by component CMakeLists)
++    set(openmp_flag                           "-fopenmp")
++    set(automatic_local_variable_storage_flag "-frecursive")
++    set(real_size_64_flag                     "-fdefault-real-8;-fdefault-double-8")
++    set(check_bounds_flag                     "-fcheck=bounds")
++    set(check_nobounds_flag                   "-fno-check=bounds")
++    set(check_nopointers_flag                 "-fno-check=pointer")
++    set(qauto_threaded_flags                  "-frecursive")
++
+     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+ endif(UNIX)
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/fm_statistical_output.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/fm_statistical_output.f90
+index 5b0d13fe..678a9369 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/fm_statistical_output.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/fm_statistical_output.f90
+@@ -3088,7 +3088,8 @@ subroutine flow_init_statistical_output_his(output_config_set, output_set)
+          !
+          ! Basic flow quantities
+          !
+-         call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_OBSCRS_DISCHARGE), obscrs_data(:, 1), aggregate_obscrs_data)
++         function_pointer => aggregate_obscrs_data
++         call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_OBSCRS_DISCHARGE), obscrs_data(:, 1), function_pointer)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_OBSCRS_DISCHARGE_CUMUL), obscrs_data(:, 2))
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_OBSCRS_AREA), obscrs_data(:, 3))
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_OBSCRS_VELOCITY), obscrs_data(:, 4))
+@@ -3107,7 +3108,8 @@ subroutine flow_init_statistical_output_his(output_config_set, output_set)
+       !
+       if (his_write_settings%lateral > 0 .and. numlatsg > 0) then
+          allocate (qplat_data(size(qplat, dim=2)))
+-         call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_LATERAL_PRESCRIBED_DISCHARGE_INSTANTANEOUS), qplat_data, transform_qplat)
++         function_pointer => transform_qplat
++         call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_LATERAL_PRESCRIBED_DISCHARGE_INSTANTANEOUS), qplat_data, function_pointer)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_LATERAL_PRESCRIBED_DISCHARGE_AVERAGE), qplatAve)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_LATERAL_REALIZED_DISCHARGE_INSTANTANEOUS), qLatReal)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_LATERAL_REALIZED_DISCHARGE_AVERAGE), qLatRealAve)
+@@ -3117,7 +3119,8 @@ subroutine flow_init_statistical_output_his(output_config_set, output_set)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_DRED_LINK_DISCHARGE), temp_pointer)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_DRED_DISCHARGE), dadpar%totvoldred)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_DUMP_DISCHARGE), dadpar%totvoldump)
+-         call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_DRED_TIME_FRAC), null(), calculate_dredge_time_fraction)
++         function_pointer => calculate_dredge_time_fraction
++         call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_DRED_TIME_FRAC), null(), function_pointer)
+          call add_stat_output_items(output_set, output_config_set%configs(IDX_HIS_PLOUGH_TIME_FRAC), time_ploughed)
+       end if
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/inifcori.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/inifcori.f90
+index e53a80b1..a9cfee8c 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/inifcori.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/inifcori.f90
+@@ -160,7 +160,8 @@ subroutine inifcori()
+          end do
+       end if
+ 
+-      k = size(fcori)
++      k = 0
++      if (allocated(fcori)) k = size(fcori) ! size() of an unallocated array is undefined (1 with gfortran)
+       if (k > 0) then
+          !call newfil(msgbu, trim(getoutputdir())//trim(md_ident)//'_Cdwcoeff.tek')
+          !call newfil(mout,'fcori.xyz')
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/m_map_his_precision.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/m_map_his_precision.f90
+index 68cb57c0..b688b838 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/m_map_his_precision.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/m_map_his_precision.f90
+@@ -45,7 +45,7 @@ function netcdf_data_type(nc_precision_string) result(nc_data_type)
+       use MessageHandling, only: mess, LEVEL_ERROR
+       use string_module, only: str_tolower
+ 
+-      character(len=*), value, intent(in) :: nc_precision_string !< Description of the data type
++      character(len=*), intent(in) :: nc_precision_string !< Description of the data type
+ 
+       integer :: nc_data_type !< Result type as used by the NetCDF library
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/partition.F90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/partition.F90
+index 05fbbb4b..6a4e4f16 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/partition.F90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/partition.F90
+@@ -6220,7 +6220,7 @@ subroutine logical_and_across_partitions(val, allval)
+ 
+       ierror = 0
+       allval = val
+-      if (jampi) then
++      if (jampi == 1) then
+ #ifdef HAVE_MPI
+          call mpi_allreduce(val, allval, 1, MPI_LOGICAL, MPI_LAND, DFM_COMM_DFMWORLD, ierror)
+ #endif
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/unstruc_model.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/unstruc_model.f90
+index 705e3228..d12ca60f 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/unstruc_model.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_data/unstruc_model.f90
+@@ -531,7 +531,7 @@ subroutine readMDUFile(filename, istat)
+       use m_check_positive_value, only: check_positive_value
+       use m_add_baroclinic_pressure, only: rhointerfaces
+       use m_flow_validatestate_data
+-      use m_array_or_scalar, only: realloc
++      use m_alloc, only: realloc
+       use precision_basics, only: equal
+ 
+       character(*), intent(in) :: filename !< Name of file to be read (the MDU file must be in current working directory).
+@@ -3597,7 +3597,7 @@ subroutine writeMDUFilepointer(mout, writeall, istat)
+          end if
+       end if
+ 
+-      if (jaspacevarcharn .and. (wind_drag_type /= CD_TYPE_CHARNOCK1955 .and. wind_drag_type /= CD_TYPE_CHARNOCK_PLUS_VISCOUS)) then
++      if (jaspacevarcharn /= 0 .and. (wind_drag_type /= CD_TYPE_CHARNOCK1955 .and. wind_drag_type /= CD_TYPE_CHARNOCK_PLUS_VISCOUS)) then
+          write (msgbuf, '(a,i0,a)') &
+             'Inconsistent configuration: a time- and space-varying Charnock coefficient was '// &
+             'specified in the .ext file, but [wind] ICdtyp is set to ', &
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_gui/intini.F90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_gui/intini.F90
+index 99ad87ad..56f0fba7 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_gui/intini.F90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_gui/intini.F90
+@@ -38,9 +38,9 @@ module m_intini
+    use m_minmaxworld
+ 
+    use precision, only: dp
+-   #if HAVE_DISPLAY==1
++#if HAVE_DISPLAY==1
+       use interacter_utils, only: patch_user32_dll_sendmessage_for_interacter
+-   #endif
++#endif
+ 
+    implicit none
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/caching.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/caching.f90
+index 3ffa178d..57a17c09 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/caching.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/caching.f90
+@@ -58,7 +58,7 @@ module unstruc_caching
+ 
+    logical, private :: cache_success
+ 
+-   character(len=20), dimension(5), private :: section = ['OBSERVATIONS        ', &
++   character(len=20), dimension(5), private :: section = [character(len=20) :: 'OBSERVATIONS        ', &
+                                                           'FIXED WEIRS         ', &
+                                                           'CROSS_SECTIONS      ', &
+                                                           'DRY_POINTS_AND_AREAS', &
+@@ -629,6 +629,12 @@ subroutine store_caching_file(base_name, use_caching)
+       !
+       ! Store the fixed weirs data
+       !
++      ! size() of / writing an unallocated array is undefined (crashes with gfortran): use empty arrays instead
++      if (.not. allocated(cache_xpl_fixed)) allocate (cache_xpl_fixed(0))
++      if (.not. allocated(cache_ypl_fixed)) allocate (cache_ypl_fixed(0))
++      if (.not. allocated(cache_dsl_fixed)) allocate (cache_dsl_fixed(0))
++      if (.not. allocated(cache_ilink_fixed)) allocate (cache_ilink_fixed(0))
++      if (.not. allocated(cache_ipol_fixed)) allocate (cache_ipol_fixed(0))
+       write (lun) section(key_fixed_weirs), size(cache_xpl_fixed), size(cache_ilink_fixed)
+ 
+       if (size(cache_xpl_fixed) > 0) then
+@@ -653,6 +659,15 @@ subroutine store_caching_file(base_name, use_caching)
+       !
+       ! Store the data for the dry points and areas
+       !
++      ! size() of / writing an unallocated array is undefined (crashes with gfortran): use empty arrays instead
++      if (.not. allocated(cached_bottom_area_dry)) allocate (cached_bottom_area_dry(0))
++      if (.not. allocated(cached_lne_dry)) allocate (cached_lne_dry(2, 0))
++      if (.not. allocated(cached_lnn_dry)) allocate (cached_lnn_dry(0))
++      if (.not. allocated(cached_xz_dry)) allocate (cached_xz_dry(0))
++      if (.not. allocated(cached_yz_dry)) allocate (cached_yz_dry(0))
++      if (.not. allocated(cached_xzw_dry)) allocate (cached_xzw_dry(0))
++      if (.not. allocated(cached_yzw_dry)) allocate (cached_yzw_dry(0))
++      if (.not. allocated(cached_netcell_dry)) allocate (cached_netcell_dry(0))
+       write (lun) section(key_dry_points_and_areas), cached_nump_dry, cached_nump1d2d_dry, size(cached_bottom_area_dry), size(cached_lnn_dry), size(cached_netcell_dry, 1)
+       write (lun) cached_bottom_area_dry, cached_lne_dry, cached_lnn_dry, cached_xz_dry, cached_yz_dry, cached_xzw_dry, cached_yzw_dry
+       call store_netcell(lun, cached_netcell_dry)
+@@ -660,6 +675,7 @@ subroutine store_caching_file(base_name, use_caching)
+       !
+       ! Store data for thin dams
+       !
++      if (.not. allocated(cached_thin_dams)) allocate (cached_thin_dams(0)) ! size() of an unallocated array is undefined (non-zero with gfortran)
+       write (lun) section(key_thin_dams), size(cached_thin_dams, 1)
+       call store_thin_dams(lun, cached_thin_dams)
+ 
+@@ -680,8 +696,11 @@ subroutine store_thin_dams(lun, thin_dams)
+       number_thin_dams = size(thin_dams, 1)
+       if (number_thin_dams > 0) then
+          do i = 1, number_thin_dams
+-            number_flow_links = size(thin_dams(i)%ln)
+-            number_polyline_points = size(thin_dams(i)%xp)
++            ! size() of an unallocated component is undefined (non-zero with gfortran)
++            number_flow_links = 0
++            if (allocated(thin_dams(i)%ln)) number_flow_links = size(thin_dams(i)%ln)
++            number_polyline_points = 0
++            if (allocated(thin_dams(i)%xp)) number_polyline_points = size(thin_dams(i)%xp)
+             write (lun) number_flow_links, number_polyline_points
+             write (lun) thin_dams(i)%np, thin_dams(i)%lnx
+             if (number_polyline_points > 0) then
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/read_statistical_output.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/read_statistical_output.f90
+index 232c539d..0a4e5e66 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/read_statistical_output.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/read_statistical_output.f90
+@@ -121,13 +121,15 @@ end function get_operation_type
+    !> Test if any output is requested in the value string
+    function is_output_requested_in_value_string(value_string) result(res)
+       use m_statistical_output_types, only: SO_UNKNOWN, SO_NONE
+-      character(*), value :: value_string !< The string provided as a value in the MDU file
++      character(*), intent(in) :: value_string !< The string provided as a value in the MDU file
+       logical :: res
+ 
+       integer :: ierr, operation_type, moving_average_window
++      character(len=len(value_string)) :: local_value_string ! local copy (gfortran rejects VALUE on assumed-length character)
+       res = .false.
++      local_value_string = value_string
+       do
+-         ierr = parse_next_stat_type_from_value_string(value_string, operation_type, moving_average_window)
++         ierr = parse_next_stat_type_from_value_string(local_value_string, operation_type, moving_average_window)
+          if (ierr /= SO_NOERR) then
+             ! Either an error or the end of the record. Other parts are responsible to catch these errors
+             exit
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unc_write_his.F90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unc_write_his.F90
+index 10a27188..7214a7e2 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unc_write_his.F90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unc_write_his.F90
+@@ -1446,6 +1446,7 @@ end function build_nc_dimension_id_start_array
+    !> Return array of NetCDF dimension counts corresponding to NetCDF dimensions
+    function build_nc_dimension_id_count_array(nc_dim_ids, ihisfile) result(counts)
+       use m_output_config, only: t_station_nc_dimensions
++      integer :: i ! implied-do index (gfortran does not support F2018 typed implied-do)
+       type(t_station_nc_dimensions), intent(in) :: nc_dim_ids !< The active NetCDF dimensions for this variable
+       integer, intent(in) :: ihisfile !< NetCDF id of already open dataset
+       integer, allocatable :: counts(:) !< NetCDF dimension counts
+@@ -1453,7 +1454,7 @@ function build_nc_dimension_id_count_array(nc_dim_ids, ihisfile) result(counts)
+       integer, allocatable :: dim_ids(:)
+ 
+       dim_ids = build_nc_dimension_id_list(nc_dim_ids)
+-      counts = [(get_dimid_len(ihisfile, dim_ids(i)), integer :: i=1, size(dim_ids))]
++      counts = [(get_dimid_len(ihisfile, dim_ids(i)), i=1, size(dim_ids))]
+       if (nc_dim_ids%timedim) then
+          counts(size(counts)) = 1 ! Only write one element for time dimension, which comes last
+       end if
+@@ -1492,6 +1493,7 @@ subroutine write_station_netcdf_variable(output_variable_item, ihisfile, it_his)
+       use MessageHandling, only: err
+       use m_statistical_output_types, only: t_output_variable_item
+       use m_output_config, only: t_output_quantity_config
++      integer :: i ! implied-do index (gfortran does not support F2018 typed implied-do)
+       type(t_output_variable_item), intent(in) :: output_variable_item !< The output variable item to write
+       integer, intent(in) :: ihisfile !< The history file id
+       integer, intent(in) :: it_his !< The history file time index
+@@ -1510,7 +1512,7 @@ subroutine write_station_netcdf_variable(output_variable_item, ihisfile, it_his)
+          counts = build_nc_dimension_id_count_array(nc_dim_ids, ihisfile)
+          starts = build_nc_dimension_id_start_array(nc_dim_ids, it_his)
+ 
+-         positions = [(i, integer :: i=1, size(counts))]
++         positions = [(i, i=1, size(counts))]
+          station_id_index = findloc(build_nc_dimension_id_list(nc_dim_ids), value=id_statdim, dim=1)
+       end associate
+ 
+@@ -1539,99 +1541,100 @@ subroutine unc_put_his_structure_static_vars(ncid)
+       use m_monitoring_runupgauges, only: rug, num_rugs
+       use string_module, only: trimexact
+       use m_observations_data, only: numobs, nummovobs, namobs
++      integer :: i ! implied-do index (gfortran does not support F2018 typed implied-do)
+       integer, intent(in) :: ncid !< NetCDF id of already open dataset
+ 
+       character(len=strlen_netcdf), dimension(:), allocatable :: structure_names
+       integer, dimension(:), allocatable :: indices
+ 
+       if (allocated(weir2cgen)) then
+-         indices = [(weir2cgen(i), integer :: i=1, nweirgen)]
+-         structure_names = [(trimexact(cgen_ids(indices(i)), strlen_netcdf), integer :: i=1, nweirgen)]
++         indices = [(weir2cgen(i), i=1, nweirgen)]
++         structure_names = [character(len=strlen_netcdf) :: (trimexact(cgen_ids(indices(i)), strlen_netcdf), i=1, nweirgen)]
+       else if (network%sts%numWeirs > 0) then
+-         indices = [(network%sts%weirIndices(i), integer :: i=1, nweirgen)]
+-         structure_names = [(trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), integer :: i=1, nweirgen)]
++         indices = [(network%sts%weirIndices(i), i=1, nweirgen)]
++         structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), i=1, nweirgen)]
+       else
+          allocate (structure_names(0))
+       end if
+       call unc_put_his_structure_names(ncid, his_write_settings%weir, id_weirgen_id, structure_names)
+ 
+-      indices = [(network%sts%orificeIndices(i), integer :: i=1, network%sts%numOrifices)]
+-      structure_names = [(trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), integer :: i=1, network%sts%numOrifices)]
++      indices = [(network%sts%orificeIndices(i), i=1, network%sts%numOrifices)]
++      structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), i=1, network%sts%numOrifices)]
+       call unc_put_his_structure_names(ncid, his_write_settings%orifice, id_orifgen_id, structure_names)
+ 
+-      structure_names = [(pump_ids(i), integer :: i=1, npumpsg)]
++      structure_names = [(pump_ids(i), i=1, npumpsg)]
+       call unc_put_his_structure_names(ncid, his_write_settings%pump, id_pump_id, structure_names)
+       call unc_put_his_structure_mid_points(ncid, ST_PUMP, his_write_settings%pump, npumpsg, 'line', id_poly_xmid=id_pump_xmid, id_poly_ymid=id_pump_ymid)
+ 
+-      structure_names = [(gate_ids(i), integer :: i=1, ngatesg)]
++      structure_names = [(gate_ids(i), i=1, ngatesg)]
+       call unc_put_his_structure_names(ncid, his_write_settings%gate, id_gate_id, structure_names)
+ 
+       if (jaoldstr == 1) then
+-         structure_names = [(cgen_ids(i), integer :: i=1, ncgensg)]
++         structure_names = [(cgen_ids(i), i=1, ncgensg)]
+       else if (network%sts%numGeneralStructures > 0) then
+-         indices = [(network%sts%generalStructureIndices(i), integer :: i=1, ngenstru)]
+-         structure_names = [(trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), integer :: i=1, ngenstru)]
++         indices = [(network%sts%generalStructureIndices(i), i=1, ngenstru)]
++         structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), i=1, ngenstru)]
+       else
+-         indices = [(genstru2cgen(i), integer :: i=1, ngenstru)]
+-         structure_names = [(cgen_ids(indices(i)), integer :: i=1, ngenstru)]
++         indices = [(genstru2cgen(i), i=1, ngenstru)]
++         structure_names = [(cgen_ids(indices(i)), i=1, ngenstru)]
+       end if
+       call unc_put_his_structure_names(ncid, his_write_settings%cgen, id_genstru_id, structure_names)
+ 
+-      indices = [(network%sts%uniweirIndices(i), integer :: i=1, network%sts%numuniweirs)]
+-      structure_names = [(trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), integer :: i=1, network%sts%numuniweirs)]
++      indices = [(network%sts%uniweirIndices(i), i=1, network%sts%numuniweirs)]
++      structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), i=1, network%sts%numuniweirs)]
+       call unc_put_his_structure_names(ncid, his_write_settings%universal_weir, id_uniweir_id, structure_names)
+ 
+       structure_names = get_dambreak_names()
+       call unc_put_his_structure_names(ncid, his_write_settings%dambreak, id_dambreak_id, structure_names)
+ 
+-      indices = [(network%sts%culvertIndices(i), integer :: i=1, network%sts%numCulverts)]
+-      structure_names = [(trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), integer :: i=1, network%sts%numCulverts)]
++      indices = [(network%sts%culvertIndices(i), i=1, network%sts%numCulverts)]
++      structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), i=1, network%sts%numCulverts)]
+       call unc_put_his_structure_names(ncid, his_write_settings%culvert, id_culvert_id, structure_names)
+ 
+-      indices = [(network%sts%bridgeIndices(i), integer :: i=1, network%sts%numBridges)]
+-      structure_names = [(trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), integer :: i=1, network%sts%numBridges)]
++      indices = [(network%sts%bridgeIndices(i), i=1, network%sts%numBridges)]
++      structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(indices(i))%id, strlen_netcdf), i=1, network%sts%numBridges)]
+       call unc_put_his_structure_names(ncid, his_write_settings%bridge, id_bridge_id, structure_names)
+ 
+-      structure_names = [(network%cmps%compound(i)%id, integer :: i=1, network%cmps%count)]
++      structure_names = [(network%cmps%compound(i)%id, i=1, network%cmps%count)]
+       call unc_put_his_structure_names(ncid, his_write_settings%compound_structure, id_cmpstru_id, structure_names)
+ 
+-      structure_names = [(longculverts(i)%id, integer :: i=1, nlongculverts)]
++      structure_names = [(longculverts(i)%id, i=1, nlongculverts)]
+       call unc_put_his_structure_names(ncid, his_write_settings%long_culvert, id_longculvert_id, structure_names)
+ 
+-      structure_names = [(cdam_ids(i), integer :: i=1, ncdamsg)]
++      structure_names = [(cdam_ids(i), i=1, ncdamsg)]
+       call unc_put_his_structure_names(ncid, his_write_settings%cdam, id_cdam_id, structure_names)
+ 
+-      structure_names = [(namobs(i), integer :: i=1, numobs + nummovobs)]
++      structure_names = [(namobs(i), i=1, numobs + nummovobs)]
+       call unc_put_his_structure_names(ncid, 1, id_statname, structure_names)
+ 
+-      structure_names = [(crs(i)%name, integer :: i=1, ncrs)]
++      structure_names = [(crs(i)%name, i=1, ncrs)]
+       call unc_put_his_structure_names(ncid, 1, id_crs_id, structure_names)
+ 
+-      structure_names = [(rug(i)%name, integer :: i=1, num_rugs)]
++      structure_names = [(rug(i)%name, i=1, num_rugs)]
+       call unc_put_his_structure_names(ncid, 1, id_rugname, structure_names)
+ 
+       if (allocated(source_sinks%name)) then
+          structure_names = pack(source_sinks%name, source_sinks%is_normal)
+       else
+-         structure_names = [(source_sinks%name(i), integer :: i=1, source_sinks%num_total)]
++         structure_names = [(source_sinks%name(i), i=1, source_sinks%num_total)]
+       end if
+       ! structure_names = pack(source_sink_name, is_source_sink_real)
+       call unc_put_his_structure_names(ncid, his_write_settings%sourcesink, id_srcname, structure_names)
+ 
+-      structure_names = [(bubblescreens(i)%id, integer :: i=1, size(bubblescreens))]
++      structure_names = [(bubblescreens(i)%id, i=1, size(bubblescreens))]
+       call unc_put_his_structure_names(ncid, his_write_settings%bubblescreens, id_bubblescreen_name, structure_names)
+ 
+       if (network%sts%numGates > 0) then
+-         indices = [(network%sts%gateIndices(i), integer :: i=1, ngategen)]
+-         structure_names = [(trimexact(network%sts%struct(network%sts%gateIndices(i))%id, strlen_netcdf), integer :: i=1, ngategen)]
++         indices = [(network%sts%gateIndices(i), i=1, ngategen)]
++         structure_names = [character(len=strlen_netcdf) :: (trimexact(network%sts%struct(network%sts%gateIndices(i))%id, strlen_netcdf), i=1, ngategen)]
+       else
+-         indices = [(gate2cgen(i), integer :: i=1, ngategen)]
+-         structure_names = [(cgen_ids(indices(i)), integer :: i=1, ngategen)]
++         indices = [(gate2cgen(i), i=1, ngategen)]
++         structure_names = [(cgen_ids(indices(i)), i=1, ngategen)]
+       end if
+ 
+       call unc_put_his_structure_names(ncid, his_write_settings%gate, id_gategen_id, structure_names)
+ 
+-      structure_names = [(lat_ids(i), integer :: i=1, numlatsg)]
++      structure_names = [(lat_ids(i), i=1, numlatsg)]
+       call unc_put_his_structure_names(ncid, his_write_settings%lateral, id_lat_id, structure_names)
+    end subroutine unc_put_his_structure_static_vars
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unstruc_netcdf.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unstruc_netcdf.f90
+index 42f43dbe..56fecd23 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unstruc_netcdf.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_io/unstruc_netcdf.f90
+@@ -7983,7 +7983,7 @@ subroutine unc_write_map_filepointer(imapfile, tim, jaseparate) ! wrimap
+             call definencvar(imapfile, id_air_pressure(iid), nf90_double, idims, 'Patm', 'Atmospheric Pressure', 'N m-2', 'FlowElem_xcc FlowElem_ycc')
+          end if
+ 
+-         if (ja_icecover) then
++         if (ja_icecover /= 0) then
+             if (ice_mapout%ice_s1) then
+                call definencvar(imapfile, id_ice_s1(iid), nf90_double, idims, 'ice_s1', 'Sea surface height of open water', 'm', 'FlowElem_xcc FlowElem_ycc')
+             end if
+@@ -9444,7 +9444,7 @@ subroutine unc_write_map_filepointer(imapfile, tim, jaseparate) ! wrimap
+          ierr = nf90_put_var(imapfile, id_air_pressure(iid), air_pressure, [1, itim], [ndxndxi, 1])
+       end if
+ 
+-      if (ja_icecover) then
++      if (ja_icecover /= 0) then
+          if (ice_mapout%ice_s1) then
+             ierr = nf90_put_var(imapfile, id_ice_s1(iid), ice_s1, [1, itim], [ndxndxi, 1])
+          end if
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/laterals.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/laterals.f90
+index e76accd3..b12a2623 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/laterals.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/laterals.f90
+@@ -98,7 +98,7 @@ module m_laterals
+       procedure :: update => update_flow_parameter !< Update flow_parameter, perform averaging
+    end type t_flow_parameter
+ 
+-   interface initialize_flow_parameter
++   interface ! (unnamed: a generic named like its specific breaks the type-bound binding in gfortran)
+       module subroutine initialize_flow_parameter(this, num_elements, input_variable, weighing_variable, &
+                                                   index_start, index_end, index_to_node)
+          class(t_flow_parameter), intent(inout) :: this !< Flow parameter object
+@@ -108,13 +108,13 @@ module subroutine initialize_flow_parameter(this, num_elements, input_variable,
+          integer, dimension(:), pointer, intent(in) :: index_start, index_end !< Indexing parameters for mapping input variable to flow parameter locations.
+          integer, dimension(:), pointer, intent(in) :: index_to_node !< Index mapping to flow nodes.
+       end subroutine initialize_flow_parameter
+-   end interface initialize_flow_parameter
++   end interface
+ 
+-   interface update_flow_parameter
++   interface
+       module subroutine update_flow_parameter(this)
+          class(t_flow_parameter), intent(inout) :: this
+       end subroutine update_flow_parameter
+-   end interface update_flow_parameter
++   end interface
+ 
+    type(t_flow_parameter), public, target :: average_waterlevels_per_lateral !< Flow parameter structure for laterals concentration.
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/links_to_centers.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/links_to_centers.f90
+index 764716a6..e640f7d4 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/links_to_centers.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/links_to_centers.f90
+@@ -69,7 +69,7 @@ subroutine links_to_centers(vnod, vlin)
+          do kk = 1, ndx
+             k_start = ktop(kk) + 1
+             k_end = kbot(kk) + kmxn(kk) - 1
+-            !$OMP SIMD ASSERT
++            !$OMP SIMD
+             do k = k_start, k_end
+                if (k <= ndkx) then ! Vector/simd code may go out of bounds without explicit check
+                   vnod(k) = vnod(ktop(kk))
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/m_dambreak_breach_submodule.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/m_dambreak_breach_submodule.f90
+index c2431c2b..d442134c 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/m_dambreak_breach_submodule.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/m_dambreak_breach_submodule.f90
+@@ -28,7 +28,7 @@
+ !-------------------------------------------------------------------------------
+ 
+ submodule(m_dambreak_breach) m_dambreak_breach_submodule
+-   use precision, only: dp
++   ! dp is host-associated from the parent module m_dambreak_breach (gfortran rejects re-USE of it here)
+ 
+    implicit none
+ 
+@@ -226,7 +226,6 @@ end subroutine update_water_level_using_averaging
+ 
+    !> Calculate breach growth using vdKnaap model
+    subroutine calculate_breach_growth_using_vdKnaap_model(dambreak, time, time_step)
+-      import t_dambreak
+ 
+       class(t_dambreak), intent(inout) :: dambreak !< dambreak data for a single dambreak
+       real(kind=dp), intent(in) :: time !< current time
+@@ -271,7 +270,6 @@ end subroutine calculate_breach_growth_using_vdKnaap_model
+    subroutine calculate_breach_growth_using_Verheij_vdKnaap_model(dambreak, time, time_step)
+       use ieee_arithmetic, only: ieee_is_nan
+       use m_physcoef, only: gravity => ag
+-      import t_dambreak
+ 
+       class(t_dambreak), intent(inout) :: dambreak !< dambreak data for a single dambreak
+       real(kind=dp), intent(in) :: time !< current time
+@@ -338,7 +336,6 @@ subroutine calculate_breach_growth_using_tables(dambreak, time, time_step)
+       use m_flowtimes, only: irefdate, tunit, tzone
+       use messagehandling, only: msgbuf, LEVEL_ERROR, SetMessage
+       use unstruc_channel_flow, only: network
+-      import t_dambreak
+ 
+       class(t_dambreak), intent(inout) :: dambreak !< dambreak data for a single dambreak
+       real(kind=dp), intent(in) :: time !< current time
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/setumod.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/setumod.f90
+index 7310cf62..8c7c9eec 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/setumod.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute/setumod.f90
+@@ -889,7 +889,7 @@ subroutine set_V_2D_default(jasfer3D)
+ 
+       !$OMP SIMD
+       do L = lnx1D + 1, lnx
+-         if (jasfer3D) then
++         if (jasfer3D == 1) then
+             ucx_link_1 = +csb_1(L) * ucx_1(L) + snb_1(L) * ucy_1(L)
+             ucy_link_1 = -snb_1(L) * ucx_1(L) + csb_1(L) * ucy_1(L)
+             ucx_link_2 = +csb_2(L) * ucx_2(L) + snb_2(L) * ucy_2(L)
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute_transport/ini_transport.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute_transport/ini_transport.f90
+index 3a0f4125..75bf6f4d 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute_transport/ini_transport.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/compute_transport/ini_transport.f90
+@@ -200,7 +200,7 @@ subroutine ini_transport()
+          const_names(ispir) = 'secondary_flow_intensity'
+       end if
+ 
+-      tracer_limiter_mass_error = 0.0_dp ! initialise mass error counter
++      if (allocated(tracer_limiter_mass_error)) tracer_limiter_mass_error = 0.0_dp ! initialise mass error counter (guard: may not be allocated yet)
+       if (itra1 > 0) then
+          do i = itra1, itran
+             itrace = i - itra1 + 1
+@@ -257,16 +257,17 @@ subroutine ini_transport()
+ !  local timestepping
+       time_dtmax = -1.0_dp ! cfl-numbers not evaluated
+       nsubsteps = 1
+-      ndeltasteps = 1
+-      jaupdatehorflux = 1
++      ! guards: these arrays may not be allocated yet (assigning to an unallocated allocatable segfaults with gfortran)
++      if (allocated(ndeltasteps)) ndeltasteps = 1
++      if (allocated(jaupdatehorflux)) jaupdatehorflux = 1
+       numnonglobal = 0
+ 
+ !  sediment advection velocity
+-      jaupdateconst = 1
++      if (allocated(jaupdateconst)) jaupdateconst = 1
+ 
+       if (stm_included) then
+          if (stmpar%lsedsus > 0) then
+-            noupdateconst = 0
++            if (allocated(noupdateconst)) noupdateconst = 0
+             do i = ised1, isedn
+                jaupdateconst(i) = 0
+                noupdateconst(i) = 1
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/flow_init_structurecontrol_implementation.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/flow_init_structurecontrol_implementation.f90
+index 4f3cb841..d7bed07e 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/flow_init_structurecontrol_implementation.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/flow_init_structurecontrol_implementation.f90
+@@ -35,6 +35,7 @@
+ contains
+ !> Initializes controllers that force structures.
+    module function flow_init_structurecontrol() result(status)
++      use, intrinsic :: iso_c_binding, only: c_loc, c_f_pointer
+       use dfm_error, only: DFM_NOERR
+       use m_flowgeom, only: lnx, wu, ln, bob0
+       use m_netw, only: numl
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/set_model_boundingbox.F90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/set_model_boundingbox.F90
+index 9579b56d..19fcc662 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/set_model_boundingbox.F90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/set_model_boundingbox.F90
+@@ -68,6 +68,7 @@ function set_model_boundingbox() result(ierr)
+       integer :: make_latlon
+ 
+       ierr = DFM_NOERR
++      nullify (lonn, latn) ! pointer status is otherwise undefined when passed to reallocP (crashes with gfortran)
+ 
+       make_latlon = 0
+ #ifdef HAVE_PROJ
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings.f90
+index 2a226e77..4cd3791e 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings.f90
+@@ -2026,7 +2026,7 @@ subroutine finalize(iresult)
+       use m_mathconstants, only: pi
+       use m_filez, only: doclose
+       use m_physcoef, only: dicoww
+-      use m_array_or_scalar, only: realloc
++      use m_alloc, only: realloc
+       use m_cellmask_from_polygon_set, only: t_netcell_set
+       use unstruc_inifields, only: finalize_1dfield_global_values
+       use network_data, only: LINK_1D
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_init.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_init.f90
+index 7f999420..e12957f9 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_init.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_init.f90
+@@ -647,6 +647,7 @@ subroutine read_lateral_discharge_definition(block_ptr, loc_id, base_dir, ilatty
+       use timespace_parameters, only: LOCTP_NODEID, LOCTP_BRANCHID_CHAINAGE, LOCTP_POLYGON_XY, LOCTP_POLYGON_FILE
+       use fm_location_types, only: SPATIAL_LOCATION_1D
+       use unstruc_files, only: resolvePath
++      integer :: i ! implied-do index (gfortran does not support F2018 typed implied-do)
+ 
+       ! Arguments
+       type(tree_data), pointer, intent(in) :: block_ptr !< Pointer to lateral block in extforce file; child node of the extforce file tree
+@@ -685,7 +686,7 @@ subroutine read_lateral_discharge_definition(block_ptr, loc_id, base_dir, ilatty
+       has_location_file = has_key(block_ptr, 'Lateral', 'locationFile')
+ 
+       ! Test if multiple discharge methods were set
+-      number_of_discharge_specifications = sum([(1, integer :: i=1, MAXIMUM_NUMBER_OF_DISCHARGE_SPECIFICATIONS)], [has_node_id, has_branch_id .or. has_chainage, has_num_coordinates .or. has_x_coordinates .or. has_y_coordinates, has_location_file])
++      number_of_discharge_specifications = sum([(1, i=1, MAXIMUM_NUMBER_OF_DISCHARGE_SPECIFICATIONS)], [has_node_id, has_branch_id .or. has_chainage, has_num_coordinates .or. has_x_coordinates .or. has_y_coordinates, has_location_file])
+ 
+       if (number_of_discharge_specifications < 1) then
+          call mess(LEVEL_ERROR, 'Lateral '''//trim(loc_id)//''': No discharge specifications found. Use nodeId, branchId + chainage, numCoordinates + xCoordinates + yCoordinates, or locationFile.')
+@@ -1544,7 +1545,7 @@ function enable_quantity(quantity) result(success)
+          success = .false.
+       end select
+ 
+-      if (success == .false.) then
++      if (.not. success) then
+          success = .true.
+          select case (str_tolower(qid_base))
+          case ('initialwaterdepth', 'waterdepth')
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_update.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_update.f90
+index cbcc71b8..518a60b8 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_update.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/fm_external_forcings_update.f90
+@@ -59,7 +59,7 @@ module fm_external_forcings_update
+    use dfm_error, only: dfm_noerr, dfm_extforcerror
+    use m_calibration, only: calibration_backup_frcu
+    use unstruc_channel_flow, only: network
+-   use time_class, only: c_time, ecgetvalues
++   use time_class, only: c_time
+    use m_longculverts_data, only: nlongculverts
+    use m_nearfield, only: nearfield_mode, NEARFIELD_UPDATED, addNearfieldData
+    use m_airdensity, only: get_airdensity
+@@ -563,6 +563,7 @@ end subroutine get_timespace_value_by_item
+ 
+    !> set_wave_parameters
+    subroutine set_wave_parameters(initialization)
++      use precision, only: dp
+       use ieee_arithmetic, only: ieee_is_nan
+       use m_compute_wave_parameters, only: compute_wave_parameters
+       use unstruc_messages, only: callback_msg
+@@ -762,6 +763,7 @@ end subroutine set_all_wave_parameters
+ 
+    !> Read only the offline wave quantities required by the active configuration.
+    subroutine set_offline_wave_parameters()
++      use precision, only: dp
+       ! EC owns the raw source fields. Reset only FM-derived fields before
+       ! calculating them from the values EC provides.
+       hwav(:) = 0.0_dp
+@@ -951,6 +953,7 @@ end subroutine update_subsidence_and_uplift_data
+ 
+    !> prepare_air_pressure_temperature_dew_point_temperature
+    subroutine prepare_air_pressure_temperature_dew_point_temperature(time_in_seconds)
++      use precision, only: dp
+       use m_meteo, only: item_apwxwy_p, item_airpressure, item_hac_air_temperature, item_hacs_air_temperature, &
+          item_dac_air_temperature, item_dacs_air_temperature, item_air_temperature, item_dac_dew_point_temperature, &
+          item_dacs_dew_point_temperature, item_dew_point_temperature
+@@ -978,6 +981,7 @@ end subroutine prepare_air_pressure_temperature_dew_point_temperature
+ 
+    !> Prepare wind data if jawind=1 and air_pressure_available
+    subroutine prepare_wind(time_in_seconds, iresult)
++      use precision, only: dp
+       use m_wind, only: jawind, air_pressure_available
+       use dfm_error, only: DFM_NOERR
+ 
+@@ -996,6 +1000,7 @@ end subroutine prepare_wind
+ 
+    !> prepare_wind_model_data
+    subroutine prepare_wind_model_data(time_in_seconds, iresult)
++      use precision, only: dp
+       use m_wind
+       use m_flowparameters, only: jawave, flow_without_waves, EPS10
+       use m_flow, only: wind_speed_factor
+@@ -1178,6 +1183,7 @@ end subroutine get_timespace_value_by_name
+ 
+       !> get_timespace_value_by_item_and_array
+       subroutine get_timespace_value_by_item_and_array(item, array)
++         use precision, only: dp
+          use m_flowtimes, only: irefdate, tzone, tunit
+ 
+          ! Arguments
+@@ -1190,6 +1196,7 @@ end subroutine get_timespace_value_by_item_and_array
+ 
+       !> perform_additional_spatial_interpolation, the size of array_x and array_y is lnx.
+       subroutine perform_additional_spatial_interpolation(array_x, array_y)
++         use precision, only: dp
+          ! Arguments
+          real(kind=dp), dimension(:), intent(inout) :: array_x !< Array of X-components for interpolation
+          real(kind=dp), dimension(:), intent(inout) :: array_y !< Array of Y-components for interpolation
+@@ -1214,6 +1221,7 @@ end subroutine get_timespace_value_by_item
+ 
+       !> initialize_array_with_zero
+       subroutine initialize_array_with_zero(array)
++         use precision, only: dp
+          ! Arguments
+          real(kind=dp), dimension(:), allocatable, intent(inout) :: array !< Array that will be initialized
+ 
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/nearfield.f90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/nearfield.f90
+index 3c4fd7e8..fa076afb 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/nearfield.f90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/timespace/nearfield.f90
+@@ -156,8 +156,9 @@ subroutine reset_nearfieldData()
+       nf_numsour = 0
+       nf_numsink = 0
+       source_sinks%num_nearfield = 0
+-      nf_entr_start = 0
+-      nf_entr_end = 0
++      ! guard: assigning to an unallocated allocatable is invalid (segfaults with gfortran)
++      if (allocated(nf_entr_start)) nf_entr_start = 0
++      if (allocated(nf_entr_end)) nf_entr_end = 0
+       !
+       ! Pointers to data inside COSUMO_BMI
+       !
+diff --git a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_utils/saadf.F90 b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_utils/saadf.F90
+index 4c193abe..71d46f5d 100644
+--- a/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_utils/saadf.F90
++++ b/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_utils/saadf.F90
+@@ -10857,7 +10857,11 @@ subroutine rndperm(n, iord, iseed)
+ ! local
+ !
+       integer i, j, itmp
++#ifdef __GFORTRAN__
++      intrinsic :: irand ! GNU extension intrinsic (Intel provides irand as an external in IFPORT)
++#else
+       integer, external :: irand
++#endif
+ !----------------------------------------------------------------------
+       no_warning_unused_dummy_argument(iseed)
+ 
+diff --git a/src/utils_gpl/flow1d/packages/flow1d_core/src/structures.f90 b/src/utils_gpl/flow1d/packages/flow1d_core/src/structures.f90
+index 64437641..490762ea 100644
+--- a/src/utils_gpl/flow1d/packages/flow1d_core/src/structures.f90
++++ b/src/utils_gpl/flow1d/packages/flow1d_core/src/structures.f90
+@@ -469,10 +469,12 @@ end subroutine reIndexCrossSections
+    pure function GetStrucType_from_string(string) result(istrtype)
+       use string_module, only: str_lower
+ 
+-      character(len=*), value :: string
++      character(len=*), intent(in) :: string
+       integer :: istrtype
+-      call str_lower(string, 999)
+-      select case(trim(string))
++      character(len=len(string)) :: lstring ! local copy (gfortran rejects VALUE on assumed-length character)
++      lstring = string
++      call str_lower(lstring, 999)
++      select case(trim(lstring))
+       case ('pump')
+          istrtype = ST_PUMP
+       case ('generalstructure')
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/CMakeLists.txt b/src/utils_gpl/flow1d_implicit/flow1d_implicit/CMakeLists.txt
+index aa70cc47..9c2541f9 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/CMakeLists.txt
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/CMakeLists.txt
+@@ -27,7 +27,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${source_files})
+ set_target_properties (${library_name} PROPERTIES FOLDER utils_gpl/flow1d_implicit)
+ 
+ set_source_files_properties(${src_path}/dumpTime.F90
+-                            ${src_path}/FLMINMAX.f
+-                            ${src_path}/FLWRHI.f
+-                            ${src_path}/SOFLOW.f
++                            ${src_path}/FLMINMAX.f90
++                            ${src_path}/FLWRHI.f90
++                            ${src_path}/SOFLOW.f90
+                             PROPERTIES COMPILE_OPTIONS "${file_preprocessor_flag}")
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLHYPA.f90 b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLHYPA.f90
+index 250d04ea..43cacc9b 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLHYPA.f90
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLHYPA.f90
+@@ -272,7 +272,7 @@ subroutine FLHYPA(time   ,iter   ,nbran  ,ngrid  ,branch ,typcr  ,&
+    &waoft(1,7)     ,waoft(1,8)     ,waoft(1,9)     ,&
+ !  <wf>
+    &waoft(1,1)     ,juer   ,ker                    ,&
+-   &fm1dimp                                        ,&
++   &fm1dimp                                         &
+    &)
+ 
+ !     FM1DIMP2DO: remove debug
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOW.f90 b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOW.f90
+index ffa6196f..2dd2239a 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOW.f90
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOW.f90
+@@ -507,7 +507,7 @@ subroutine sre_FLOW (time   ,dt1    ,steady ,iter   ,istep  ,itim,&
+    &omqlat ,ibuf   ,lfrou  ,qtyp   ,indx   ,bicg   ,solbuf ,&
+    &stdbq  ,nstdb                                          ,&
+    &debug_wr                                               ,&
+-   &fm1dimp                                                ,&
++   &fm1dimp                                                 &
+    &)
+ !
+    if (ker .eq. fatal) goto 1000
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOWIT.f90 b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOWIT.f90
+index 888e2f0b..d41853e0 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOWIT.f90
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/FLOWIT.f90
+@@ -395,7 +395,7 @@ subroutine FLOWIT(g      ,istep  ,time   ,dt1    ,steady ,iter   ,&
+    &prslot  ,psltvr  ,waoft   ,cpa    ,rpa     ,alfab  ,&
+    &tauwi   ,ksi     ,a1m     ,ker    ,dt1     ,theta2 ,&
+    &exrstp  ,omalfa  ,omc     ,omr    ,omw             ,&
+-   &fm1dimp                                            ,&
++   &fm1dimp                                             &
+    &)
+ !
+ !     Debug variables FM1DIMP2DO: remove
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/GAREADHEAD.f90 b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/GAREADHEAD.f90
+index 56302c98..db6b7524 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/GAREADHEAD.f90
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/GAREADHEAD.f90
+@@ -87,7 +87,7 @@ subroutine GAreadheader (lunhis  ,filnamhis ,nstepsim ,dtsim   ,&
+ !
+ !     Open his file
+ !
+-   open(lunhis , file = filnamhis , form = 'binary')
++   open(lunhis , file = filnamhis , form = 'unformatted', access = 'stream')
+ !
+    read   (lunhis)  (dattim,i=1,4)
+    read   (lunhis)  nvar,nloc
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/MOZOPENHS.f90 b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/MOZOPENHS.f90
+index b9912580..9f4fdf35 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/MOZOPENHS.f90
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/MOZOPENHS.f90
+@@ -13,7 +13,7 @@ SUBROUTINE MOZOPENHS (IN, NAME, IOPT)
+ 
+    ELSE
+ 
+-      OPEN(IN, FILE=NAME, FORM='BINARY', STATUS='unknown')
++      OPEN(IN, FILE=NAME, FORM='UNFORMATTED', ACCESS='STREAM', STATUS='unknown')
+ 
+    ENDIF
+ !
+diff --git a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/SOFLOW_wrap.f90 b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/SOFLOW_wrap.f90
+index d3cff6e5..7228a6b0 100644
+--- a/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/SOFLOW_wrap.f90
++++ b/src/utils_gpl/flow1d_implicit/flow1d_implicit/src/SOFLOW_wrap.f90
+@@ -300,7 +300,7 @@ subroutine SOFLOW_wrap(time1)
+ !units  
+         &   juer                                       , &
+ !derived type with all info
+-        &   f1dimppar                                 , &
++        &   f1dimppar                                   &
+ !close
+         &)
+     
+diff --git a/src/utils_gpl/ice/packages/ice_data/src/icecover_module.f90 b/src/utils_gpl/ice/packages/ice_data/src/icecover_module.f90
+index 031e1589..04e0c027 100644
+--- a/src/utils_gpl/ice/packages/ice_data/src/icecover_module.f90
++++ b/src/utils_gpl/ice/packages/ice_data/src/icecover_module.f90
+@@ -282,7 +282,7 @@ end subroutine check_output_flags
+ function is_allocated_icecover(icecover) result(flag)
+    type (icecover_type), intent(in) :: icecover !< data structure containing ice cover data
+    
+-   integer :: flag !< logical flag for allocation
++   logical :: flag !< logical flag for allocation
+    
+    flag = associated(icecover%ice_area_fraction)
+ end function is_allocated_icecover
+@@ -500,6 +500,8 @@ subroutine icecover_prepare_output(icecover, water_level, water_density, ag)
+    real(fp) :: zmin !< lower ice cover surface height (m+REF)
+    real(fp) :: zmax !< upper ice cover surface height (m+REF)
+    
++   ! size() of an unassociated pointer is undefined (non-zero with gfortran): nothing to do without ice arrays
++   if (.not. associated(icecover%ice_area_fraction)) return
+    ndx = size(icecover%ice_area_fraction)
+    do n = 1, ndx
+       open_water_level = water_level(n) + icecover%pressure(n) / water_density(n) / ag
+diff --git a/src/utils_gpl/morphology/packages/morphology_io/src/rdmor.f90 b/src/utils_gpl/morphology/packages/morphology_io/src/rdmor.f90
+index d5608928..cc81f8e7 100644
+--- a/src/utils_gpl/morphology/packages/morphology_io/src/rdmor.f90
++++ b/src/utils_gpl/morphology/packages/morphology_io/src/rdmor.f90
+@@ -43,7 +43,7 @@ subroutine rdmor(lundia    ,error     ,filmor_in ,lsec      ,lsedtot   , &
+                & nambnd    ,julday    ,mor_ptr   ,sedpar    ,morpar    , &
+                & fwfac     ,morlyr    ,griddim   ,ag)
+ !!--declarations----------------------------------------------------------------
+-    use precision, only: fp
++    use precision, only: fp, dp
+     use properties
+     use table_handles
+     use bedcomposition_module
+diff --git a/src/utils_lgpl/deltares_common/packages/deltares_common/src/m_alloc.f90 b/src/utils_lgpl/deltares_common/packages/deltares_common/src/m_alloc.f90
+index d6b80b80..608fb870 100644
+--- a/src/utils_lgpl/deltares_common/packages/deltares_common/src/m_alloc.f90
++++ b/src/utils_lgpl/deltares_common/packages/deltares_common/src/m_alloc.f90
+@@ -29,7 +29,7 @@
+ !> Utility routines for memory (re)allocation.
+ module m_alloc
+    use m_alloc_generated, only: realloc, reallocP
+-   use m_alloc_handwritten, only: realloc, reallocP, aerr, allocSize, reserve_sufficient_space
++   use m_alloc_handwritten, only: realloc, aerr, allocSize, reserve_sufficient_space
+    implicit none
+    private
+ 
+diff --git a/src/utils_lgpl/deltares_common/packages/deltares_common/src/unit_utils.f90 b/src/utils_lgpl/deltares_common/packages/deltares_common/src/unit_utils.f90
+index ee188553..e854ab8f 100644
+--- a/src/utils_lgpl/deltares_common/packages/deltares_common/src/unit_utils.f90
++++ b/src/utils_lgpl/deltares_common/packages/deltares_common/src/unit_utils.f90
+@@ -73,8 +73,8 @@ end function is_correct_unit
+    !> The check 
+    subroutine set_available_units()
+        available_units = [ &
+-          t_unit_category('velocity', ['m/s', 'm s-1', 'ms-1', 'meter per second']), &
+-          t_unit_category('from_direction', ['degrees', 'deg', 'degree', 'degreen']) &
++          t_unit_category('velocity', [character(len=IdLen) :: 'm/s', 'm s-1', 'ms-1', 'meter per second']), &
++          t_unit_category('from_direction', [character(len=IdLen) :: 'degrees', 'deg', 'degree', 'degreen']) &
+        ]
+    end subroutine set_available_units   
+ 
+diff --git a/src/utils_lgpl/ec_module/packages/ec_module/src/ec_typedefs.f90 b/src/utils_lgpl/ec_module/packages/ec_module/src/ec_typedefs.f90
+index d8d062c3..d5967750 100644
+--- a/src/utils_lgpl/ec_module/packages/ec_module/src/ec_typedefs.f90
++++ b/src/utils_lgpl/ec_module/packages/ec_module/src/ec_typedefs.f90
+@@ -104,7 +104,7 @@ module m_ec_typedefs
+       integer :: from_line = -1 !< Data for this block start linenumber in temporary string buffer
+       integer :: thru_line = -1 !< Data for this block final linenumber in temporary string buffer
+       integer :: func
+-      integer :: timecolumn !< Number of the column holding the time strings, compul
++      integer :: timecolumn = 0 !< Number of the column holding the time strings, compul (default 0 = none; was undefined)
+       character(len=50) :: timeunit !< netcdf-convention time unit definition
+       logical :: periodic = .false. !< should a timeseries be rewinded beyond the last entry ?
+       integer :: timeint = timeint_lin !< Type of time interpolation
+diff --git a/src/utils_lgpl/io_netcdf/packages/io_netcdf/src/netcdf_utils.F90 b/src/utils_lgpl/io_netcdf/packages/io_netcdf/src/netcdf_utils.F90
+index f6afb2c1..56881689 100644
+--- a/src/utils_lgpl/io_netcdf/packages/io_netcdf/src/netcdf_utils.F90
++++ b/src/utils_lgpl/io_netcdf/packages/io_netcdf/src/netcdf_utils.F90
+@@ -89,7 +89,7 @@ module netcdf_utils
+    integer                                   :: size = 0      !< Actual size of attribute set
+    integer                                   :: growsby = 1   !< Increment for attribute set
+    integer                                   :: count = 0     !< Actual number of attributes in set
+-   type(ug_nc_attribute), pointer, dimension(:) :: atts          !< Buffered array with the nc_attribute elements
++   type(ug_nc_attribute), pointer, dimension(:) :: atts => null() !< Buffered array with the nc_attribute elements (null-initialised: undefined status crashes gfortran builds)
+ end type nc_att_set
+ 
+ interface ncu_set_att
+
+# Part 2: NEW files outside the source tree: CMake shim packages (dflowfm_build/cmake_shims/lib/cmake/*), passed via CMAKE_PREFIX_PATH
+diff --git a/cmake_shims/lib/cmake/HDF5/HDF5Config.cmake b/cmake_shims/lib/cmake/HDF5/HDF5Config.cmake
+new file mode 100644
+index 0000000..c2749ec
+--- /dev/null
++++ b/cmake_shims/lib/cmake/HDF5/HDF5Config.cmake
+@@ -0,0 +1,4 @@
++# Shim: Ubuntu's libhdf5-dev (autotools build) ships no CMake config package; wrap CMake's FindHDF5 module.
++# HDF5_NO_FIND_PACKAGE_CONFIG_FILE stops FindHDF5 from calling find_package(HDF5 CONFIG) again (infinite recursion).
++set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
++find_package(HDF5 MODULE REQUIRED COMPONENTS C HL)
+diff --git a/cmake_shims/lib/cmake/PETSc/PETScConfig.cmake b/cmake_shims/lib/cmake/PETSc/PETScConfig.cmake
+new file mode 100644
+index 0000000..5f011a0
+--- /dev/null
++++ b/cmake_shims/lib/cmake/PETSc/PETScConfig.cmake
+@@ -0,0 +1,10 @@
++# Shim: PETSc (built from source with gfortran/OpenMPI) has no CMake config package.
++# Provides PETSc::PETSc (shared libpetsc + C headers + Fortran .mod files in <prefix>/include).
++set(PETSC_DIR "/home/user/sfincs_feas/dflowfm_build/deps/petsc" CACHE PATH "PETSc install prefix")
++if(NOT TARGET PETSc::PETSc)
++    find_library(PETSC_LIBRARY NAMES petsc PATHS "${PETSC_DIR}/lib" NO_DEFAULT_PATH REQUIRED)
++    add_library(PETSc::PETSc SHARED IMPORTED)
++    set_target_properties(PETSc::PETSc PROPERTIES
++        IMPORTED_LOCATION "${PETSC_LIBRARY}"
++        INTERFACE_INCLUDE_DIRECTORIES "${PETSC_DIR}/include")
++endif()
+diff --git a/cmake_shims/lib/cmake/SWAN_MPI/SWAN_MPIConfig.cmake b/cmake_shims/lib/cmake/SWAN_MPI/SWAN_MPIConfig.cmake
+new file mode 100644
+index 0000000..d53bae1
+--- /dev/null
++++ b/cmake_shims/lib/cmake/SWAN_MPI/SWAN_MPIConfig.cmake
+@@ -0,0 +1,6 @@
++# STUB: SWAN (D-Waves wave model) is not needed for D-Flow FM. Empty imported target only,
++# so that find_package(SWAN_MPI CONFIG REQUIRED) in src/cmake/CMakeLists.txt succeeds.
++message(STATUS "SWAN_MPI: using EMPTY STUB (D-Waves/SWAN not built)")
++if(NOT TARGET SWAN_MPI::SWAN_MPI)
++    add_library(SWAN_MPI::SWAN_MPI INTERFACE IMPORTED)
++endif()
+diff --git a/cmake_shims/lib/cmake/SWAN_OMP/SWAN_OMPConfig.cmake b/cmake_shims/lib/cmake/SWAN_OMP/SWAN_OMPConfig.cmake
+new file mode 100644
+index 0000000..3da947c
+--- /dev/null
++++ b/cmake_shims/lib/cmake/SWAN_OMP/SWAN_OMPConfig.cmake
+@@ -0,0 +1,6 @@
++# STUB: SWAN (D-Waves wave model) is not needed for D-Flow FM. Empty imported target only,
++# so that find_package(SWAN_OMP CONFIG REQUIRED) in src/cmake/CMakeLists.txt succeeds.
++message(STATUS "SWAN_OMP: using EMPTY STUB (D-Waves/SWAN not built)")
++if(NOT TARGET SWAN_OMP::SWAN_OMP)
++    add_library(SWAN_OMP::SWAN_OMP INTERFACE IMPORTED)
++endif()
+diff --git a/cmake_shims/lib/cmake/TIFF/TIFFConfig.cmake b/cmake_shims/lib/cmake/TIFF/TIFFConfig.cmake
+new file mode 100644
+index 0000000..8c4f700
+--- /dev/null
++++ b/cmake_shims/lib/cmake/TIFF/TIFFConfig.cmake
+@@ -0,0 +1,2 @@
++# Shim: Ubuntu's libtiff-dev ships no CMake config package; wrap CMake's FindTIFF module (creates TIFF::TIFF).
++find_package(TIFF MODULE REQUIRED)
+diff --git a/cmake_shims/lib/cmake/ZLIB/ZLIBConfig.cmake b/cmake_shims/lib/cmake/ZLIB/ZLIBConfig.cmake
+new file mode 100644
+index 0000000..adb31b7
+--- /dev/null
++++ b/cmake_shims/lib/cmake/ZLIB/ZLIBConfig.cmake
+@@ -0,0 +1,2 @@
++# Shim: Ubuntu's zlib1g-dev has no CMake config package; wrap CMake's FindZLIB module (creates ZLIB::ZLIB).
++find_package(ZLIB MODULE REQUIRED)
+diff --git a/cmake_shims/lib/cmake/inja/injaConfig.cmake b/cmake_shims/lib/cmake/inja/injaConfig.cmake
+new file mode 100644
+index 0000000..e4a4a6b
+--- /dev/null
++++ b/cmake_shims/lib/cmake/inja/injaConfig.cmake
+@@ -0,0 +1,5 @@
++# STUB: inja (C++ template engine) is only used by D-Waves (wave_data). Empty imported target only.
++message(STATUS "inja: using EMPTY STUB (only needed by D-Waves)")
++if(NOT TARGET pantor::inja)
++    add_library(pantor::inja INTERFACE IMPORTED)
++endif()
+diff --git a/cmake_shims/lib/cmake/netCDF-Fortran/netCDF-FortranConfig.cmake b/cmake_shims/lib/cmake/netCDF-Fortran/netCDF-FortranConfig.cmake
+new file mode 100644
+index 0000000..a7efe65
+--- /dev/null
++++ b/cmake_shims/lib/cmake/netCDF-Fortran/netCDF-FortranConfig.cmake
+@@ -0,0 +1,14 @@
++# Shim: Ubuntu's libnetcdff-dev (netcdf-fortran 4.5.4, autotools build) ships no CMake config package.
++# Provides the imported target netCDF::netcdff that the Delft3D CMake code links against.
++if(NOT TARGET netCDF::netcdf)
++    find_package(netCDF CONFIG REQUIRED)
++endif()
++if(NOT TARGET netCDF::netcdff)
++    find_library(NETCDFF_LIBRARY NAMES netcdff REQUIRED)
++    find_path(NETCDFF_MODULE_DIR NAMES netcdf.mod PATHS /usr/include REQUIRED)
++    add_library(netCDF::netcdff SHARED IMPORTED)
++    set_target_properties(netCDF::netcdff PROPERTIES
++        IMPORTED_LOCATION "${NETCDFF_LIBRARY}"
++        INTERFACE_INCLUDE_DIRECTORIES "${NETCDFF_MODULE_DIR}"
++        INTERFACE_LINK_LIBRARIES netCDF::netcdf)
++endif()
+diff --git a/cmake_shims/lib/cmake/triangle/triangleConfig.cmake b/cmake_shims/lib/cmake/triangle/triangleConfig.cmake
+new file mode 100644
+index 0000000..d9a0a2a
+--- /dev/null
++++ b/cmake_shims/lib/cmake/triangle/triangleConfig.cmake
+@@ -0,0 +1,9 @@
++# Shim: triangle built from src/third_party_open/triangle (same source the Deltares Conan recipe uses).
++set(TRIANGLE_DIR "/home/user/sfincs_feas/dflowfm_build/deps/triangle" CACHE PATH "triangle install prefix")
++if(NOT TARGET triangle::triangle)
++    add_library(triangle::triangle STATIC IMPORTED)
++    set_target_properties(triangle::triangle PROPERTIES
++        IMPORTED_LOCATION "${TRIANGLE_DIR}/lib/libtriangle.a"
++        INTERFACE_INCLUDE_DIRECTORIES "${TRIANGLE_DIR}/include"
++        INTERFACE_LINK_LIBRARIES m)
++endif()
