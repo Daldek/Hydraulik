@@ -68,6 +68,11 @@ def model_on(t_measured: np.ndarray, t_model: np.ndarray, q: np.ndarray) -> np.n
     return np.interp(t_measured, t_model, q)
 
 
+def centroid(t: np.ndarray, q: np.ndarray) -> float:
+    weight = np.clip(np.nan_to_num(q), 0.0, None)
+    return float(np.sum(t * weight) / np.sum(weight))
+
+
 def nse(observed: np.ndarray, simulated: np.ndarray) -> float:
     ok = np.isfinite(observed)
     o, s = observed[ok], simulated[ok]
@@ -97,16 +102,20 @@ def inlet_metrics(test: str, run: str, measured: dict) -> dict:
         vol_o = float(np.nansum(observed_event[fit]) * dt)
         vol_s = float(np.sum(simulated_event[fit]) * dt)
         smooth_o, smooth_s = smooth(observed_event, dt), smooth(simulated_event, dt)
-        peak_o, peak_s = int(np.nanargmax(smooth_o)), int(np.argmax(smooth_s))
         entry.update(
             {
                 "volume_measured_l": vol_o,
                 "volume_model_l": vol_s,
                 "volume_ratio": vol_s / vol_o if vol_o > 0 else float("nan"),
-                "peak_measured_l_s": float(smooth_o[peak_o]),
-                "peak_model_l_s": float(smooth_s[peak_s]),
-                "peak_time_shift_s": float(t[peak_s] - t[peak_o]),
-                "nse": nse(observed[fit], simulated[fit]),
+                "peak_measured_l_s": float(np.nanmax(smooth_o)),
+                "peak_model_l_s": float(np.max(smooth_s)),
+                # Shift of the hydrograph centroid (a peak time is undefined on
+                # the flat plateau of H1-H3).
+                "centroid_shift_s": centroid(t[fit], simulated_event[fit])
+                - centroid(t[fit], observed_event[fit]),
+                # Shape of the response (for T07-T12 the rise above the
+                # generator flow, so the baseline offset is not counted twice).
+                "nse": nse(observed_event[fit], simulated_event[fit]),
             }
         )
         if test in ("T01", "T02", "T03"):
@@ -132,7 +141,7 @@ def inlet_metrics(test: str, run: str, measured: dict) -> dict:
             s = window_mean(
                 t, model_on(t, series["t"], series[f"depth_{gauge}"]) * 1000.0, window
             )
-            depths[gauge[:11]] = {"measured_mm": o, "model_mm": s}
+            depths[f"D_S{int(gauge[8:10])}"] = {"measured_mm": o, "model_mm": s}
         metrics["depths"] = depths
     # Outfall: only the steady generator flow (no roof water reaches it).
     if runoff:
@@ -203,10 +212,11 @@ def validation_tables(metrics: dict) -> list[str]:
         "### Kratki 1–4: objętość, szczyt, przesunięcie szczytu, NSE",
         "",
         "Seria 1 (T01–T06): cała odpowiedź na deszcz. Seria 2 (T07–T12): przyrost "
-        "ponad przepływ ustalony z generatorów. Objętość i NSE w oknie 100–600 s.",
+        "ponad przepływ ustalony z generatorów. Okno 100–600 s. Przesunięcie: "
+        "środek ciężkości hydrogramu modelu minus pomiaru.",
         "",
         "| Test | Wariant | Objętość model/pomiar IN1 / IN2 / IN3 / IN4 | "
-        "Szczyt model/pomiar | Przesunięcie szczytu [s] | NSE |",
+        "Szczyt model/pomiar | Przesunięcie [s] | NSE |",
         "|---|---|---|---|---|---|",
     ]
     for test in cs.TESTS:
@@ -219,7 +229,7 @@ def validation_tables(metrics: dict) -> list[str]:
                 f"{m[n]['peak_model_l_s'] / m[n]['peak_measured_l_s']:.2f}"
                 for n in INLETS
             )
-            shifts = " / ".join(f"{m[n]['peak_time_shift_s']:+.0f}" for n in INLETS)
+            shifts = " / ".join(f"{m[n]['centroid_shift_s']:+.0f}" for n in INLETS)
             nses = " / ".join(f"{m[n]['nse']:.2f}" for n in INLETS)
             lines.append(f"| {test} | {label} | {ratios} | {peaks} | {shifts} | {nses} |")
 
@@ -230,8 +240,9 @@ def validation_tables(metrics: dict) -> list[str]:
         "Udział kratki w sumie przepływu przez kratki 1–5, okno 300–360 s "
         "(IN5 zmierzona tylko jako jedna wartość ustalona).",
         "",
-        "| Test | Wariant | Suma [L/s] | IN1 | IN2 | IN3 | IN4 | IN5 |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Test | Wariant | Suma [L/s] | IN1 | IN2 | IN3 | IN4 | IN5 | "
+        "RMSE udziałów [p.p.] |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for test in ("T01", "T02", "T03"):
         m = metrics.get(f"C_{test}") or metrics.get(test)
@@ -250,12 +261,14 @@ def validation_tables(metrics: dict) -> list[str]:
                         + [mm["IN5"]["plateau_model_l_s"]],
                     )
                 )
+        measured_shares = 100 * np.array(measured) / sum(measured)
         for label, values in rows:
-            total = sum(values)
+            shares = 100 * np.array(values) / sum(values)
+            rmse = np.sqrt(np.mean((shares - measured_shares) ** 2))
             lines.append(
-                f"| {test} | {label} | {total:.3f} | "
-                + " | ".join(f"{100 * v / total:.0f}%" for v in values)
-                + " |"
+                f"| {test} | {label} | {sum(values):.3f} | "
+                + " | ".join(f"{s:.0f}%" for s in shares)
+                + (" | – |" if label == "pomiar" else f" | {rmse:.1f} |")
             )
 
     lines += [
@@ -272,7 +285,7 @@ def validation_tables(metrics: dict) -> list[str]:
         for gauge, value in metrics["C_T03"]["depths"].items():
             other = metrics["C_T07"]["depths"][gauge]
             lines.append(
-                f"| {gauge.replace('d_gauge_', 'D_S')} | {value['measured_mm']:.1f} | "
+                f"| {gauge} | {value['measured_mm']:.1f} | "
                 f"{value['model_mm']:.1f} | {other['measured_mm']:.1f} | "
                 f"{other['model_mm']:.1f} |"
             )

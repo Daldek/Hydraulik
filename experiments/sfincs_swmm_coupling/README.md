@@ -558,6 +558,34 @@ Wnioski:
    które przy cofce przeszacowuje wypływ. Dla screeningu powodziowego jest to
    przeszacowanie po bezpiecznej stronie.
 
+### 3.13 Walidacja na danych laboratoryjnych (A Coruña)
+
+Wariant zalecany (p. 4) policzony na stanowisku laboratoryjnym CITEEC
+(Sañudo i in. 2024; dane: Zenodo 7941067):
+
+- ulica ze skrzyżowaniem w kształcie T o powierzchni 49 m², NMT w oczku 5 cm;
+- 5 kratek i 4 studzienki;
+- 12 testów deszczowych, z dopływem z generatorów spływu i bez niego.
+
+Szczegóły i tabele: `validation/README.md`, rozdz. 3.
+
+- **Bilans i stabilność:** bilans dokładny, bez oscylacji. Jeden test liczy
+  się 40–98 s, a w oczku 10 cm 8–12 s z tymi samymi wynikami.
+- **Czas odpowiedzi kratek** jest zgodny z pomiarem: przesunięcie środka
+  ciężkości hydrogramu od −7 do +15 s (mediana).
+- **Bez kalibracji:**
+  - podział deszczu między kratki jest dobry (RMSE udziałów 5–7 p.p.);
+  - przy skupionym dopływie z generatorów kratki łapią prawie wszystko,
+    a w laboratorium przepuszczają ok. 45%.
+- **Z kalibracją:** jeden mnożnik współczynników (×0,07) dopasowuje ten
+  stan ustalony, ale psuje odpowiedź na deszcz. Wzór wymiany zależny tylko
+  od głębokości nie oddaje skuteczności kratki ulicznej, bo ta zależy też
+  od przepływu i prędkości dopływu.
+- **Definicja głębokości nad kratką:** średnia albo maksimum z komórek
+  zmienia wynik o 40–50%.
+- **Brak wybicia:** test nie obejmuje wybicia z sieci (przewody wypełnione
+  w niewielkim stopniu).
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian
@@ -580,11 +608,17 @@ Wnioski:
 4. Test z dopływem powierzchniowym i stanami ustalonymi jest lepszym testem
    sprzężenia niż opad: oscylacje są jednoznaczne, a wynik da się porównać
    z eksperymentem laboratoryjnym.
-5. Kolejny krok badawczy: walidacja na danych laboratoryjnych podwójnego drenażu
-   i analiza wrażliwości na współczynniki wpustu, bo porównanie z D-Flow FM pokazało,
-   że opis wpustu zmienia wymianę bardziej niż wybór schematu numerycznego.
-   Pełna iteracja w obrębie kroku (jak w D-Flow FM) wymagałaby cofania stanu SFINCS-a
-   i SWMM, którego ich interfejsy nie udostępniają.
+5. **Walidacja laboratoryjna (A Coruña, p. 3.13):**
+   - Potwierdza dokładny bilans i poprawny czas odpowiedzi.
+   - Potwierdza, że głównym źródłem niepewności jest opis wpustu, a nie
+     schemat numeryczny (podobnie wyszło w porównaniu z D-Flow FM).
+   - Współczynniki wpustu zależą od warunków dopływu, więc w screeningu
+     trzeba je podawać z zakresem.
+   - Wybicie z sieci nadal nie jest sprawdzone na pomiarach. Otwarte dane
+     go nie obejmują; test 8B EA to porównanie modeli, a jego dane są
+     dostępne na prośbę.
+   - Pełna iteracja w obrębie kroku (jak w D-Flow FM) wymagałaby cofania
+     stanu SFINCS-a i SWMM, którego ich interfejsy nie udostępniają.
 
 ## 5. Ograniczenia
 
