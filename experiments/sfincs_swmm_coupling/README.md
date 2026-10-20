@@ -316,6 +316,17 @@ Wnioski:
 
 ![Wymiana w J2, Q3, v1 vs v2](figures/fig6_q3_exchange_J2_v1_v2.png)
 
+### 3.7 Porównanie z D-Flow FM 1D2D
+
+Ten sam przypadek z dopływem powierzchniowym policzono w D-Flow FM z natywnym
+sprzężeniem 1D2D (szczegóły: `dflowfm/README.md`):
+
+- przy małym przepływie wymiana w studzienkach jest niemal taka sama jak
+  w SFINCS–SWMM (różnice 0–13%), przy większym zależy silnie od opisu wpustu;
+- jakościowo zachowanie jest zgodne: nasycenie sieci, wybicie w J3, cofka;
+- D-Flow FM nie oscyluje (wymiana liczona niejawnie), ale liczy się ok. 6 razy
+  dłużej (2,9–3,7 s wobec 0,5–0,6 s, 1 wątek).
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian

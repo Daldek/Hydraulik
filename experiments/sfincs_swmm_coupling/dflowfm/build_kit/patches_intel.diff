@@ -1,0 +1,119 @@
+# Intel oneAPI build of D-Flow FM: NO modifications to the Delft3D sources were needed.
+# The worktree /home/user/sfincs_feas/d3d_check/Delft3D_intel (commit 54e33a7) is unmodified (git status clean).
+# Only NEW files outside the source tree are needed (env script + CMake shim packages), listed below.
+# Plus two build-directory/command-line items that are not files in the source tree:
+#   - touch build_intel/conan/generators/conan.stamp   (satisfies the conan.lock freshness check in src/cmake/CMakeLists.txt)
+#   - FC="mpiifx -I<deps_intel>/netcdf-fortran/include"  (Intel netcdf.mod before Ubuntu's gfortran netcdf.mod in /usr/include)
+diff --git a/env_intel.sh b/env_intel.sh
+new file mode 100644
+index 0000000..f34d5ed
+--- /dev/null
++++ b/env_intel.sh
+@@ -0,0 +1,15 @@
++# Source this file before configuring/building D-Flow FM with the Intel oneAPI 2024.2 toolchain.
++#   source /home/user/sfincs_feas/dflowfm_build/env_intel.sh
++source /opt/intel/oneapi/setvars.sh --force > /dev/null 2>&1   # ifx/icx/icpx 2024.2 + Intel MPI 2021.13
++export DFM_BUILD_ROOT=/home/user/sfincs_feas/dflowfm_build
++export DELFT3D_SRC_INTEL=/home/user/sfincs_feas/d3d_check/Delft3D_intel   # clean git worktree @ 54e33a7
++export DEPS_INTEL=$DFM_BUILD_ROOT/deps_intel
++export PATH=$DFM_BUILD_ROOT/tools-venv/bin:$PATH                         # CMake 4.1.2 (>= 3.30 required)
++# Same wrappers as Deltares' third-party-libs container: FC=mpiifx, CC=mpiicx, CXX=mpicxx (g++ underneath)
++export CC=mpiicx CXX=mpicxx
++# The Intel netcdf.mod dir must be searched before "-isystem /usr/include" (added by the apt netCDF-C/GDAL
++# targets), because Ubuntu's libnetcdff-dev puts a gfortran-only netcdf.mod there.
++export FC="mpiifx -I$DEPS_INTEL/netcdf-fortran/include"
++export PETSC_DIR=$DEPS_INTEL/petsc
++export CMAKE_PREFIX_PATH=$DFM_BUILD_ROOT/cmake_shims_intel:$DEPS_INTEL/precice:$DEPS_INTEL/netcdf-fortran
++export LD_LIBRARY_PATH=$DEPS_INTEL/petsc/lib:$DEPS_INTEL/precice/lib:$DEPS_INTEL/netcdf-fortran/lib:$LD_LIBRARY_PATH
+diff --git a/cmake_shims_intel/lib/cmake/HDF5/HDF5Config.cmake b/cmake_shims_intel/lib/cmake/HDF5/HDF5Config.cmake
+new file mode 100644
+index 0000000..c2749ec
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/HDF5/HDF5Config.cmake
+@@ -0,0 +1,4 @@
++# Shim: Ubuntu's libhdf5-dev (autotools build) ships no CMake config package; wrap CMake's FindHDF5 module.
++# HDF5_NO_FIND_PACKAGE_CONFIG_FILE stops FindHDF5 from calling find_package(HDF5 CONFIG) again (infinite recursion).
++set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE TRUE)
++find_package(HDF5 MODULE REQUIRED COMPONENTS C HL)
+diff --git a/cmake_shims_intel/lib/cmake/PETSc/PETScConfig.cmake b/cmake_shims_intel/lib/cmake/PETSc/PETScConfig.cmake
+new file mode 100644
+index 0000000..e8cd6f2
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/PETSc/PETScConfig.cmake
+@@ -0,0 +1,10 @@
++# Shim: PETSc (built from source with Intel oneAPI 2024.2 / Intel MPI) has no CMake config package.
++# Provides PETSc::PETSc (shared libpetsc + C headers + Fortran .mod files in <prefix>/include).
++set(PETSC_DIR "/home/user/sfincs_feas/dflowfm_build/deps_intel/petsc" CACHE PATH "PETSc install prefix")
++if(NOT TARGET PETSc::PETSc)
++    find_library(PETSC_LIBRARY NAMES petsc PATHS "${PETSC_DIR}/lib" NO_DEFAULT_PATH REQUIRED)
++    add_library(PETSc::PETSc SHARED IMPORTED)
++    set_target_properties(PETSc::PETSc PROPERTIES
++        IMPORTED_LOCATION "${PETSC_LIBRARY}"
++        INTERFACE_INCLUDE_DIRECTORIES "${PETSC_DIR}/include")
++endif()
+diff --git a/cmake_shims_intel/lib/cmake/SWAN_MPI/SWAN_MPIConfig.cmake b/cmake_shims_intel/lib/cmake/SWAN_MPI/SWAN_MPIConfig.cmake
+new file mode 100644
+index 0000000..d53bae1
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/SWAN_MPI/SWAN_MPIConfig.cmake
+@@ -0,0 +1,6 @@
++# STUB: SWAN (D-Waves wave model) is not needed for D-Flow FM. Empty imported target only,
++# so that find_package(SWAN_MPI CONFIG REQUIRED) in src/cmake/CMakeLists.txt succeeds.
++message(STATUS "SWAN_MPI: using EMPTY STUB (D-Waves/SWAN not built)")
++if(NOT TARGET SWAN_MPI::SWAN_MPI)
++    add_library(SWAN_MPI::SWAN_MPI INTERFACE IMPORTED)
++endif()
+diff --git a/cmake_shims_intel/lib/cmake/SWAN_OMP/SWAN_OMPConfig.cmake b/cmake_shims_intel/lib/cmake/SWAN_OMP/SWAN_OMPConfig.cmake
+new file mode 100644
+index 0000000..3da947c
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/SWAN_OMP/SWAN_OMPConfig.cmake
+@@ -0,0 +1,6 @@
++# STUB: SWAN (D-Waves wave model) is not needed for D-Flow FM. Empty imported target only,
++# so that find_package(SWAN_OMP CONFIG REQUIRED) in src/cmake/CMakeLists.txt succeeds.
++message(STATUS "SWAN_OMP: using EMPTY STUB (D-Waves/SWAN not built)")
++if(NOT TARGET SWAN_OMP::SWAN_OMP)
++    add_library(SWAN_OMP::SWAN_OMP INTERFACE IMPORTED)
++endif()
+diff --git a/cmake_shims_intel/lib/cmake/TIFF/TIFFConfig.cmake b/cmake_shims_intel/lib/cmake/TIFF/TIFFConfig.cmake
+new file mode 100644
+index 0000000..8c4f700
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/TIFF/TIFFConfig.cmake
+@@ -0,0 +1,2 @@
++# Shim: Ubuntu's libtiff-dev ships no CMake config package; wrap CMake's FindTIFF module (creates TIFF::TIFF).
++find_package(TIFF MODULE REQUIRED)
+diff --git a/cmake_shims_intel/lib/cmake/ZLIB/ZLIBConfig.cmake b/cmake_shims_intel/lib/cmake/ZLIB/ZLIBConfig.cmake
+new file mode 100644
+index 0000000..adb31b7
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/ZLIB/ZLIBConfig.cmake
+@@ -0,0 +1,2 @@
++# Shim: Ubuntu's zlib1g-dev has no CMake config package; wrap CMake's FindZLIB module (creates ZLIB::ZLIB).
++find_package(ZLIB MODULE REQUIRED)
+diff --git a/cmake_shims_intel/lib/cmake/inja/injaConfig.cmake b/cmake_shims_intel/lib/cmake/inja/injaConfig.cmake
+new file mode 100644
+index 0000000..e4a4a6b
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/inja/injaConfig.cmake
+@@ -0,0 +1,5 @@
++# STUB: inja (C++ template engine) is only used by D-Waves (wave_data). Empty imported target only.
++message(STATUS "inja: using EMPTY STUB (only needed by D-Waves)")
++if(NOT TARGET pantor::inja)
++    add_library(pantor::inja INTERFACE IMPORTED)
++endif()
+diff --git a/cmake_shims_intel/lib/cmake/triangle/triangleConfig.cmake b/cmake_shims_intel/lib/cmake/triangle/triangleConfig.cmake
+new file mode 100644
+index 0000000..f0aacc8
+--- /dev/null
++++ b/cmake_shims_intel/lib/cmake/triangle/triangleConfig.cmake
+@@ -0,0 +1,9 @@
++# Shim: triangle built from src/third_party_open/triangle (same source the Deltares Conan recipe uses).
++set(TRIANGLE_DIR "/home/user/sfincs_feas/dflowfm_build/deps_intel/triangle" CACHE PATH "triangle install prefix")
++if(NOT TARGET triangle::triangle)
++    add_library(triangle::triangle STATIC IMPORTED)
++    set_target_properties(triangle::triangle PROPERTIES
++        IMPORTED_LOCATION "${TRIANGLE_DIR}/lib/libtriangle.a"
++        INTERFACE_INCLUDE_DIRECTORIES "${TRIANGLE_DIR}/include"
++        INTERFACE_LINK_LIBRARIES m)
++endif()

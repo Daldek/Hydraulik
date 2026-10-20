@@ -829,7 +829,7 @@
     "scenario": "Q0",
     "description": "Inflow, no network",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.408912284001417,
+    "wall_time_s": 0.4057308720002766,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -875,13 +875,13 @@
         "outflow_m3s": 0.14994285315041755
       }
     ],
-    "finished_at": "2026-10-20T20:07:02"
+    "finished_at": "2026-10-20T20:32:22"
   },
   "Q1_rec": {
     "scenario": "Q1_rec",
     "description": "Inflow, free-flowing network, recommended scheme",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 3.702465921000112,
+    "wall_time_s": 0.5187217049988249,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -1021,7 +1021,7 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:46:38"
+    "finished_at": "2026-10-20T20:32:23"
   },
   "Q2_naive": {
     "scenario": "Q2_naive",
@@ -1757,7 +1757,7 @@
     "scenario": "Q3_rec",
     "description": "Inflow, backwater, recommended scheme",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.48914246799995453,
+    "wall_time_s": 0.5605599119990075,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -1897,7 +1897,7 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:46:47"
+    "finished_at": "2026-10-20T20:32:24"
   },
   "Q2_rec_rs05": {
     "scenario": "Q2_rec_rs05",
@@ -2049,7 +2049,7 @@
     "scenario": "Q2_rec_rs025",
     "description": "Q2_rec with SWMM routing step 0.25 s",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.5924240510003074,
+    "wall_time_s": 0.6169255240001803,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -2189,7 +2189,7 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:46:49"
+    "finished_at": "2026-10-20T20:32:24"
   },
   "S3_slot_w03": {
     "scenario": "S3_slot_w03",

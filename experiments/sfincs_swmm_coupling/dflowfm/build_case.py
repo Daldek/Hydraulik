@@ -44,7 +44,13 @@ FREE_OUTFLOW_DROP_M = 0.1  # downstream water level this far below the lowest be
 CONTACT_TYPE_STREET_INLET = 5
 
 MANHOLES = list(cs.EXCHANGE_NODES_XY)  # J1, J2, J3
-OUTFALL_XY = (cs.OUTFALL_X_M, cs.DRAINAGE_LINE_Y_M)
+# The 1D network lies 0.5 m beside the drainage line, still inside the manhole
+# cells: a 1D node exactly on a 2D cell centre gives a zero-length 1D2D link,
+# which D-Flow FM silently drops. Levels are taken on the drainage line, as in
+# SFINCS-SWMM. The outfall lies 5 m outside the 2D domain, so the 2D outflow
+# boundary does not claim the 1D end node.
+NETWORK_Y_OFFSET_M = 0.5
+OUTFALL_X_M = cs.N_CELLS_X * cs.CELL_SIZE_M + 5.0
 PIPES = [("C1", "J1", "J2"), ("C2", "J2", "J3"), ("C3", "J3", "OUT")]
 
 SCENARIO_NETWORK = {
@@ -57,8 +63,17 @@ SCENARIO_NETWORK = {
 }
 
 
+def level_xy(name: str) -> tuple[float, float]:
+    """Point on the drainage line whose surface elevation sets the node levels."""
+    if name == "OUT":
+        return (OUTFALL_X_M, cs.DRAINAGE_LINE_Y_M)
+    return cs.EXCHANGE_NODES_XY[name]
+
+
 def xy(name: str) -> tuple[float, float]:
-    return OUTFALL_XY if name == "OUT" else cs.EXCHANGE_NODES_XY[name]
+    """Position of the node in the 1D network geometry."""
+    x, y = level_xy(name)
+    return (x, y + NETWORK_Y_OFFSET_M)
 
 
 def node_id(name: str) -> str:
@@ -68,7 +83,7 @@ def node_id(name: str) -> str:
 
 
 def invert_m(name: str) -> float:
-    x, y = xy(name)
+    x, y = level_xy(name)
     return cs.surface_elevation_m(x, y) - cs.NODE_DEPTH_BELOW_SURFACE_M
 
 
