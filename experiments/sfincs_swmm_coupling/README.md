@@ -104,6 +104,24 @@ Rozwiązanie zastosowane w teście:
 | B. Sprzężenie naiwne (domyślne SWMM) | S1, S2, S3 |
 | C. Stabilizacja krok po kroku | S2/S3 + `SLOT`; + ogranicznik; S3 + `SLOT` + relaksacja w = 0,3 |
 | D. Wariant zalecany i wrażliwość | S2/S3 + `SLOT` + relaksacja w = 0,1, `Δt_c` = 1, 5, 30 s |
+| E. Dopływ powierzchniowy (p. 2.7) | Q0 (bez sieci), Q1, Q2, Q3 w wariantach: naiwny, `SLOT`, zalecany; Q2 zalecany z `Δt_c` = 5 s i z krokiem SWMM 0,5 i 0,25 s |
+
+### 2.7 Wariant z dopływem powierzchniowym
+
+Zamiast opadu woda wpływa na powierzchnię jako przepływ, w układzie podobnym do
+eksperymentów laboratoryjnych podwójnego drenażu:
+
+- **dopływ:** natywne punkty źródłowe SFINCS-a (`srcfile`/`disfile`), po jednym na
+  każdy wiersz komórek górnej krawędzi (x = 1 m), równy podział;
+- **hydrogram schodkowy:** 0,05 → 0,10 → 0,15 m³/s, każdy stopień przez 20 min,
+  przejścia liniowe 60 s (razem 355,5 m³);
+- **dolna krawędź:** odpływ swobodny. Koordynator odbiera przez `qext` wodę stojącą
+  w ostatniej kolumnie komórek i księguje jej objętość, więc bilans zostaje dokładny;
+- **stany ustalone:** statystyki z ostatnich 5 min każdego stopnia (średnia, odchylenie,
+  zmiany znaku, dryf).
+
+Zaleta: w stanie ustalonym prawdziwa wymiana jest stała, więc każda oscylacja jest
+jednoznacznie artefaktem numerycznym.
 
 ## 3. Wyniki
 
@@ -196,16 +214,64 @@ weryfikowany (objętość drenażu nie była odczytywana z wyników SFINCS-a).
 
 ![Maksymalna głębokość](figures/fig3_max_depth.png)
 
+### 3.5 Dopływ powierzchniowy: stany ustalone
+
+**Stan ustalony jest osiągany na każdym stopniu.** Dopływ − suma wymiany − odpływ
+dolną krawędzią ≤ 0,0004 m³/s we wszystkich przebiegach.
+
+**Bilans.** Błąd po stronie powierzchni wynosi −0,045 m³ we wszystkich przebiegach,
+tyle samo co w Q0 bez sieci. Błąd po stronie sieci jest równy błędowi ciągłości
+raportowanemu przez SWMM (zgodność do 0,03 m³).
+
+Wymiana w stanie ustalonym, ostatni stopień (0,15 m³/s), średnia ± odchylenie [m³/s]:
+
+| Przebieg | J1 | J2 | J3 | Suma |
+|---|---|---|---|---|
+| Q1 zalecany (sieć swobodna) | +0,0308 ± 0 | +0,0284 ± 0 | +0,0238 ± 0 | +0,083 |
+| Q2 naiwny (`EXTRAN`) | rozbieżny | | | |
+| Q2 `SLOT` | +0,0308 ± 0 | +0,0284 ± 0 | **−0,0251 ± 0,1353** | +0,034 |
+| Q2 zalecany | +0,0308 ± 0 | +0,0284 ± 0 | −0,0250 ± 0,0083 | +0,034 |
+| Q2 zalecany, `Δt_c` = 5 s | +0,0299 ± 0 | +0,0276 ± 0 | −0,0232 ± 0,0040 | +0,034 |
+| Q2 zalecany, krok SWMM 0,5 s | | | −0,025 ± 0,0017 | |
+| Q2 zalecany, krok SWMM 0,25 s | | | **−0,025 ± 0,0000** | |
+| Q3 `SLOT` (cofka) | +0,0308 ± 0 | +0,0133 ± 0,1274 | −0,2698 ± 0,0004 | −0,226 |
+| Q3 zalecany (cofka) | +0,0308 ± 0 | +0,0108 ± 0,0187 | −0,2689 ± 0,0016 | −0,227 |
+
+Obserwacje:
+
+1. **Węzły bez przeciążenia są idealnie stabilne** (odchylenie 0) we wszystkich
+   wariantach. Problem dotyczy wyłącznie węzłów w przepływie ciśnieniowym.
+2. **Oscylacja w `SLOT` jest czysto numeryczna.** W J3 jej odchylenie (0,135 m³/s) jest
+   ponad 5 razy większe niż sama średnia wymiana (−0,025 m³/s).
+3. **Relaksacja zachowuje średnią** (−0,0250 vs −0,0251 m³/s) i zmniejsza odchylenie
+   16-krotnie.
+4. **Resztkowa oscylacja wynika z kroku obliczeniowego SWMM.** Przy kroku SWMM
+   0,25 s (wymiana nadal co 1 s) znika całkowicie, a średnia się nie zmienia.
+5. **Wynik fizycznie spójny.** W Q2 suma wymiany na stopniach 0,10 i 0,15 m³/s jest
+   taka sama (0,034 m³/s): sieć jest nasycona, nadmiar wody wybija w J3 i spływa po
+   powierzchni. Tego zachowania nie da się odtworzyć redukcją opadu.
+6. **Błąd ciągłości SWMM przy długotrwałym przeciążeniu wynosi ok. 3%** (Q2) i nie
+   maleje z krokiem SWMM (3,11% przy 1 s, 3,13% przy 0,25 s). Interfejs sprzężenia go
+   nie powoduje (błąd po stronie powierzchni pozostaje −0,045 m³), ale jego przyczyna
+   w SWMM nie jest wyjaśniona. Możliwe źródła to metoda `SLOT` albo obsługa ujemnego
+   wpływu bocznego w węźle pod ciśnieniem.
+
+![Wymiana w J3, Q2](figures/fig5_q2_exchange_J3.png)
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian
    w kodzie żadnego z modeli**.
 2. Wymiana objętości liczonych z faktycznego czasu SFINCS-a zapewnia **dokładne
    zachowanie masy na interfejsie** mimo adaptacyjnego kroku SFINCS-a.
-3. Stabilność decyduje o użyteczności. Minimalny działający zestaw w tym teście to
-   `SLOT` w SWMM + relaksacja wymiany (w ≈ 0,1) + `Δt_c` ≈ 1 s. To punkt wyjścia,
-   a nie rozwiązanie docelowe: oscylacje są stłumione, ale nie usunięte.
-4. Kolejny krok badawczy: schemat odporny na cykl graniczny (np. iteracja
+3. Stabilność decyduje o użyteczności. Działający zestaw w tym teście to `SLOT`
+   w SWMM + relaksacja wymiany (w ≈ 0,1) + `Δt_c` ≈ 1 s. Krok obliczeniowy SWMM
+   0,25 s usuwa resztkową oscylację w stanie ustalonym (p. 3.5). Zachowanie przy
+   szybko zmiennych przepływach wymaga jeszcze sprawdzenia.
+4. Test z dopływem powierzchniowym i stanami ustalonymi jest lepszym testem
+   sprzężenia niż opad: oscylacje są jednoznaczne, a wynik da się porównać
+   z eksperymentem laboratoryjnym.
+5. Kolejny krok badawczy: schemat odporny na cykl graniczny (np. iteracja
    w obrębie kroku albo ogranicznik oparty na zmierzonej odpowiedzi węzła zamiast
    założonej powierzchni) i walidacja na danych laboratoryjnych podwójnego drenażu.
 
@@ -220,6 +286,9 @@ weryfikowany (objętość drenażu nie była odczytywana z wyników SFINCS-a).
 - Tylko Linux; kompilacja `libsfincs.so` na Windows i macOS niesprawdzona.
 - Czas obliczeń zmierzony na bardzo małej domenie, niereprezentatywny.
 - Przegląd literatury nie był systematyczny. Przed tezą o nowości trzeba go wykonać.
+- Błąd ciągłości SWMM przy długotrwałym przeciążeniu (ok. 3%) ma niewyjaśnioną przyczynę.
+- Odpływ swobodny w wariancie z dopływem jest konstrukcją koordynatora (odbiór wody
+  z ostatniej kolumny), a nie natywnym brzegiem SFINCS-a.
 
 ## 6. Obserwacje dla autorów narzędzi
 

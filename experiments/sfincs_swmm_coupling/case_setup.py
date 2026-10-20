@@ -28,6 +28,18 @@ SFINCS_DTMAX_S = 1.0  # upper bound on the adaptive SFINCS time step
 # --- Forcing -----------------------------------------------------------------
 
 SIMULATION_DURATION_S = 3600.0
+# Surface inflow alternative to rain: stepped hydrograph, spread evenly over the
+# upstream edge (x = 1 m, all rows); 60 s linear ramps between the steps.
+INFLOW_HYDROGRAPH_M3S = [
+    (0.0, 0.0),
+    (60.0, 0.05),
+    (1200.0, 0.05),
+    (1260.0, 0.10),
+    (2400.0, 0.10),
+    (2460.0, 0.15),
+    (3600.0, 0.15),
+]
+STEADY_WINDOW_S = 300.0  # last part of each step used for steady-state statistics
 RAIN_INTENSITY_MM_H = 60.0
 RAIN_DURATION_S = 1200.0
 
@@ -88,6 +100,11 @@ class Scenario:
     equalisation_limiter : bool
         Limit the volume exchanged in one interval to a fraction of the volume
         that would equalise surface level and node head.
+    forcing : str
+        "rain" (uniform block rain, closed domain) or "inflow" (stepped surface
+        inflow at the upstream edge, free outflow measured at the downstream edge).
+    swmm_routing_step_s : float
+        SWMM routing step; must divide the 1 s stride used by the coupler.
     """
 
     name: str
@@ -102,6 +119,8 @@ class Scenario:
     surcharge_method: str = "EXTRAN"
     relaxation: float = 1.0
     equalisation_limiter: bool = False
+    forcing: str = "rain"
+    swmm_routing_step_s: float = float(SWMM_ROUTING_STEP_S)
 
 
 BOTTLENECK = {"C1": 0.3, "C2": 0.3, "C3": 0.15}
@@ -114,6 +133,17 @@ CASES = {
     "S2": {"pipe_diameters_m": BOTTLENECK},
     "S3": {"outfall_stage": BACKWATER_STAGE},
 }
+
+
+def _recommended(**kwargs) -> dict:
+    """Settings of the recommended scheme (slot + under-relaxation, 1 s)."""
+    return dict(
+        coupled=True,
+        surcharge_method="SLOT",
+        relaxation=RECOMMENDED_RELAXATION,
+        **kwargs,
+    )
+
 
 SCENARIOS = {
     s.name: s
@@ -168,6 +198,65 @@ SCENARIOS = {
             for case, extra in CASES.items()
             for dt in (1, 5, 30)
         ],
+        # E. Surface inflow instead of rain (stepped steady states).
+        Scenario("Q0", "Inflow, no network", forcing="inflow"),
+        Scenario(
+            "Q1_rec",
+            "Inflow, free-flowing network, recommended scheme",
+            forcing="inflow",
+            **_recommended(),
+        ),
+        Scenario(
+            "Q2_naive",
+            "Inflow, surcharged network, naive (EXTRAN)",
+            forcing="inflow",
+            coupled=True,
+            **CASES["S2"],
+        ),
+        Scenario(
+            "Q2_slot",
+            "Inflow, surcharged network, slot only",
+            forcing="inflow",
+            coupled=True,
+            surcharge_method="SLOT",
+            **CASES["S2"],
+        ),
+        Scenario(
+            "Q2_rec",
+            "Inflow, surcharged network, recommended scheme",
+            forcing="inflow",
+            **_recommended(**CASES["S2"]),
+        ),
+        Scenario(
+            "Q2_rec_dt5",
+            "Q2_rec with exchange every 5 s",
+            forcing="inflow",
+            **_recommended(exchange_interval_s=5.0, **CASES["S2"]),
+        ),
+        Scenario(
+            "Q3_slot",
+            "Inflow, backwater, slot only",
+            forcing="inflow",
+            coupled=True,
+            surcharge_method="SLOT",
+            **CASES["S3"],
+        ),
+        Scenario(
+            "Q3_rec",
+            "Inflow, backwater, recommended scheme",
+            forcing="inflow",
+            **_recommended(**CASES["S3"]),
+        ),
+        *[
+            Scenario(
+                f"Q2_rec_rs{tag}",
+                f"Q2_rec with SWMM routing step {step} s",
+                forcing="inflow",
+                swmm_routing_step_s=step,
+                **_recommended(**CASES["S2"]),
+            )
+            for tag, step in (("05", 0.5), ("025", 0.25))
+        ],
         Scenario(
             "S3_slot_w03",
             "S3 + slot + under-relaxation w = 0.3",
@@ -202,6 +291,12 @@ def write_sfincs_case(run_dir: Path, scenario: Scenario) -> None:
     mask_row = " ".join("1" for _ in range(N_CELLS_X))
     (run_dir / "sfincs.msk").write_text((mask_row + "\n") * N_CELLS_Y)
 
+    if scenario.forcing == "inflow":
+        _write_inflow(run_dir)
+        rain_lines = {}
+    else:
+        rain_lines = {"precipfile": "sfincs.prcp"}
+
     # Block rain; the 1 s ramp at the end is included in the analytical volume.
     rain = [
         (0.0, RAIN_INTENSITY_MM_H),
@@ -225,7 +320,7 @@ def write_sfincs_case(run_dir: Path, scenario: Scenario) -> None:
         "inputformat": "asc",
         "depfile": "sfincs.dep",
         "mskfile": "sfincs.msk",
-        "precipfile": "sfincs.prcp",
+        **rain_lines,
         "manning": MANNING_N,
         "huthresh": WET_DRY_THRESHOLD_M,
         "alpha": SFINCS_ALPHA,
@@ -235,6 +330,9 @@ def write_sfincs_case(run_dir: Path, scenario: Scenario) -> None:
         "dtmaxout": SIMULATION_DURATION_S,
         "dthisout": 60.0,
     }
+    if scenario.forcing == "inflow":
+        lines["srcfile"] = "sfincs.src"
+        lines["disfile"] = "sfincs.dis"
     if scenario.conceptual_drainage_mm_h is not None:
         lines["urbfile"] = "sfincs.urb"
         (run_dir / "sfincs.urb").write_text(
@@ -247,6 +345,31 @@ def write_sfincs_case(run_dir: Path, scenario: Scenario) -> None:
         )
     (run_dir / "sfincs.inp").write_text(
         "".join(f"{key:<16}= {value}\n" for key, value in lines.items())
+    )
+
+
+def inflow_points() -> list[tuple[float, float]]:
+    """Discharge points on the upstream edge, one per cell row."""
+    return [(cell_centre(0), cell_centre(j)) for j in range(N_CELLS_Y)]
+
+
+def outflow_points() -> list[tuple[float, float]]:
+    """Cells of the downstream edge where the coupler removes outflowing water."""
+    return [(cell_centre(N_CELLS_X - 1), cell_centre(j)) for j in range(N_CELLS_Y)]
+
+
+def _write_inflow(run_dir: Path) -> None:
+    """Write the SFINCS discharge points and their (equal) discharge series."""
+    points = inflow_points()
+    (run_dir / "sfincs.src").write_text(
+        "".join(f"{x:.2f} {y:.2f} inflow_{j:02d}\n" for j, (x, y) in enumerate(points))
+    )
+    share = 1.0 / len(points)
+    (run_dir / "sfincs.dis").write_text(
+        "".join(
+            f"{t:.1f} " + " ".join(f"{q * share:.6f}" for _ in points) + "\n"
+            for t, q in INFLOW_HYDROGRAPH_M3S
+        )
     )
 
 
@@ -303,7 +426,7 @@ END_TIME             01:00:00
 REPORT_STEP          00:01:00
 WET_STEP             00:00:01
 DRY_STEP             00:00:01
-ROUTING_STEP         {SWMM_ROUTING_STEP_S}
+ROUTING_STEP         {scenario.swmm_routing_step_s:g}
 VARIABLE_STEP        0
 ALLOW_PONDING        NO
 INERTIAL_DAMPING     PARTIAL

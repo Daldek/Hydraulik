@@ -165,6 +165,54 @@ def analytical_rain_volume_m3(t_s: float) -> float:
     return area * (rate * full + ramp_volume)
 
 
+def analytical_inflow_volume_m3(t_s: float) -> float:
+    """Surface inflow volume up to time t (piecewise-linear hydrograph)."""
+    points = cs.INFLOW_HYDROGRAPH_M3S
+    volume = 0.0
+    for (t0, q0), (t1, q1) in zip(points, points[1:]):
+        if t_s <= t0:
+            break
+        t_upper = min(t_s, t1)
+        q_upper = q0 + (q1 - q0) * (t_upper - t0) / (t1 - t0)
+        volume += 0.5 * (q0 + q_upper) * (t_upper - t0)
+    return volume
+
+
+def steady_state_statistics(series: dict, nodes: list[str]) -> list[dict]:
+    """Mean, spread and sign flips of the exchange at the end of each step."""
+    t = np.array(series["t"])
+    step_ends = [
+        t1
+        for (_, q0), (t1, q1) in zip(
+            cs.INFLOW_HYDROGRAPH_M3S, cs.INFLOW_HYDROGRAPH_M3S[1:]
+        )
+        if q0 == q1 and q0 > 0.0
+    ]
+    statistics = []
+    for t_end in step_ends:
+        window = (t > t_end - cs.STEADY_WINDOW_S) & (t <= t_end)
+        half = (t > t_end - cs.STEADY_WINDOW_S / 2) & (t <= t_end)
+        entry = {
+            "t_end_s": t_end,
+            "inflow_m3s": float(np.interp(t_end, *zip(*cs.INFLOW_HYDROGRAPH_M3S))),
+            "outflow_m3s": float(np.mean(np.array(series["sink_q"])[window])),
+        }
+        for name in nodes:
+            q = np.array(series[f"q_{name}"])
+            qw = q[window]
+            entry[name] = {
+                "mean_m3s": float(qw.mean()),
+                "std_m3s": float(qw.std()),
+                "min_m3s": float(qw.min()),
+                "max_m3s": float(qw.max()),
+                "sign_flips": int(np.sum(np.diff(np.sign(qw[np.abs(qw) > 1e-6])) != 0)),
+                # Drift: mean of the second half minus mean of the whole window.
+                "drift_m3s": float(q[half].mean() - qw.mean()),
+            }
+        statistics.append(entry)
+    return statistics
+
+
 def network_volume_m3(nodes, links) -> float:
     return sum(n.volume for n in nodes.values()) + sum(l.volume for l in links)
 
@@ -223,6 +271,8 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         "surface_m3": [],
         "network_m3": [],
         "outfall_m3": [],
+        "sink_m3": [],
+        "sink_q": [],
     }
     for name in cells:
         series[f"q_{name}"] = []
@@ -236,6 +286,13 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
     zs_max = np.array(zs, copy=True)
     q_previous = {name: 0.0 for name in cells}
     w = scenario.relaxation
+
+    # Free outflow at the downstream edge (inflow forcing only): the coupler
+    # removes the water standing in the last column and books its volume.
+    sink_cells = []
+    if scenario.forcing == "inflow":
+        sink_cells = [sfincs.cell_index(x, y) for x, y in cs.outflow_points()]
+    sink_m3 = 0.0
 
     wall_start = time.perf_counter()
     k = 0
@@ -270,10 +327,18 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
             q_previous[name] = q
             qext[cell] = -q
 
+        sink_q = 0.0
+        for cell in sink_cells:
+            q = max(float(zs[cell]) - float(zb[cell]), 0.0) * cell_area_m2
+            q /= max_removal_window_s
+            qext[cell] = -q
+            sink_q += q
+
         sfincs.update_until(t_target)
         t_new = sfincs.current_time()
         overshoot_s.append(t_new - t_target)
         np.maximum(zs_max, zs, out=zs_max)
+        sink_m3 += sink_q * (t_new - t_old)
 
         if scenario.coupled:
             for name, q in q_now.items():
@@ -305,6 +370,8 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         series["surface_m3"].append(float(depth.sum() * cell_area_m2))
         series["network_m3"].append(network_volume_m3(nodes, links) if links else 0.0)
         series["outfall_m3"].append(outfall_out_m3)
+        series["sink_m3"].append(sink_m3)
+        series["sink_q"].append(sink_q)
         for name, cell in cells.items():
             series[f"q_{name}"].append(q_now[name])
             series[f"head_{name}"].append(nodes[name].head)
@@ -323,12 +390,16 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
 
     # Mass balance at the final time.
     t_final = series["t_sfincs"][-1]
-    rain = analytical_rain_volume_m3(t_final)
+    if scenario.forcing == "inflow":
+        rain, inflow = 0.0, analytical_inflow_volume_m3(t_final)
+    else:
+        rain, inflow = analytical_rain_volume_m3(t_final), 0.0
     surface = series["surface_m3"][-1]
     network = series["network_m3"][-1]
     out = series["outfall_m3"][-1]
+    sink = series["sink_m3"][-1]
     conceptual = rain - surface if scenario.conceptual_drainage_mm_h else 0.0
-    total_error = rain - surface - network - out - conceptual
+    total_error = rain + inflow - surface - network - out - sink - conceptual
     exchanged_total = sum(exchanged_m3.values())
 
     q_arrays = {name: np.array(series[f"q_{name}"]) for name in cells}
@@ -342,21 +413,30 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         "description": scenario.description,
         "exchange_interval_s": dt_c,
         "wall_time_s": wall_s,
+        "forcing": scenario.forcing,
         "rain_m3": rain,
+        "surface_inflow_m3": inflow,
+        "downstream_outflow_m3": sink,
         "surface_final_m3": surface,
         "network_final_m3": network,
         "outfall_net_m3": out,
         "exchanged_total_m3": exchanged_total,
         "exchanged_per_node_m3": exchanged_m3,
         "mass_error_m3": total_error,
-        "mass_error_pct_of_rain": 100.0 * total_error / rain,
+        "mass_error_pct_of_rain": (
+            100.0 * total_error / rain if rain > 0.0 else float("nan")
+        ),
         "outfall_gross_inflow_m3": outfall_gross_in_m3,
-        "mass_error_pct_of_inflow": 100.0 * total_error / (rain + outfall_gross_in_m3),
+        "mass_error_pct_of_inflow": (
+            100.0 * total_error / (rain + inflow + outfall_gross_in_m3)
+        ),
         "limited_steps": limited_steps,
         "max_abs_dq_m3s": max(
             (float(np.max(np.abs(np.diff(q)))) for q in q_arrays.values()), default=0.0
         ),
-        "surface_side_error_m3": rain - surface - exchanged_total - conceptual,
+        "surface_side_error_m3": (
+            rain + inflow - surface - exchanged_total - sink - conceptual
+        ),
         "network_side_error_m3": exchanged_total - network - out,
         "swmm_routing_stats": swmm_stats,
         "overshoot_s": {
@@ -371,6 +451,11 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
             np.max(zs_max[-cs.N_CELLS_Y * 5 :] - zb[-cs.N_CELLS_Y * 5 :])
         ),
         "flooded_area_m2_gt_5cm": float(np.sum((zs_max - zb) > 0.05) * cell_area_m2),
+        "steady_states": (
+            steady_state_statistics(series, list(cells))
+            if scenario.forcing == "inflow"
+            else []
+        ),
         "finished_at": datetime.now().isoformat(timespec="seconds"),
     }
     np.savez(
