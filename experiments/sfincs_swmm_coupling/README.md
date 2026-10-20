@@ -101,6 +101,7 @@ Rozwiązanie zastosowane w teście:
 | `SLOT` | metoda szczeliny Preissmanna w SWMM zamiast domyślnej `EXTRAN` dla przepływu ciśnieniowego |
 | ogranicznik wyrównania | gdy `H > z_t`: `|Q|·Δt_c ≤ β·|zs − H|·A_eq`, `A_eq = A_cell·A_node/(A_cell + A_node)`, β = 0,5 |
 | relaksacja | `Q_k = w·Q_nowe + (1 − w)·Q_{k−1}`; objętość nadal liczona z faktycznie użytego `Q_k`, więc masa zachowana |
+| wymiana półniejawna (p. 3.8) | relaksacja ze współczynnikiem liczonym ze sztywności połączenia: `w = 1/(1+K)`, `K = Δt_c·(∂Q/∂zs / A_pow − ∂Q/∂H / A_węzła)`; pojemność węzła `A_węzła` stała (1,167 m²) albo mierzona z reakcji ciśnienia na wodę dodaną w poprzednim kroku |
 
 ### 2.6 Scenariusze
 
@@ -111,6 +112,8 @@ Rozwiązanie zastosowane w teście:
 | C. Stabilizacja krok po kroku | S2/S3 + `SLOT`; + ogranicznik; S3 + `SLOT` + relaksacja w = 0,3 |
 | D. Wariant zalecany i wrażliwość | S2/S3 + `SLOT` + relaksacja w = 0,1, `Δt_c` = 1, 5, 30 s |
 | E. Dopływ powierzchniowy (p. 2.7) | Q0 (bez sieci), Q1, Q2, Q3 w wariantach: naiwny, `SLOT`, zalecany; Q2 zalecany z `Δt_c` = 5 s i z krokiem SWMM 0,5 i 0,25 s |
+| G. Wymiana półniejawna (p. 3.8) | S2, S3, Q2, Q3 z pojemnością węzła stałą i mierzoną; wariant mierzony także z `Δt_c` = 5 s |
+| H. Sam krok SWMM 0,5 s (p. 3.8) | S2, S3, Q2, Q3 z `SLOT` bez relaksacji; S2, S3 zalecane z krokiem SWMM 0,5 s |
 | F. Wzory v1 dla porównania (p. 2.8) | S1, S2/S3 `SLOT`, S2/S3 zalecany, Q1–Q3 w wariantach `SLOT` i zalecanym, z sufiksem `_v1` |
 
 ### 2.7 Wariant z dopływem powierzchniowym
@@ -327,6 +330,47 @@ sprzężeniem 1D2D (szczegóły: `dflowfm/README.md`):
 - D-Flow FM nie oscyluje (wymiana liczona niejawnie), ale liczy się ok. 6 razy
   dłużej (2,9–3,7 s wobec 0,5–0,6 s, 1 wątek).
 
+### 3.8 Czy da się lepiej tłumić oscylacje? Wymiana półniejawna i krok SWMM
+
+Porównanie z D-Flow FM (p. 3.7) pokazało, że oscylacje wynikają z jawności schematu.
+Sprawdzono dwa usprawnienia: wymianę półniejawną (p. 2.5) i sam krótszy krok SWMM.
+
+| Q2, węzeł pod ciśnieniem J3, stan ustalony 0,15 m³/s | Średnia [m³/s] | Odchylenie [m³/s] | Opóźnienie reakcji J1* |
+|---|---|---|---|
+| `SLOT`, bez stabilizacji | −0,0296 | 0,200 | 89 s |
+| `SLOT`, krok SWMM 0,5 s | −0,0307 | 0,200 | – |
+| półniejawna, pojemność stała | −0,0300 | 0,071 | 89 s |
+| półniejawna, pojemność mierzona | −0,0294 | 0,069 | 89 s |
+| relaksacja w = 0,1 | −0,0303 | 0,0096 | 93 s |
+| **relaksacja w = 0,1 + krok SWMM 0,5 s** | **−0,0303** | **0,0000** | 93 s |
+
+\* czas, po którym wymiana w J1 osiąga 90% zmiany po skoku dopływu w 20. min.
+
+Z opadem (zmiany znaku wymiany w węźle oscylującym): S2: 952 (`SLOT`) → 490
+(półniejawna) → 182 (relaksacja) → **20** (relaksacja + krok SWMM 0,5 s); S3, J2: 410 →
+195 → 17 → **9**. Objętości wymiany są we wszystkich wariantach zgodne (różnice ≤ 3%).
+
+Wnioski:
+
+1. **Wymiana półniejawna nie jest lepsza od zwykłej relaksacji.** Jest nieobciążona
+   i nie opóźnia reakcji, ale zmniejsza oscylację tylko ok. 3 razy (relaksacja ok.
+   20 razy). Oscylacja ustala się przy amplitudzie, przy której wzór jest mało czuły,
+   więc wyliczony współczynnik słabnie (w ≈ 0,3). Wahania nie wynikają z prostej
+   „pojemności” węzła, tylko z wewnętrznej dynamiki SWMM w przepływie ciśnieniowym.
+   Wynik negatywny, ale wart opisania.
+2. **Pierwsza wersja wymiany półniejawnej, `Q = Q₀/(1+K)`, była obciążona:** zaniżała
+   wymianę w stanie ustalonym (przy cofce o ok. 45%). Poprawna jest postać przyrostowa
+   (*delta form*), w której tłumi się tylko zmianę wymiany. To pułapka metodyczna warta
+   ostrzeżenia w publikacji.
+3. **Sam krótszy krok SWMM nie pomaga, relaksacja sama nie wystarcza.** Oscylację usuwa
+   dopiero ich połączenie.
+4. **Koszt relaksacji jest pomijalny:** opóźnienie reakcji rośnie o ok. 4 s przy
+   zmianach dopływu trwających minuty. Koszt kroku SWMM 0,5 s to ok. 2 razy dłuższy
+   czas obliczeń na tej małej domenie (SWMM stanowi tu dużą część pracy).
+5. W pomiarze pojemność węzła J1 (wolnego) wynosi ok. 2600 m², J3 (pod ciśnieniem)
+   ok. 1,2 m², a J3 przy cofce osiąga górną granicę 10⁴ m². Pomiar działa zgodnie
+   z intuicją, choć nie przełożył się na lepsze tłumienie.
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian
@@ -335,16 +379,19 @@ sprzężeniem 1D2D (szczegóły: `dflowfm/README.md`):
    zachowanie masy na interfejsie** mimo adaptacyjnego kroku SFINCS-a.
 3. Stabilność decyduje o użyteczności. Działający zestaw w tym teście to:
    ciągłe wzory wymiany (v2) + `SLOT` w SWMM + relaksacja wymiany (w ≈ 0,1)
-   + `Δt_c` ≈ 1 s + krok obliczeniowy SWMM 0,5 s. Wzory ciągłe usuwają oscylacje
+   + `Δt_c` ≈ 1 s + krok obliczeniowy SWMM 0,5 s. Wymiana półniejawna
+   tego zestawu nie poprawia (p. 3.8). Wzory ciągłe usuwają oscylacje
    w węzłach, w których ciśnienie krąży wokół terenu, a krótszy krok SWMM usuwa je
    w węzłach pod ciśnieniem (p. 3.5–3.6). Zachowanie przy szybko zmiennych
    przepływach wymaga jeszcze sprawdzenia.
 4. Test z dopływem powierzchniowym i stanami ustalonymi jest lepszym testem
    sprzężenia niż opad: oscylacje są jednoznaczne, a wynik da się porównać
    z eksperymentem laboratoryjnym.
-5. Kolejny krok badawczy: schemat odporny na cykl graniczny (np. iteracja
-   w obrębie kroku albo ogranicznik oparty na zmierzonej odpowiedzi węzła zamiast
-   założonej powierzchni) i walidacja na danych laboratoryjnych podwójnego drenażu.
+5. Kolejny krok badawczy: walidacja na danych laboratoryjnych podwójnego drenażu
+   i analiza wrażliwości na współczynniki wpustu, bo porównanie z D-Flow FM pokazało,
+   że opis wpustu zmienia wymianę bardziej niż wybór schematu numerycznego.
+   Pełna iteracja w obrębie kroku (jak w D-Flow FM) wymagałaby cofania stanu SFINCS-a
+   i SWMM, którego ich interfejsy nie udostępniają.
 
 ## 5. Ograniczenia
 

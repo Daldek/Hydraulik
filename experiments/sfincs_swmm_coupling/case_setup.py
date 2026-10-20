@@ -108,6 +108,10 @@ class Scenario:
     exchange_law : str
         "continuous" (v2: Rubinato et al. 2017 coefficients, Villemonte
         submergence, linearised orifice) or "legacy" (v1: discontinuous).
+    semi_implicit : str or None
+        Semi-implicit exchange (one linearised backward-Euler step) with the
+        node storage area "fixed" (SWMM MIN_SURFAREA) or "measured" from the
+        node's head response; None keeps the explicit exchange.
     """
 
     name: str
@@ -125,6 +129,7 @@ class Scenario:
     forcing: str = "rain"
     swmm_routing_step_s: float = float(SWMM_ROUTING_STEP_S)
     exchange_law: str = "continuous"
+    semi_implicit: str | None = None
 
 
 BOTTLENECK = {"C1": 0.3, "C2": 0.3, "C3": 0.15}
@@ -272,6 +277,45 @@ SCENARIOS = {
     ]
 }
 
+
+# Semi-implicit exchange (G): fixed vs measured node area, SWMM step 1 s, no
+# relaxation; plus a 5 s exchange interval for the measured variant.
+for _base in ["S2_slot", "S3_slot", "Q2_slot", "Q3_slot"]:
+    _case = _base.split("_")[0]
+    for _area in ("fixed", "measured"):
+        _name = f"{_case}_si_{_area}"
+        SCENARIOS[_name] = replace(
+            SCENARIOS[_base],
+            name=_name,
+            description=f"{_case} + slot + semi-implicit exchange ({_area} node area)",
+            semi_implicit=_area,
+        )
+    SCENARIOS[f"{_case}_si_measured_dt5"] = replace(
+        SCENARIOS[f"{_case}_si_measured"],
+        name=f"{_case}_si_measured_dt5",
+        description=f"{_case} + slot + semi-implicit (measured), exchange every 5 s",
+        exchange_interval_s=5.0,
+    )
+
+# SWMM routing step 0.5 s without any relaxation (H): is the shorter SWMM step
+# alone enough to remove the limit cycle?
+for _base in ["S2_slot", "S3_slot", "Q2_slot", "Q3_slot"]:
+    _name = f"{_base}_rs05"
+    SCENARIOS[_name] = replace(
+        SCENARIOS[_base],
+        name=_name,
+        description=SCENARIOS[_base].description + ", SWMM routing step 0.5 s",
+        swmm_routing_step_s=0.5,
+    )
+
+for _base in ["S2_rec_dt1", "S3_rec_dt1"]:
+    _name = _base.replace("_dt1", "_rs05")
+    SCENARIOS[_name] = replace(
+        SCENARIOS[_base],
+        name=_name,
+        description=SCENARIOS[_base].description + ", SWMM routing step 0.5 s",
+        swmm_routing_step_s=0.5,
+    )
 
 # Legacy (v1) exchange law for a subset, to quantify the effect of the
 # continuous formulation (v2) that all other scenarios use.
