@@ -181,6 +181,17 @@ def main() -> None:
         FIGURES / "fig3_max_depth.png",
     )
     interval_sensitivity(summary, FIGURES / "fig4_interval_sensitivity.png")
+    exchange_comparison(
+        "Q2 (dopływ powierzchniowy, przeciążenie)",
+        "J3",
+        [
+            ("Q2_slot", "SLOT"),
+            ("Q2_rec", "SLOT + relaksacja w = 0,1"),
+            ("Q2_rec_rs025", "jw. + krok SWMM 0,25 s"),
+        ],
+        (3300, 3420),
+        FIGURES / "fig5_q2_exchange_J3.png",
+    )
     print("figures written to", FIGURES)
 
 
