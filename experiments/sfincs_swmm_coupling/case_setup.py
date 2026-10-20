@@ -120,6 +120,11 @@ class Scenario:
         Reference area A of the exchange law v2 (perimeter P = 2*sqrt(pi*A)).
     inlet_coefficient_scale : float
         Factor on both Rubinato et al. (2017) coefficients of the law v2.
+    spill_mode : str
+        "exchange": spills leave a surcharged node as negative lateral inflow
+        computed by the coupler; "swmm_flooding": nodes cannot surcharge above
+        the rim, SWMM floods the excess itself and the coupler returns the
+        flooded volume to the surface cell.
     semi_implicit : str or None
         Semi-implicit exchange (one linearised backward-Euler step) with the
         node storage area "fixed" (SWMM MIN_SURFAREA) or "measured" from the
@@ -147,6 +152,7 @@ class Scenario:
     inflow_scale: float = 1.0
     inlet_area_m2: float = NODE_SURFACE_AREA_M2
     inlet_coefficient_scale: float = 1.0
+    spill_mode: str = "exchange"
 
 
 BOTTLENECK = {"C1": 0.3, "C2": 0.3, "C3": 0.15}
@@ -445,6 +451,34 @@ for _base in ["S2_rec_rs05", "S3_rec_rs05"]:
     )
 SCENARIOS.update(EXTRAN_RUNS)
 
+# Spill computed by SWMM's own flooding (K), EXTRAN and SLOT, with and without
+# relaxation; SWMM step 0.5 s, 1 s exchange.
+FLOODING_RUNS = {}
+for _base in [
+    "V_base",
+    "V_nodes_12",
+    "V_depth_4",
+    "V3_base",
+    "V1_base",
+    "S2_rec_rs05",
+    "S3_rec_rs05",
+]:
+    for _method, _w, _tag in (
+        ("EXTRAN", RECOMMENDED_RELAXATION, "extran"),
+        ("EXTRAN", 1.0, "extran_norelax"),
+        ("SLOT", RECOMMENDED_RELAXATION, "slot"),
+    ):
+        _name = f"{_base}_flood_{_tag}"
+        FLOODING_RUNS[_name] = replace(
+            SCENARIOS[_base],
+            name=_name,
+            description=f"{SCENARIOS[_base].description}, spill = SWMM flooding, {_method}, w = {_w:g}",
+            surcharge_method=_method,
+            relaxation=_w,
+            spill_mode="swmm_flooding",
+        )
+SCENARIOS.update(FLOODING_RUNS)
+
 
 # Legacy (v1) exchange law for a subset, to quantify the effect of the
 # continuous formulation (v2) that all other scenarios use.
@@ -601,12 +635,15 @@ def write_swmm_case(run_dir: Path, scenario: Scenario) -> Path:
     """Write the SWMM input file and return its path."""
     nodes = exchange_nodes(scenario)
     depth = scenario.node_depth_m
+    surcharge_depth = (
+        0.0 if scenario.spill_mode == "swmm_flooding" else NODE_SURCHARGE_DEPTH_M
+    )
     ground = {name: surface_elevation_m(x, y) for name, (x, y) in nodes.items()}
     outfall_invert = surface_elevation_m(OUTFALL_X_M, DRAINAGE_LINE_Y_M) - depth
 
     junctions = "".join(
         f"{name:<6} {ground[name] - depth:.4f} "
-        f"{depth:.2f} 0 {NODE_SURCHARGE_DEPTH_M:.1f} 0\n"
+        f"{depth:.2f} 0 {surcharge_depth:.1f} 0\n"
         for name in nodes
     )
     if scenario.outfall_stage is None:
