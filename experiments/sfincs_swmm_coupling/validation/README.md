@@ -139,7 +139,8 @@ Pobrane 2026-10-20, sumy MD5 zgodne z Zenodo. Bez archiwum multimediów.
   - kratka poprzeczna 2,5 × 0,13 m.
   - Prześwit kratek nie jest podany.
 - **Dachy:** woda trafia rynną do wpustów dachowych i dalej do studzienek.
-  Odpływ z dachów jest zmierzony, więc można go podać wprost do SWMM.
+  Zapisy odpływu z dachów w testach blokowych są niespójne (p. 3.1), więc
+  nie nadają się na dane wejściowe.
 - **Pomiary:** baza SQLite, testy T01–T12, 600 s, krok 0,2 s:
   - przepływ przez wpusty 1–4 (szeregi czasowe);
   - wpust 5 i dopływy do studzienek tylko jako wartości ustalone dla H1–H3;
@@ -182,3 +183,189 @@ warunkach nieustalonych.
   opad → spływ → wpusty → sieć → wylot.
 - Wybicie sprawdza tylko test 8B EA. To porównanie modeli, a dane są
   dostępne na prośbę.
+
+## 3. Test A Coruña: model i wyniki
+
+Kod: `coruna/` (`coruna_setup.py`, `run_coruna.py`, `run_all.py`,
+`compare.py`). Tabele: `coruna/results/`. Rysunki: `coruna/figures/`.
+
+### 3.1 Model
+
+- **Powierzchnia SFINCS:** ulica i chodniki z NMT 5 cm, 19 766 komórek,
+  49,4 m².
+  - Szorstkość n = 0,016, próg suchej komórki 0,1 mm, `dtmax` 0,2 s.
+  - Adwekcja pędu włączona; w tej wersji SFINCS jest domyślna.
+- **Dachy pominięte.** Odprowadzają wodę rynnami prosto do studzienek, więc
+  nie biorą udziału w wymianie ulica–sieć. Ich zapisy w testach blokowych
+  są niespójne:
+  - w T01–T03 odpływ z dachu trwa ok. 115 s, choć deszcz trwa 240 s;
+  - zawiera tylko ok. 45% wody, która spadła na dach;
+  - w T06–T12 zapisów nie ma.
+
+  Dlatego odpływ z sieci porównuję tylko tam, gdzie woda z dachów do niego
+  nie trafia: w serii 2 przed deszczem.
+- **Deszcz:**
+  - hietogramy H1–H6 odczytane z rysunku w opisie zbioru;
+  - natężenie równomierne; mapa natężenia jako wariant wrażliwości;
+  - początek deszczu 130 s. Zbiór go nie podaje, więc oszacowałem go
+    z odpowiedzi zmierzonej.
+- **Generatory SD1 i SD2** (seria 2): po 1 L/s rozłożone w 10 punktach na
+  szerokości jezdni. Opis nie podaje, jak wyglądają urządzenia. Przed
+  początkiem zapisu model ma 300 s rozbiegu, żeby przepływ się ustalił.
+- **Sieć SWMM:** z warstw autorów zbioru (w tym n = 0,005), wylot swobodny,
+  `EXTRAN`, SurDepth = 0.
+- **Sprzężenie:** wariant zalecany do screeningu (README p. 4) z jedną
+  zmianą: kratka zbiera wodę ze wszystkich komórek pod sobą.
+  - Kratka 0,5 × 0,2 m to 40 komórek, kratka poprzeczna 150.
+  - Głębokość nad kratką = średnia z tych komórek.
+  - Wzór przelew/otwór (v2), z obwodem i polem kratki.
+  - Wymiana co 0,2 s, SWMM co 1 s.
+- **Dwa warianty współczynników:**
+  - bez kalibracji: współczynniki z testu wykonalności;
+  - skalibrowany: oba współczynniki × 0,07, dobrane na stanie ustalonym
+    serii 2 (p. 3.4).
+
+### 3.2 Bilans i koszt obliczeń
+
+- **Bilans powierzchni:** błąd poniżej 0,01 L na 260–2060 L wody, we
+  wszystkich 45 przebiegach.
+- **Bilans sieci:** do −2,8 L (0,14%) przy dopływie z generatorów. SWMM sam
+  raportuje błąd 0,000%, więc różnica pochodzi raczej z odczytu objętości
+  w sieci przez pyswmm. Nie wyjaśniłem jej do końca.
+- **Wybicie:** nie wystąpiło. Przewody są wypełnione w niewielkim stopniu.
+- **Czas:** 40–98 s na test (900 s symulacji, oczko 5 cm). Przy oczku 10 cm
+  8–12 s, z praktycznie tymi samymi wynikami (p. 3.6).
+
+### 3.3 Co mówią same pomiary
+
+1. **Seria 2 przed deszczem (stan ustalony):**
+   - z generatorów wpływa 2 L/s, a odpływ z sieci to 2,05–2,13 L/s, więc
+     bilans się zamyka;
+   - kratki 1–4 łapią razem 1,18 L/s, a 0,91 L/s przepływa nad nimi do
+     kratki końcowej IN5;
+   - sześć powtórzeń tego stanu różni się o 0,005–0,035 L/s (odch. std.).
+2. **Seria 1 w stanie ustalonym deszczu (T01–T03):** suma przepływu przez
+   kratki 1–5 to 78–83% deszczu spadającego na modelowaną powierzchnię.
+   - Brakujących 17–22% nie umiem przypisać. Możliwe przyczyny: straty,
+     mniejsze natężenie nad ulicą niż na mapach, błąd pomiaru.
+   - Model odprowadza do kratek cały deszcz, więc tu musi zawyżać sumę.
+
+### 3.4 Kalibracja na stanie ustalonym (seria 2 przed deszczem)
+
+Rys. `fig_coruna_calibration.png`, tabela `results/calibration.md`.
+
+- **Bez kalibracji** kratki 1–4 łapią 1,99 z 2 L/s, a do IN5 trafia
+  0,01 L/s (pomiar: 0,91). RMSE przepływów IN1–IN5 wynosi 0,46 L/s.
+- **Skanowanie mnożnika** (1 … 0,05) daje najmniejszy błąd przy 0,07:
+  RMSE 0,095 L/s.
+- Po kalibracji zostaje błąd kratki 1: 0,23 L/s w modelu wobec 0,43 L/s
+  w pomiarze. Jeden mnożnik nie dopasowuje wszystkich kratek naraz.
+
+### 3.5 Sprawdzenie na testach z deszczem
+
+Rys. `fig_coruna_set1.png` i `fig_coruna_set2.png`, tabela
+`results/validation.md`.
+
+- Seria 1: cała odpowiedź na deszcz.
+- Seria 2: przyrost ponad przepływ z generatorów.
+- Mediany z 6 testów × 4 kratek. Przesunięcie = środek ciężkości hydrogramu
+  w modelu minus w pomiarze.
+
+| Miara | Bez kalibracji | Skalibrowany (×0,07) |
+|---|---|---|
+| Stan ustalony serii 2: RMSE przepływów IN1–IN5 | 0,46 L/s | **0,095 L/s** |
+| Seria 1, podział wody między kratki w deszczu stałym (T01–T03): RMSE udziałów | **4,6–7,4 p.p.** | 11,7–17,6 p.p. |
+| Seria 1: objętość model/pomiar | 1,43 | 1,00 |
+| Seria 1: NSE | 0,53 | 0,57 |
+| Seria 1: przesunięcie | +15 s | +36 s |
+| Seria 2, przyrost od deszczu: objętość model/pomiar (IN2–IN4) | **1,12** | 0,43 |
+| Seria 2: NSE | **0,60** | 0,11 |
+| Seria 2: przesunięcie | −7 s | −9 s |
+
+Wnioski:
+
+1. **Czas odpowiedzi model oddaje dobrze.**
+   - W serii 2, gdzie ulica jest już mokra od generatorów, przesunięcie jest
+     bliskie zera.
+   - W serii 1 model spóźnia się o ok. 15 s. Model startuje z suchej ulicy,
+     a w laboratorium była mokra po poprzednim teście. Swoje wnosi też
+     niepewność początku deszczu (±10 s).
+2. **Kalibracja na stanie ustalonym nie przenosi się na deszcz.** Mnożnik
+   0,07 poprawia przepływ z generatorów, ale psuje odpowiedź na deszcz:
+   - zbyt dużo wody przepływa nad kratkami 1–4 do IN5;
+   - przyrost od deszczu w serii 2 jest zaniżony ponad dwukrotnie;
+   - podział wody w serii 1 jest gorszy niż bez kalibracji.
+
+   W laboratorium kratki przepuszczają ok. 45% skupionego przepływu
+   z generatorów (1 L/s), ale wodę z deszczu łapią prawie w całości.
+3. **Wzór zależny tylko od głębokości z jednym współczynnikiem nie opisuje
+   kratki ulicznej w obu warunkach.** Skuteczność kratki zależy od
+   przepływu i prędkości dopływu: woda szybka przeskakuje nad kratką.
+   Tak działają zależności skuteczności kratki z podręczników projektowania
+   ulic, np. HEC-22 (FHWA), z podziałem na przepływ czołowy i boczny oraz
+   prędkością przeskoku.
+   - W screeningu w siatce 2–5 m kratka jest mniejsza od komórki, więc jej
+     prawo wymiany i tak jest parametryzacją.
+   - Wniosek dla Hydraulika: współczynnik wpustu trzeba traktować jako
+     niepewny, zależny od warunków dopływu, i pokazywać zakres wyników,
+     a nie jedną wartość.
+4. **Bez kalibracji model dobrze dzieli wodę między kratki** (RMSE udziałów
+   5–7 p.p.).
+   - Sumę przepływu przez wszystkie kratki zawyża o 21–29%, a prawie całą tę
+     różnicę wyjaśnia niedobór wody w samych pomiarach (p. 3.3).
+   - Objętości poszczególnych kratek 1–4 różnią się bardziej (mediana +43%),
+     bo model kieruje za dużo wody do IN1 i IN3, a za mało do IN4.
+5. **Głębokości w punktach pomiarowych nie nadają się do oceny.**
+   - Model daje w rynsztoku 1,5–4 razy większe głębokości niż pomiar.
+   - Mierzone głębokości to 0,5–11 mm. To wielkości porównywalne
+     z dokładnością NMT z kamery LiDAR (rzędu milimetrów) i z różnicą rzędnych
+     w obrębie jednej komórki 5 cm.
+   - Wynik nie przesądza ani o błędzie modelu, ani o jego braku.
+
+### 3.6 Wrażliwość (wariant skalibrowany, T03 i T09)
+
+Tabela `results/sensitivity.md`.
+
+| Zmiana | Przepływ przez kratki 1–4 w stanie ustalonym |
+|---|---|
+| oczko 10 cm zamiast 5 cm | −4–5% (czas 8× krótszy) |
+| krok wymiany 1 s zamiast 0,2 s | 0% |
+| n = 0,012 / 0,020 zamiast 0,016 | −11% / +9% (T03) |
+| próg suchej komórki 1 mm zamiast 0,1 mm | +6–8%, gorsze NSE w T03 |
+| zmierzona mapa deszczu zamiast natężenia równomiernego | +0–4% |
+| głębokość nad kratką: maksimum zamiast średniej | **+42–53%** |
+
+- **Definicja głębokości nad kratką** zmienia wynik tak mocno jak
+  współczynnik wpustu. To kolejny argument, że opis wpustu jest głównym
+  źródłem niepewności sprzężenia (wcześniej: porównanie z D-Flow FM,
+  README p. 3.7 i 3.9).
+- **Krok wymiany i oczko siatki** prawie nie mają znaczenia, a ostateczne
+  wnioski się od nich nie zmieniają.
+
+### 3.7 Ograniczenia testu
+
+- **Brak wybicia z sieci:** test sprawdza tylko kierunek z ulicy do sieci.
+- **Założenia własne:**
+  - początek deszczu oszacowany z danych;
+  - szerokość hietogramu H6 odczytana z rysunku (±5 s);
+  - położenie i budowa generatorów przyjęte;
+  - prześwit kratek nieznany.
+- **Brakująca woda w pomiarach:** w serii 1 brakuje 17–22% wody; przyczyny
+  nie ustaliłem.
+- **Kratka IN5:** zmierzona tylko jako jedna wartość ustalona (T01–T03),
+  a w serii 2 wyznaczona z bilansu.
+- **Brak porównania z modelem autorów:** artykułu Sañudo i in. (2024) z ich
+  modelem Iber–SWMM nie mogłem pobrać (wiley.com zablokowany w tym
+  środowisku).
+
+### 3.8 Odtworzenie
+
+```bash
+# dane: https://doi.org/10.5281/zenodo.7941067, rozpakowane archiwa
+# 02_Geometries, 03_Rain_intensity_maps, 04_Digital_Elevation_Models,
+# 06_Hydraulic_tests_database do jednego katalogu <dane-coruna>
+cd coruna
+export CORUNA_DATA=<dane-coruna> SFINCS_LIBRARY=<katalog-instalacji>/lib/libsfincs.so
+python run_all.py            # 45 przebiegów, 4 równolegle, ok. 15–20 min
+python compare.py            # tabele results/*.md i rysunki figures/*.png
+```
