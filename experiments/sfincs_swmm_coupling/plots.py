@@ -192,6 +192,17 @@ def main() -> None:
         (3300, 3420),
         FIGURES / "fig5_q2_exchange_J3.png",
     )
+    exchange_comparison(
+        "Q3 (dopływ, cofka)",
+        "J2",
+        [
+            ("Q3_slot_v1", "SLOT, wzory v1 (nieciągłe)"),
+            ("Q3_slot", "SLOT, wzory v2 (ciągłe)"),
+            ("Q3_rec", "SLOT + relaksacja, wzory v2"),
+        ],
+        (3300, 3420),
+        FIGURES / "fig6_q3_exchange_J2_v1_v2.png",
+    )
     print("figures written to", FIGURES)
 
 

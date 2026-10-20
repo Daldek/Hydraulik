@@ -8,7 +8,7 @@ traced back to this file.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 # --- Domain (SFINCS) --------------------------------------------------------
@@ -105,6 +105,9 @@ class Scenario:
         inflow at the upstream edge, free outflow measured at the downstream edge).
     swmm_routing_step_s : float
         SWMM routing step; must divide the 1 s stride used by the coupler.
+    exchange_law : str
+        "continuous" (v2: Rubinato et al. 2017 coefficients, Villemonte
+        submergence, linearised orifice) or "legacy" (v1: discontinuous).
     """
 
     name: str
@@ -121,6 +124,7 @@ class Scenario:
     equalisation_limiter: bool = False
     forcing: str = "rain"
     swmm_routing_step_s: float = float(SWMM_ROUTING_STEP_S)
+    exchange_law: str = "continuous"
 
 
 BOTTLENECK = {"C1": 0.3, "C2": 0.3, "C3": 0.15}
@@ -267,6 +271,30 @@ SCENARIOS = {
         ),
     ]
 }
+
+
+# Legacy (v1) exchange law for a subset, to quantify the effect of the
+# continuous formulation (v2) that all other scenarios use.
+LEGACY_COMPARISON = [
+    "S1",
+    "S2_slot",
+    "S3_slot",
+    "S2_rec_dt1",
+    "S3_rec_dt1",
+    "Q1_rec",
+    "Q2_slot",
+    "Q2_rec",
+    "Q2_rec_rs025",
+    "Q3_slot",
+    "Q3_rec",
+]
+for _name in LEGACY_COMPARISON:
+    SCENARIOS[f"{_name}_v1"] = replace(
+        SCENARIOS[_name],
+        name=f"{_name}_v1",
+        description=SCENARIOS[_name].description + " [legacy exchange law v1]",
+        exchange_law="legacy",
+    )
 
 
 def cell_centre(index: int) -> float:

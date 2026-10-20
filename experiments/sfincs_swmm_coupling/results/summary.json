@@ -3,7 +3,7 @@
     "scenario": "S0",
     "description": "SFINCS only, no drainage",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.8816361759995743,
+    "wall_time_s": 79.55159929399997,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -33,13 +33,13 @@
     "max_depth_at_end_m": 0.3584654144744146,
     "flooded_area_m2_gt_5cm": 1044.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:03"
+    "finished_at": "2026-10-20T18:42:09"
   },
   "S0K": {
     "scenario": "S0K",
     "description": "SFINCS built-in conceptual drainage (30 mm/h, whole grid)",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7875574280001274,
+    "wall_time_s": 68.44903719600006,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -69,13 +69,2191 @@
     "max_depth_at_end_m": 0.2704474625703934,
     "flooded_area_m2_gt_5cm": 532.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:04"
+    "finished_at": "2026-10-20T18:43:17"
   },
   "S1": {
     "scenario": "S1",
     "description": "Coupled, free-flowing network",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 1.0951703549999365,
+    "wall_time_s": 83.75301751000006,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 66.27709717619237,
+    "network_final_m3": 0.6189573402694607,
+    "outfall_net_m3": 101.38099113246017,
+    "exchanged_total_m3": 101.75790294513621,
+    "exchanged_per_node_m3": {
+      "J1": 17.766086371008864,
+      "J2": 25.35379734250131,
+      "J3": 58.63801923162604
+    },
+    "mass_error_m3": -0.20704564892200494,
+    "mass_error_pct_of_rain": -0.12319012847147316,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.12319012847147316,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.0008954402788873897,
+    "surface_side_error_m3": 0.03499987867141385,
+    "network_side_error_m3": -0.2420455275934188,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 101.7558622427696,
+      "final_storage": 21.855838286351013,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 101.38099113246024,
+      "routing_error": -0.23958707966531545,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 0
+    },
+    "max_depth_m": 0.2904205304459193,
+    "max_depth_at_end_m": 0.2904205304459193,
+    "flooded_area_m2_gt_5cm": 616.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:44:41"
+  },
+  "S2": {
+    "scenario": "S2",
+    "description": "Coupled, surcharged network",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 103.18633229399984,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 32695.438605875286,
+    "network_final_m3": 7.935325089313709,
+    "outfall_net_m3": 285.4550701242505,
+    "exchanged_total_m3": -32336.054751532858,
+    "exchanged_per_node_m3": {
+      "J1": -10759.76828691897,
+      "J2": -10830.417245072636,
+      "J3": -10745.86921954125
+    },
+    "mass_error_m3": -32820.75900108885,
+    "mass_error_pct_of_rain": -19528.02939316288,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -19528.02939316288,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 10.199117865396252,
+    "surface_side_error_m3": -191.31385434242839,
+    "network_side_error_m3": -32629.445146746424,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 1453.519201805709,
+      "final_storage": 280.2021571085349,
+      "flooding": 159.71085248379265,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 34072.747686347604,
+      "routing_error": -2255.68893371337,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.0990648407653256,
+      "max": 0.45630530349063747,
+      "p95": 0.23688517219466107
+    },
+    "capped_steps": 42,
+    "sign_flips": {
+      "J1": 1084,
+      "J2": 1034,
+      "J3": 1129
+    },
+    "max_depth_m": 4.79834936380937,
+    "max_depth_at_end_m": 4.79834936380937,
+    "flooded_area_m2_gt_5cm": 8400.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:25"
+  },
+  "S3": {
+    "scenario": "S3",
+    "description": "Coupled, backwater from the outfall",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.9786408449999726,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 3198.2966840206177,
+    "network_final_m3": 42.13301621206719,
+    "outfall_net_m3": 732.9911607838627,
+    "exchanged_total_m3": -2958.260369251852,
+    "exchanged_per_node_m3": {
+      "J1": -1037.6432842255624,
+      "J2": -1036.1473449298658,
+      "J3": -884.4697400964238
+    },
+    "mass_error_m3": -3805.3508610165472,
+    "mass_error_pct_of_rain": -2264.146403889182,
+    "outfall_gross_inflow_m3": 33.15861069221271,
+    "mass_error_pct_of_inflow": -1891.0585566964855,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 5.196853992725322,
+    "surface_side_error_m3": -71.96631476876564,
+    "network_side_error_m3": -3733.3845462477816,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 504.06598411561293,
+      "final_storage": 1487.7477476012425,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 4192.745526930453,
+      "routing_error": -740.143200783907,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.07322439739259916,
+      "max": 0.4770446651345992,
+      "p95": 0.33519840023582215
+    },
+    "capped_steps": 166,
+    "sign_flips": {
+      "J1": 535,
+      "J2": 663,
+      "J3": 739
+    },
+    "max_depth_m": 1.1364830780015946,
+    "max_depth_at_end_m": 1.1364830780015946,
+    "flooded_area_m2_gt_5cm": 6984.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:26"
+  },
+  "S2_slot": {
+    "scenario": "S2_slot",
+    "description": "S2 + SWMM slot method",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5455289820001781,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 70.14116957081299,
+    "network_final_m3": 3.273961403257923,
+    "outfall_net_m3": 94.82006598832825,
+    "exchanged_total_m3": 97.89383183907614,
+    "exchanged_per_node_m3": {
+      "J1": 17.76608651632218,
+      "J2": 25.353796172573833,
+      "J3": 54.77394915018014
+    },
+    "mass_error_m3": -0.16519696239917891,
+    "mass_error_pct_of_rain": -0.09829057083309271,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.09829057083309271,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.4213337503057716,
+    "surface_side_error_m3": 0.034998590110859595,
+    "network_side_error_m3": -0.2001955525100385,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 179.18607506864782,
+      "final_storage": 115.60598175345773,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 176.11594225864812,
+      "routing_error": -0.11368422440778403,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 952
+    },
+    "max_depth_m": 0.31294667845410196,
+    "max_depth_at_end_m": 0.31294667845410196,
+    "flooded_area_m2_gt_5cm": 732.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:27"
+  },
+  "S3_slot": {
+    "scenario": "S3_slot",
+    "description": "S3 + SWMM slot method",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5744709170003262,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 343.56998205934883,
+    "network_final_m3": 43.52437986992479,
+    "outfall_net_m3": -216.04654001385018,
+    "exchanged_total_m3": -175.53498290373273,
+    "exchanged_per_node_m3": {
+      "J1": 17.766086373547317,
+      "J2": 13.713457890339344,
+      "J3": -207.01452716761938
+    },
+    "mass_error_m3": -2.9778219154234478,
+    "mass_error_pct_of_rain": -1.7717748053926625,
+    "outfall_gross_inflow_m3": 310.71864746838185,
+    "mass_error_pct_of_inflow": -0.6219491483703353,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.5330075135895839,
+    "surface_side_error_m3": 0.0350008443838874,
+    "network_side_error_m3": -3.012822759807335,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 427.8247020011496,
+      "final_storage": 1536.877820265706,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 387.2803109061105,
+      "routing_error": -0.6964757054204629,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.023033827526564434,
+      "max": 0.49983023933236836,
+      "p95": 0.23297735831802102
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 410,
+      "J3": 71
+    },
+    "max_depth_m": 0.4606221228629064,
+    "max_depth_at_end_m": 0.4606221228629064,
+    "flooded_area_m2_gt_5cm": 1756.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:28"
+  },
+  "S2_slot_lim": {
+    "scenario": "S2_slot_lim",
+    "description": "S2 + slot + equalisation limiter",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5257510740002544,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 70.14473848225933,
+    "network_final_m3": 3.2745433492566254,
+    "outfall_net_m3": 94.81584929614655,
+    "exchanged_total_m3": 97.89026221938504,
+    "exchanged_per_node_m3": {
+      "J1": 17.76608651650478,
+      "J2": 25.35379248085635,
+      "J3": 54.77038322202391
+    },
+    "mass_error_m3": -0.16513112766251936,
+    "mass_error_pct_of_rain": -0.09825139981110215,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.09825139981110215,
+    "limited_steps": 1490,
+    "max_abs_dq_m3s": 0.11217392059019074,
+    "surface_side_error_m3": 0.034999298355629094,
+    "network_side_error_m3": -0.20013042601814846,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 99.65088471550362,
+      "final_storage": 115.62653069408988,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 96.58010546789687,
+      "routing_error": -0.20435513232301972,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 6
+    },
+    "max_depth_m": 0.31282474411469785,
+    "max_depth_at_end_m": 0.31282474411469785,
+    "flooded_area_m2_gt_5cm": 736.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:28"
+  },
+  "S3_slot_lim": {
+    "scenario": "S3_slot_lim",
+    "description": "S3 + slot + equalisation limiter",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.6359305770001811,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 193.7796555139051,
+    "network_final_m3": 43.57669350706542,
+    "outfall_net_m3": -66.47992606637361,
+    "exchanged_total_m3": -25.744655497529372,
+    "exchanged_per_node_m3": {
+      "J1": 17.766086371008864,
+      "J2": 4.766795599502057,
+      "J3": -48.27753746804029
+    },
+    "mass_error_m3": -2.8064229545969255,
+    "mass_error_pct_of_rain": -1.6697941063824153,
+    "outfall_gross_inflow_m3": 161.61787607474784,
+    "mass_error_pct_of_inflow": -0.8512363232794903,
+    "limited_steps": 1963,
+    "max_abs_dq_m3s": 0.008783488040589935,
+    "surface_side_error_m3": 0.03499998362425316,
+    "network_side_error_m3": -2.8414229382211857,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 257.07123383990444,
+      "final_storage": 1538.725053215587,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 216.27843544185794,
+      "routing_error": -1.0828128363858935,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 1,
+      "J3": 5
+    },
+    "max_depth_m": 0.37583446359545825,
+    "max_depth_at_end_m": 0.37583446359545825,
+    "flooded_area_m2_gt_5cm": 1092.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:29"
+  },
+  "S2_rec_dt1": {
+    "scenario": "S2_rec_dt1",
+    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 1 s",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5300729160007904,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 70.07388202888458,
+    "network_final_m3": 3.234023315044135,
+    "outfall_net_m3": 94.92775925808338,
+    "exchanged_total_m3": 97.96111856853392,
+    "exchanged_per_node_m3": {
+      "J1": 17.766128911897166,
+      "J2": 25.34716213455453,
+      "J3": 54.84782752208223
+    },
+    "mass_error_m3": -0.16566460201211441,
+    "mass_error_pct_of_rain": -0.09856881181181319,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.09856881181181319,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.01213686120908923,
+    "surface_side_error_m3": 0.03499940258149081,
+    "network_side_error_m3": -0.20066400459360523,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 102.18493652070623,
+      "final_storage": 114.19573852556974,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 99.15518553757543,
+      "routing_error": -0.19978476291995229,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 182
+    },
+    "max_depth_m": 0.3128780297358045,
+    "max_depth_at_end_m": 0.3128780297358045,
+    "flooded_area_m2_gt_5cm": 736.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:30"
+  },
+  "S2_rec_dt5": {
+    "scenario": "S2_rec_dt5",
+    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 5 s",
+    "exchange_interval_s": 5.0,
+    "wall_time_s": 0.4566566520006745,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 71.53651587275024,
+    "network_final_m3": 3.7792737784393604,
+    "outfall_net_m3": 92.78456769554826,
+    "exchanged_total_m3": 96.49848469585699,
+    "exchanged_per_node_m3": {
+      "J1": 15.997908487401043,
+      "J2": 21.840348581606232,
+      "J3": 58.66022762684972
+    },
+    "mass_error_m3": -0.030357346737872604,
+    "mass_error_pct_of_rain": -0.01806232328070007,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.01806232328070007,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.01891044786458581,
+    "surface_side_error_m3": 0.0349994313927624,
+    "network_side_error_m3": -0.06535677813063501,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 97.05053125510243,
+      "final_storage": 133.4489328544972,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 93.34077396271775,
+      "routing_error": -0.0715032088064449,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000481598161e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 923,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 76
+    },
+    "max_depth_m": 0.3138751098687518,
+    "max_depth_at_end_m": 0.3138751098687518,
+    "flooded_area_m2_gt_5cm": 740.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:31"
+  },
+  "S2_rec_dt30": {
+    "scenario": "S2_rec_dt30",
+    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 30 s",
+    "exchange_interval_s": 30.0,
+    "wall_time_s": 0.3657889950000026,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 121.085887524811,
+    "network_final_m3": 1.3981948728654834,
+    "outfall_net_m3": 45.907622810880646,
+    "exchanged_total_m3": 46.949114395021084,
+    "exchanged_per_node_m3": {
+      "J1": 5.047772270689169,
+      "J2": 7.265244937761759,
+      "J3": 34.636097186570154
+    },
+    "mass_error_m3": -0.3217052085571339,
+    "mass_error_pct_of_rain": -0.19141144080272143,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.19141144080272143,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.0010287540078750127,
+    "surface_side_error_m3": 0.03499808016790951,
+    "network_side_error_m3": -0.3567032887250434,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 46.94403556126242,
+      "final_storage": 49.37128788366819,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 45.9076228108807,
+      "routing_error": -0.7704046368729456,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000484756129e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 294,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 0
+    },
+    "max_depth_m": 0.3384765885804537,
+    "max_depth_at_end_m": 0.3384765885804537,
+    "flooded_area_m2_gt_5cm": 908.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:31"
+  },
+  "S3_rec_dt1": {
+    "scenario": "S3_rec_dt1",
+    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 1 s",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.614151681000294,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 340.180763380986,
+    "network_final_m3": 43.5538206141069,
+    "outfall_net_m3": -212.7185773323889,
+    "exchanged_total_m3": -172.14576310624392,
+    "exchanged_per_node_m3": {
+      "J1": 17.76613077502927,
+      "J2": 11.047400102891652,
+      "J3": -200.95929398416484
+    },
+    "mass_error_m3": -2.9460066627039794,
+    "mass_error_pct_of_rain": -1.7528450423656687,
+    "outfall_gross_inflow_m3": 307.3696210673697,
+    "mass_error_pct_of_inflow": -0.6196384424356864,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.04191543188662794,
+    "surface_side_error_m3": 0.03499972525793282,
+    "network_side_error_m3": -2.981006387961912,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 402.7983636018762,
+      "final_storage": 1537.9173945659213,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 362.1307534270052,
+      "routing_error": -0.7164668424838538,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.023250015957350566,
+      "max": 0.49994721344774007,
+      "p95": 0.23556306592290505
+    },
+    "capped_steps": 5,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 17,
+      "J3": 5
+    },
+    "max_depth_m": 0.4571556172558431,
+    "max_depth_at_end_m": 0.4571556172558431,
+    "flooded_area_m2_gt_5cm": 1720.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:32"
+  },
+  "S3_rec_dt5": {
+    "scenario": "S3_rec_dt5",
+    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 5 s",
+    "exchange_interval_s": 5.0,
+    "wall_time_s": 0.4677969419999499,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 337.0926151510374,
+    "network_final_m3": 43.628150841358334,
+    "outfall_net_m3": -209.92778786984553,
+    "exchanged_total_m3": -169.05761578862493,
+    "exchanged_per_node_m3": {
+      "J1": 15.997906909040815,
+      "J2": -13.433119366809363,
+      "J3": -171.62240333085637
+    },
+    "mass_error_m3": -2.7229781225502165,
+    "mass_error_pct_of_rain": -1.6201452505207452,
+    "outfall_gross_inflow_m3": 297.84268517547025,
+    "mass_error_pct_of_inflow": -0.5844395761675171,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.056023273958934944,
+    "surface_side_error_m3": 0.03500063758750116,
+    "network_side_error_m3": -2.757978760137746,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 388.3144259950229,
+      "final_storage": 1540.5420494829918,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 347.3444672475578,
+      "routing_error": -0.6844706988242688,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.022767257922088252,
+      "max": 0.4981829159623885,
+      "p95": 0.22230456701581638
+    },
+    "capped_steps": 970,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 1,
+      "J3": 3
+    },
+    "max_depth_m": 0.45527146646069205,
+    "max_depth_at_end_m": 0.45527146646069205,
+    "flooded_area_m2_gt_5cm": 1724.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:33"
+  },
+  "S3_rec_dt30": {
+    "scenario": "S3_rec_dt30",
+    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 30 s",
+    "exchange_interval_s": 30.0,
+    "wall_time_s": 0.4695282459997543,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 362.1722911377591,
+    "network_final_m3": 43.75558106829935,
+    "outfall_net_m3": -235.70881953782916,
+    "exchanged_total_m3": -194.13728909595974,
+    "exchanged_per_node_m3": {
+      "J1": -34.77098257400558,
+      "J2": -98.75557568171828,
+      "J3": -60.61073084023588
+    },
+    "mass_error_m3": -2.1490526682293023,
+    "mass_error_pct_of_rain": -1.2786652396199811,
+    "outfall_gross_inflow_m3": 272.9733533914218,
+    "mass_error_pct_of_inflow": -0.48726562858369127,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.05498353164111763,
+    "surface_side_error_m3": 0.03499795820064833,
+    "network_side_error_m3": -2.184050626429922,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 309.173055167521,
+      "final_storage": 1545.0417043891014,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 267.50079350118756,
+      "routing_error": -0.6737410553059764,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.023507043537029423,
+      "max": 0.47904487780397176,
+      "p95": 0.20101775906150574
+    },
+    "capped_steps": 244,
+    "sign_flips": {
+      "J1": 1,
+      "J2": 1,
+      "J3": 3
+    },
+    "max_depth_m": 0.4648227842392263,
+    "max_depth_at_end_m": 0.4648227842392263,
+    "flooded_area_m2_gt_5cm": 1828.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:33"
+  },
+  "Q0": {
+    "scenario": "Q0",
+    "description": "Inflow, no network",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.4087403660005293,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 301.8548412253954,
+    "surface_final_m3": 53.689768920166415,
+    "network_final_m3": 0.0,
+    "outfall_net_m3": 0.0,
+    "exchanged_total_m3": 0,
+    "exchanged_per_node_m3": {},
+    "mass_error_m3": -0.04461014556181908,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.012548564152410431,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.0,
+    "surface_side_error_m3": -0.04461014556181908,
+    "network_side_error_m3": 0.0,
+    "swmm_routing_stats": {},
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {},
+    "max_depth_m": 0.07464058397727058,
+    "max_depth_at_end_m": 0.06740137114195477,
+    "flooded_area_m2_gt_5cm": 400.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.047795941523609144
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.09992617194695413
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.14994285315041755
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:34"
+  },
+  "Q1_rec": {
+    "scenario": "Q1_rec",
+    "description": "Inflow, free-flowing network, recommended scheme",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 3.702465921000112,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 84.6124381363129,
+    "surface_final_m3": 40.11632513742515,
+    "network_final_m3": 9.617127325081587,
+    "outfall_net_m3": 223.1125842667553,
+    "exchanged_total_m3": 230.81584852183045,
+    "exchanged_per_node_m3": {
+      "J1": 96.9522974512383,
+      "J2": 76.59573595135845,
+      "J3": 57.26781511923371
+    },
+    "mass_error_m3": -1.9584748655749706,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -0.5509071351828329,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.0010245902137496323,
+    "surface_side_error_m3": -0.04461179556852812,
+    "network_side_error_m3": -1.9138630700064425,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 230.76836061092632,
+      "final_storage": 339.5878292754797,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 223.1125842667551,
+      "routing_error": -0.8497945146947572,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 0
+    },
+    "max_depth_m": 0.07464059102039755,
+    "max_depth_at_end_m": 0.044892714096818054,
+    "flooded_area_m2_gt_5cm": 284.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.008293728876469685,
+        "J1": {
+          "mean_m3s": 0.02000454533923539,
+          "std_m3s": 5.457952577915359e-06,
+          "min_m3s": 0.019997213761796074,
+          "max_m3s": 0.02001379044968515,
+          "sign_flips": 0,
+          "drift_m3s": 4.836101951885552e-06
+        },
+        "J2": {
+          "mean_m3s": 0.013258809251525741,
+          "std_m3s": 1.789392736492943e-05,
+          "min_m3s": 0.013227748697300134,
+          "max_m3s": 0.013283732281576126,
+          "sign_flips": 0,
+          "drift_m3s": 1.5499477534524492e-05
+        },
+        "J3": {
+          "mean_m3s": 0.008159721307318657,
+          "std_m3s": 1.5747706103562004e-05,
+          "min_m3s": 0.008126266352321828,
+          "max_m3s": 0.008186244160856471,
+          "sign_flips": 0,
+          "drift_m3s": 1.3142471645813392e-05
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.02535389386497627,
+        "J1": {
+          "mean_m3s": 0.03062531868658259,
+          "std_m3s": 5.269546962617613e-07,
+          "min_m3s": 0.030624465310390165,
+          "max_m3s": 0.030626668757765794,
+          "sign_flips": 0,
+          "drift_m3s": -3.721115271887454e-07
+        },
+        "J2": {
+          "mean_m3s": 0.025519925507981496,
+          "std_m3s": 2.6098870170295674e-06,
+          "min_m3s": 0.025516282708707164,
+          "max_m3s": 0.02552409545914496,
+          "sign_flips": 0,
+          "drift_m3s": 2.315473643186433e-06
+        },
+        "J3": {
+          "mean_m3s": 0.018020142320844902,
+          "std_m3s": 2.4352448074013233e-05,
+          "min_m3s": 0.017986882161429893,
+          "max_m3s": 0.01806805156536027,
+          "sign_flips": 0,
+          "drift_m3s": 2.0071954843610407e-05
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.054971379979124324,
+        "J1": {
+          "mean_m3s": 0.034402808383382034,
+          "std_m3s": 1.0269007615777063e-06,
+          "min_m3s": 0.03440146704424768,
+          "max_m3s": 0.034404833696227245,
+          "sign_flips": 0,
+          "drift_m3s": 5.981147024464173e-07
+        },
+        "J2": {
+          "mean_m3s": 0.03113873048731185,
+          "std_m3s": 3.474859360540438e-07,
+          "min_m3s": 0.03113805849193439,
+          "max_m3s": 0.031139829018802724,
+          "sign_flips": 0,
+          "drift_m3s": 1.9081482955859985e-07
+        },
+        "J3": {
+          "mean_m3s": 0.02943020966741539,
+          "std_m3s": 4.877020114054526e-07,
+          "min_m3s": 0.029429507163096044,
+          "max_m3s": 0.02943113890496946,
+          "sign_flips": 0,
+          "drift_m3s": 4.353937369944161e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:38"
+  },
+  "Q2_naive": {
+    "scenario": "Q2_naive",
+    "description": "Inflow, surcharged network, naive (EXTRAN)",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 4.123811885000578,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 23516.079480815002,
+    "surface_final_m3": 691.8626381918814,
+    "network_final_m3": 7.935194727291361,
+    "outfall_net_m3": 214.94287763306932,
+    "exchanged_total_m3": -23447.966399190045,
+    "exchanged_per_node_m3": {
+      "J1": -7787.042704597648,
+      "J2": -7736.991867537328,
+      "J3": -7923.931827055071
+    },
+    "mass_error_m3": -24075.320191367246,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": -6772.2419666293235,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 9.198089636285584,
+    "surface_side_error_m3": -404.4757198168372,
+    "network_side_error_m3": -23670.844471550405,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 492.09711397732156,
+      "final_storage": 280.1975539297797,
+      "flooding": 2.5255317792874203,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 24146.379901286564,
+      "routing_error": -4808.956778069021,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.15465635564578412,
+      "max": 0.47953329316419513,
+      "p95": 0.3605686005867027
+    },
+    "capped_steps": 314,
+    "sign_flips": {
+      "J1": 887,
+      "J2": 949,
+      "J3": 1043
+    },
+    "max_depth_m": 1.0800673765425017,
+    "max_depth_at_end_m": 0.6202484150296641,
+    "flooded_area_m2_gt_5cm": 5424.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 7.4472596445623775,
+        "J1": {
+          "mean_m3s": -2.5840486750255423,
+          "std_m3s": 2.43427616189642,
+          "min_m3s": -8.642300565113159,
+          "max_m3s": 0.4934665227899348,
+          "sign_flips": 82,
+          "drift_m3s": 0.02303489136737058
+        },
+        "J2": {
+          "mean_m3s": -2.5263741335730274,
+          "std_m3s": 2.304410815658557,
+          "min_m3s": -8.630485350108836,
+          "max_m3s": 0.49003698656977696,
+          "sign_flips": 93,
+          "drift_m3s": -0.04177830707786434
+        },
+        "J3": {
+          "mean_m3s": -2.4458204884342845,
+          "std_m3s": 2.1629769909625627,
+          "min_m3s": -8.625547748418214,
+          "max_m3s": 0.5833767349239654,
+          "sign_flips": 98,
+          "drift_m3s": 0.00830229337492927
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 7.481474923956396,
+        "J1": {
+          "mean_m3s": -2.549263888723863,
+          "std_m3s": 2.435137431670668,
+          "min_m3s": -8.635132260509106,
+          "max_m3s": 0.495133471542835,
+          "sign_flips": 96,
+          "drift_m3s": 0.012394246140426723
+        },
+        "J2": {
+          "mean_m3s": -2.413322722610038,
+          "std_m3s": 2.240148395259548,
+          "min_m3s": -8.634688701588832,
+          "max_m3s": 0.49893466404900905,
+          "sign_flips": 93,
+          "drift_m3s": -0.08698198186485762
+        },
+        "J3": {
+          "mean_m3s": -2.446217988852707,
+          "std_m3s": 2.243571169079676,
+          "min_m3s": -8.633263300030176,
+          "max_m3s": 0.5697722380437443,
+          "sign_flips": 104,
+          "drift_m3s": -0.09589210992262487
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 7.39791672694237,
+        "J1": {
+          "mean_m3s": -2.2948001797660456,
+          "std_m3s": 2.1676942535764794,
+          "min_m3s": -8.632646873005713,
+          "max_m3s": 0.47871452695444455,
+          "sign_flips": 82,
+          "drift_m3s": 0.071890671603974
+        },
+        "J2": {
+          "mean_m3s": -2.3311755430828263,
+          "std_m3s": 2.1143240787766118,
+          "min_m3s": -8.371667170042123,
+          "max_m3s": 0.477598463624767,
+          "sign_flips": 92,
+          "drift_m3s": 0.055757342083862405
+        },
+        "J3": {
+          "mean_m3s": -2.438147209220278,
+          "std_m3s": 2.2220042422364332,
+          "min_m3s": -8.627127110688592,
+          "max_m3s": 0.5613543884270485,
+          "sign_flips": 106,
+          "drift_m3s": 0.02421857511493286
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:42"
+  },
+  "Q2_slot": {
+    "scenario": "Q2_slot",
+    "description": "Inflow, surcharged network, slot only",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5352158149999013,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 191.11830462580383,
+    "surface_final_m3": 45.101493003149805,
+    "network_final_m3": 8.521305275914026,
+    "outfall_net_m3": 105.71761046579006,
+    "exchanged_total_m3": 119.32481475802138,
+    "exchanged_per_node_m3": {
+      "J1": 97.08376007470369,
+      "J2": 75.09765366297063,
+      "J3": -52.85659897965295
+    },
+    "mass_error_m3": 5.041286629342267,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": 1.4180834400400188,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.47875137864406014,
+    "surface_side_error_m3": -0.044612386975018126,
+    "network_side_error_m3": 5.085899016317285,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 329.33589862800727,
+      "final_storage": 300.89354787832013,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 315.7772239943976,
+      "routing_error": 1.5295902040786458,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 1710
+    },
+    "max_depth_m": 0.1100482424346012,
+    "max_depth_at_end_m": 0.06072859866117142,
+    "flooded_area_m2_gt_5cm": 384.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.013194401010478031,
+        "J1": {
+          "mean_m3s": 0.0200047626027177,
+          "std_m3s": 5.498267946265568e-06,
+          "min_m3s": 0.019997196513497874,
+          "max_m3s": 0.020013772395919446,
+          "sign_flips": 0,
+          "drift_m3s": 4.880356092609034e-06
+        },
+        "J2": {
+          "mean_m3s": 0.013259252573350254,
+          "std_m3s": 1.7397160648841624e-05,
+          "min_m3s": 0.013228435932140346,
+          "max_m3s": 0.013282928263028577,
+          "sign_flips": 0,
+          "drift_m3s": 1.5145509544524025e-05
+        },
+        "J3": {
+          "mean_m3s": 0.000785616600323579,
+          "std_m3s": 0.04255769051570935,
+          "min_m3s": -0.10417091829585488,
+          "max_m3s": 0.054160866174602224,
+          "sign_flips": 134,
+          "drift_m3s": -0.0008077388472779711
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.06543611490110682,
+        "J1": {
+          "mean_m3s": 0.03062532942722446,
+          "std_m3s": 5.73395584621152e-07,
+          "min_m3s": 0.030624050426758437,
+          "max_m3s": 0.03062714205042366,
+          "sign_flips": 0,
+          "drift_m3s": -3.3778538179041195e-07
+        },
+        "J2": {
+          "mean_m3s": 0.025520037901713137,
+          "std_m3s": 2.6191061040234905e-06,
+          "min_m3s": 0.02551623330418084,
+          "max_m3s": 0.025524209539583394,
+          "sign_flips": 0,
+          "drift_m3s": 2.325826462801911e-06
+        },
+        "J3": {
+          "mean_m3s": -0.02206191551820476,
+          "std_m3s": 0.1674659536328472,
+          "min_m3s": -0.2528829978749359,
+          "max_m3s": 0.14088393266946325,
+          "sign_flips": 199,
+          "drift_m3s": -3.7793500260244195e-07
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.11558218471163854,
+        "J1": {
+          "mean_m3s": 0.03440272053282656,
+          "std_m3s": 1.0721481189837974e-06,
+          "min_m3s": 0.03440058790393668,
+          "max_m3s": 0.03440524566829341,
+          "sign_flips": 0,
+          "drift_m3s": 5.838260520862892e-07
+        },
+        "J2": {
+          "mean_m3s": 0.02957118503958513,
+          "std_m3s": 0.0002057924464765761,
+          "min_m3s": 0.02939566043245515,
+          "max_m3s": 0.029861489329924284,
+          "sign_flips": 0,
+          "drift_m3s": -1.6362199286093504e-07
+        },
+        "J3": {
+          "mean_m3s": -0.029612789577985823,
+          "std_m3s": 0.20043937763546602,
+          "min_m3s": -0.30042548806535624,
+          "max_m3s": 0.1783258905787039,
+          "sign_flips": 199,
+          "drift_m3s": -2.7689109624584596e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:43"
+  },
+  "Q2_rec": {
+    "scenario": "Q2_rec",
+    "description": "Inflow, surcharged network, recommended scheme",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 1.6425488300001234,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 191.130563423279,
+    "surface_final_m3": 45.228485079934025,
+    "network_final_m3": 8.511027303368154,
+    "outfall_net_m3": 105.71209754622869,
+    "exchanged_total_m3": 119.18556362565235,
+    "exchanged_per_node_m3": {
+      "J1": 96.95234369024215,
+      "J2": 75.57389290520665,
+      "J3": -53.340672969796444
+    },
+    "mass_error_m3": 4.917826647190111,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": 1.3833548937243632,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.010774154455475773,
+    "surface_side_error_m3": -0.04461212886539556,
+    "network_side_error_m3": 4.962438776055507,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 177.26038633916392,
+      "final_storage": 300.53062511893205,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 163.81080885731305,
+      "routing_error": 2.7861097630512255,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 87
+    },
+    "max_depth_m": 0.07635873042612928,
+    "max_depth_at_end_m": 0.06075251251877489,
+    "flooded_area_m2_gt_5cm": 384.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.012915244642566298,
+        "J1": {
+          "mean_m3s": 0.02000454533923539,
+          "std_m3s": 5.457952577915359e-06,
+          "min_m3s": 0.019997213761796074,
+          "max_m3s": 0.02001379044968515,
+          "sign_flips": 0,
+          "drift_m3s": 4.836101951885552e-06
+        },
+        "J2": {
+          "mean_m3s": 0.013258810291951834,
+          "std_m3s": 1.7895179854775954e-05,
+          "min_m3s": 0.013227748697300134,
+          "max_m3s": 0.013283733653525837,
+          "sign_flips": 0,
+          "drift_m3s": 1.5500517960613525e-05
+        },
+        "J3": {
+          "mean_m3s": 0.0011345229243567734,
+          "std_m3s": 0.0038834261452933994,
+          "min_m3s": -0.006217407894457801,
+          "max_m3s": 0.008130342537203513,
+          "sign_flips": 53,
+          "drift_m3s": -0.000658561868296592
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.06540648904932823,
+        "J1": {
+          "mean_m3s": 0.03062532305003612,
+          "std_m3s": 5.416846291863321e-07,
+          "min_m3s": 0.03062422561188899,
+          "max_m3s": 0.030626730354409083,
+          "sign_flips": 0,
+          "drift_m3s": -3.548866276160967e-07
+        },
+        "J2": {
+          "mean_m3s": 0.025519932009101402,
+          "std_m3s": 2.6051240297932896e-06,
+          "min_m3s": 0.02551630994241363,
+          "max_m3s": 0.025524147210385945,
+          "sign_flips": 0,
+          "drift_m3s": 2.309945099768229e-06
+        },
+        "J3": {
+          "mean_m3s": -0.02208760833015839,
+          "std_m3s": 0.008701903409621013,
+          "min_m3s": -0.03536628867433658,
+          "max_m3s": -0.008734566064103815,
+          "sign_flips": 0,
+          "drift_m3s": 3.8723223397273826e-05
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.11566189304783014,
+        "J1": {
+          "mean_m3s": 0.034402920093061874,
+          "std_m3s": 7.32648664234041e-07,
+          "min_m3s": 0.03440107814229473,
+          "max_m3s": 0.034404787967232765,
+          "sign_flips": 0,
+          "drift_m3s": 5.116774166383231e-07
+        },
+        "J2": {
+          "mean_m3s": 0.030138737205878695,
+          "std_m3s": 1.7628716965517444e-05,
+          "min_m3s": 0.030113302710164845,
+          "max_m3s": 0.030169109712735516,
+          "sign_flips": 0,
+          "drift_m3s": -1.0834536136664075e-07
+        },
+        "J3": {
+          "mean_m3s": -0.030259888267526253,
+          "std_m3s": 0.00962859408295783,
+          "min_m3s": -0.044033155885838074,
+          "max_m3s": -0.01589776253079524,
+          "sign_flips": 0,
+          "drift_m3s": -3.9667372511015264e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:45"
+  },
+  "Q2_rec_dt5": {
+    "scenario": "Q2_rec_dt5",
+    "description": "Q2_rec with exchange every 5 s",
+    "exchange_interval_s": 5.0,
+    "wall_time_s": 0.3540577809999377,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 190.82971168157425,
+    "surface_final_m3": 47.07302002258709,
+    "network_final_m3": 8.500978981375177,
+    "outfall_net_m3": 104.27438988720917,
+    "exchanged_total_m3": 117.6418802248431,
+    "exchanged_per_node_m3": {
+      "J1": 81.38094889361997,
+      "J2": 67.53147692176303,
+      "J3": -31.270545590539893
+    },
+    "mass_error_m3": 4.821899427254294,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": 1.3563711469069746,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.011880157347547299,
+    "surface_side_error_m3": -0.04461192900447486,
+    "network_side_error_m3": 4.866511356258769,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 155.8516837102383,
+      "final_storage": 300.1758114892365,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 142.50204700269316,
+      "routing_error": 3.1111477046797953,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000481598161e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 1453,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 11
+    },
+    "max_depth_m": 0.08481704895757503,
+    "max_depth_at_end_m": 0.08481704895757503,
+    "flooded_area_m2_gt_5cm": 392.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.011581951528427859,
+        "J1": {
+          "mean_m3s": 0.016795730689911654,
+          "std_m3s": 3.6774514475804256e-06,
+          "min_m3s": 0.016790681524573376,
+          "max_m3s": 0.016801665077357104,
+          "sign_flips": 0,
+          "drift_m3s": 3.2605448116833358e-06
+        },
+        "J2": {
+          "mean_m3s": 0.012898891484847907,
+          "std_m3s": 1.296771875852098e-05,
+          "min_m3s": 0.012875228748725931,
+          "max_m3s": 0.01291947790211149,
+          "sign_flips": 0,
+          "drift_m3s": 1.134968931890655e-05
+        },
+        "J3": {
+          "mean_m3s": 0.006649801524098183,
+          "std_m3s": 0.0030090410601681717,
+          "min_m3s": -0.0005338690907065093,
+          "max_m3s": 0.009258919540563681,
+          "sign_flips": 2,
+          "drift_m3s": -0.0025957857619901634
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.0658141937396926,
+        "J1": {
+          "mean_m3s": 0.02502171676167046,
+          "std_m3s": 1.422437977995329e-06,
+          "min_m3s": 0.025019324080147953,
+          "max_m3s": 0.025023622289050234,
+          "sign_flips": 0,
+          "drift_m3s": 1.1898939394211494e-06
+        },
+        "J2": {
+          "mean_m3s": 0.02130526566150163,
+          "std_m3s": 1.4384490418687985e-06,
+          "min_m3s": 0.02130330208168137,
+          "max_m3s": 0.021307605723298668,
+          "sign_flips": 0,
+          "drift_m3s": 1.299583042665975e-06
+        },
+        "J3": {
+          "mean_m3s": -0.01221715543257469,
+          "std_m3s": 0.004677730825434053,
+          "min_m3s": -0.018168014845049225,
+          "max_m3s": -0.006729699581632347,
+          "sign_flips": 0,
+          "drift_m3s": -2.523879133608728e-06
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.11570493080000625,
+        "J1": {
+          "mean_m3s": 0.02986696107236324,
+          "std_m3s": 6.765641160937617e-07,
+          "min_m3s": 0.029865518994379652,
+          "max_m3s": 0.02986846833775303,
+          "sign_flips": 0,
+          "drift_m3s": 4.3651347772510896e-07
+        },
+        "J2": {
+          "mean_m3s": 0.027625949837026077,
+          "std_m3s": 4.854253698176503e-07,
+          "min_m3s": 0.02762519375831592,
+          "max_m3s": 0.027627124390013098,
+          "sign_flips": 0,
+          "drift_m3s": 3.012466347866727e-07
+        },
+        "J3": {
+          "mean_m3s": -0.023255471808434087,
+          "std_m3s": 0.0042225138604076486,
+          "min_m3s": -0.02900689088819705,
+          "max_m3s": -0.01897290577443996,
+          "sign_flips": 0,
+          "drift_m3s": -5.652274779402444e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:46"
+  },
+  "Q3_slot": {
+    "scenario": "Q3_slot",
+    "description": "Inflow, backwater, slot only",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.4954812279993348,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 395.5526780933287,
+    "surface_final_m3": 67.25235623107707,
+    "network_final_m3": 43.530039304189955,
+    "outfall_net_m3": -147.40533043976995,
+    "exchanged_total_m3": -107.26042192376951,
+    "exchanged_per_node_m3": {
+      "J1": 97.08373112609736,
+      "J2": 74.70178490697599,
+      "J3": -279.04593795684286
+    },
+    "mass_error_m3": -3.429743188825796,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 257.53583349676126,
+    "mass_error_pct_of_inflow": -0.5594686315908344,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.5688927509230537,
+    "surface_side_error_m3": -0.04461240063631067,
+    "network_side_error_m3": -3.385130788189514,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 462.92247336236824,
+      "final_storage": 1537.0776590462553,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 422.64730508582113,
+      "routing_error": -0.7030501935173072,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 2,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 67
+    },
+    "max_depth_m": 0.14812852777882313,
+    "max_depth_at_end_m": 0.10101357318399096,
+    "flooded_area_m2_gt_5cm": 608.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.00829126186443318,
+        "J1": {
+          "mean_m3s": 0.0200047626027177,
+          "std_m3s": 5.498267946265568e-06,
+          "min_m3s": 0.019997196513497874,
+          "max_m3s": 0.020013772395919446,
+          "sign_flips": 0,
+          "drift_m3s": 4.880356092609034e-06
+        },
+        "J2": {
+          "mean_m3s": 0.01325925256874343,
+          "std_m3s": 1.739715125540337e-05,
+          "min_m3s": 0.013228435932140346,
+          "max_m3s": 0.013282928539356169,
+          "sign_flips": 0,
+          "drift_m3s": 1.5145504937702156e-05
+        },
+        "J3": {
+          "mean_m3s": 0.00816006167292919,
+          "std_m3s": 1.580309175884968e-05,
+          "min_m3s": 0.008126681941072784,
+          "max_m3s": 0.008185329623489482,
+          "sign_flips": 0,
+          "drift_m3s": 1.3228597219437643e-05
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.025352306915519877,
+        "J1": {
+          "mean_m3s": 0.030625303278697207,
+          "std_m3s": 5.818714629072622e-07,
+          "min_m3s": 0.03062413913289534,
+          "max_m3s": 0.03062711540119802,
+          "sign_flips": 0,
+          "drift_m3s": -3.554601313258965e-07
+        },
+        "J2": {
+          "mean_m3s": 0.025520036551473824,
+          "std_m3s": 2.6132111459402056e-06,
+          "min_m3s": 0.025516075292493435,
+          "max_m3s": 0.025524234617993743,
+          "sign_flips": 0,
+          "drift_m3s": 2.322451757859334e-06
+        },
+        "J3": {
+          "mean_m3s": 0.018021141044813904,
+          "std_m3s": 2.5105758764384647e-05,
+          "min_m3s": 0.017987145745898162,
+          "max_m3s": 0.018079248022618476,
+          "sign_flips": 0,
+          "drift_m3s": 2.0561968160272975e-05
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.41044529723085965,
+        "J1": {
+          "mean_m3s": 0.03440270500501036,
+          "std_m3s": 8.624085973898117e-07,
+          "min_m3s": 0.03440069301818391,
+          "max_m3s": 0.034405016076645416,
+          "sign_flips": 0,
+          "drift_m3s": 5.134465901335261e-07
+        },
+        "J2": {
+          "mean_m3s": 0.029010754914667345,
+          "std_m3s": 4.838198737310262e-07,
+          "min_m3s": 0.029008996981004745,
+          "max_m3s": 0.02901192527615128,
+          "sign_flips": 0,
+          "drift_m3s": 1.9358254736007163e-07
+        },
+        "J3": {
+          "mean_m3s": -0.32393403514739577,
+          "std_m3s": 4.833545481921894e-07,
+          "min_m3s": -0.3239348838486027,
+          "max_m3s": -0.3239326744292784,
+          "sign_flips": 0,
+          "drift_m3s": -2.074360542780873e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:46"
+  },
+  "Q3_rec": {
+    "scenario": "Q3_rec",
+    "description": "Inflow, backwater, recommended scheme",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.48914246799995453,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 394.5549000981405,
+    "surface_final_m3": 67.25275143220347,
+    "network_final_m3": 43.53003928714717,
+    "outfall_net_m3": -146.41287233546092,
+    "exchanged_total_m3": -106.26303874223088,
+    "exchanged_per_node_m3": {
+      "J1": 96.95228563757803,
+      "J2": 74.65095323238724,
+      "J3": -277.86627761219614
+    },
+    "mass_error_m3": -3.4248184820302185,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 256.64697573174504,
+    "mass_error_pct_of_inflow": -0.5594765012007578,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.014444235343615094,
+    "surface_side_error_m3": -0.04461278811305647,
+    "network_side_error_m3": -3.3802056939171337,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 456.4720064146688,
+      "final_storage": 1537.077658444462,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 416.1919127835184,
+      "routing_error": -0.7119060756563877,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 9
+    },
+    "max_depth_m": 0.132529556923366,
+    "max_depth_at_end_m": 0.10101321918136819,
+    "flooded_area_m2_gt_5cm": 604.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.008293728876469685,
+        "J1": {
+          "mean_m3s": 0.02000454533923539,
+          "std_m3s": 5.457952577915359e-06,
+          "min_m3s": 0.019997213761796074,
+          "max_m3s": 0.02001379044968515,
+          "sign_flips": 0,
+          "drift_m3s": 4.836101951885552e-06
+        },
+        "J2": {
+          "mean_m3s": 0.013258809251525741,
+          "std_m3s": 1.789392736492943e-05,
+          "min_m3s": 0.013227748697300134,
+          "max_m3s": 0.013283732281576126,
+          "sign_flips": 0,
+          "drift_m3s": 1.5499477534524492e-05
+        },
+        "J3": {
+          "mean_m3s": 0.008159721307318657,
+          "std_m3s": 1.5747706103562004e-05,
+          "min_m3s": 0.008126266352321828,
+          "max_m3s": 0.008186244160856471,
+          "sign_flips": 0,
+          "drift_m3s": 1.3142471645813392e-05
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.02535389386497627,
+        "J1": {
+          "mean_m3s": 0.03062531868658259,
+          "std_m3s": 5.269546962617613e-07,
+          "min_m3s": 0.030624465310390165,
+          "max_m3s": 0.030626668757765794,
+          "sign_flips": 0,
+          "drift_m3s": -3.721115271887454e-07
+        },
+        "J2": {
+          "mean_m3s": 0.025519925507981496,
+          "std_m3s": 2.6098870170295674e-06,
+          "min_m3s": 0.025516282708707164,
+          "max_m3s": 0.02552409545914496,
+          "sign_flips": 0,
+          "drift_m3s": 2.315473643186433e-06
+        },
+        "J3": {
+          "mean_m3s": 0.018020142320844902,
+          "std_m3s": 2.4352448074013233e-05,
+          "min_m3s": 0.017986882161429893,
+          "max_m3s": 0.01806805156536027,
+          "sign_flips": 0,
+          "drift_m3s": 2.0071954843610407e-05
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.4104437328034146,
+        "J1": {
+          "mean_m3s": 0.0344027912474676,
+          "std_m3s": 1.0551908036329092e-06,
+          "min_m3s": 0.0344012268412884,
+          "max_m3s": 0.03440492286933902,
+          "sign_flips": 0,
+          "drift_m3s": 6.878913472660453e-07
+        },
+        "J2": {
+          "mean_m3s": 0.029010547928394973,
+          "std_m3s": 1.0511081799327372e-05,
+          "min_m3s": 0.028984699051768696,
+          "max_m3s": 0.02903447089190151,
+          "sign_flips": 0,
+          "drift_m3s": -2.4807997101028434e-08
+        },
+        "J3": {
+          "mean_m3s": -0.32393409848877835,
+          "std_m3s": 6.06400088816833e-06,
+          "min_m3s": -0.323948523030628,
+          "max_m3s": -0.32391822709279733,
+          "sign_flips": 0,
+          "drift_m3s": -1.6378850209441964e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:47"
+  },
+  "Q2_rec_rs05": {
+    "scenario": "Q2_rec_rs05",
+    "description": "Q2_rec with SWMM routing step 0.5 s",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.58410778400048,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 191.10945807027247,
+    "surface_final_m3": 45.2317896580584,
+    "network_final_m3": 8.511285064167414,
+    "outfall_net_m3": 105.73913234507702,
+    "exchanged_total_m3": 119.20336490461665,
+    "exchanged_per_node_m3": {
+      "J1": 96.95231311855977,
+      "J2": 75.6154461447211,
+      "J3": -53.364394358664235
+    },
+    "mass_error_m3": 4.908334862424709,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": 1.380684912074461,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.005128915605259302,
+    "surface_side_error_m3": -0.04461263294751916,
+    "network_side_error_m3": 4.952947495372214,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 176.89788338394396,
+      "final_storage": 300.5397268420696,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 163.442221407998,
+      "routing_error": 2.7951129530386365,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 103
+    },
+    "max_depth_m": 0.07464061977498204,
+    "max_depth_at_end_m": 0.060746602347080625,
+    "flooded_area_m2_gt_5cm": 384.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.012846382524118478,
+        "J1": {
+          "mean_m3s": 0.02000454533923539,
+          "std_m3s": 5.457952577915359e-06,
+          "min_m3s": 0.019997213761796074,
+          "max_m3s": 0.02001379044968515,
+          "sign_flips": 0,
+          "drift_m3s": 4.836101951885552e-06
+        },
+        "J2": {
+          "mean_m3s": 0.013258810151522568,
+          "std_m3s": 1.7895013015761934e-05,
+          "min_m3s": 0.013227748697300134,
+          "max_m3s": 0.013283733515352275,
+          "sign_flips": 0,
+          "drift_m3s": 1.5500377531344617e-05
+        },
+        "J3": {
+          "mean_m3s": 0.001225222631661263,
+          "std_m3s": 0.002271318497666577,
+          "min_m3s": -0.001963801150703228,
+          "max_m3s": 0.00813062467442968,
+          "sign_flips": 72,
+          "drift_m3s": -0.0007217315192633703
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.06540003582898256,
+        "J1": {
+          "mean_m3s": 0.030625315169355214,
+          "std_m3s": 5.226002306825787e-07,
+          "min_m3s": 0.03062442845313697,
+          "max_m3s": 0.030626712885826905,
+          "sign_flips": 0,
+          "drift_m3s": -3.5904559789884383e-07
+        },
+        "J2": {
+          "mean_m3s": 0.025519925994671528,
+          "std_m3s": 2.6108990254818915e-06,
+          "min_m3s": 0.02551631997971569,
+          "max_m3s": 0.02552413206375223,
+          "sign_flips": 0,
+          "drift_m3s": 2.3188278558267106e-06
+        },
+        "J3": {
+          "mean_m3s": -0.022000676866895462,
+          "std_m3s": 1.952130901457049e-06,
+          "min_m3s": -0.022005446093205008,
+          "max_m3s": -0.021994288605501323,
+          "sign_flips": 0,
+          "drift_m3s": -1.2221504580717246e-06
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.11566794001637996,
+        "J1": {
+          "mean_m3s": 0.03440276932477322,
+          "std_m3s": 1.0184298436592428e-06,
+          "min_m3s": 0.034401100078253276,
+          "max_m3s": 0.03440471512720808,
+          "sign_flips": 0,
+          "drift_m3s": 7.174777425303369e-07
+        },
+        "J2": {
+          "mean_m3s": 0.030181537972185098,
+          "std_m3s": 5.27916980770135e-07,
+          "min_m3s": 0.030180067086879866,
+          "max_m3s": 0.03018246568352625,
+          "sign_flips": 0,
+          "drift_m3s": -1.711492959091676e-07
+        },
+        "J3": {
+          "mean_m3s": -0.030309152148076363,
+          "std_m3s": 6.589423088592269e-07,
+          "min_m3s": -0.030310903812585017,
+          "max_m3s": -0.030308247967401083,
+          "sign_flips": 0,
+          "drift_m3s": -4.0741872169361426e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:48"
+  },
+  "Q2_rec_rs025": {
+    "scenario": "Q2_rec_rs025",
+    "description": "Q2_rec with SWMM routing step 0.25 s",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5924240510003074,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 191.10766677481433,
+    "surface_final_m3": 45.231871455986806,
+    "network_final_m3": 8.511285423896881,
+    "outfall_net_m3": 105.74468404523937,
+    "exchanged_total_m3": 119.20507384448572,
+    "exchanged_per_node_m3": {
+      "J1": 96.95233980508164,
+      "J2": 75.61540624268245,
+      "J3": -53.36267220327837
+    },
+    "mass_error_m3": 4.9044923000626,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 0.0,
+    "mass_error_pct_of_inflow": 1.3796040225211252,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.0012544063106055808,
+    "surface_side_error_m3": -0.04461207528689215,
+    "network_side_error_m3": 4.949104375349478,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 176.8223061428843,
+      "final_storage": 300.53973954438135,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.00431337214166017,
+      "outflow": 163.36620346672825,
+      "routing_error": 2.79655666680253,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 0,
+      "J3": 7
+    },
+    "max_depth_m": 0.07464060487382085,
+    "max_depth_at_end_m": 0.060746478236978874,
+    "flooded_area_m2_gt_5cm": 384.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.012839700499625906,
+        "J1": {
+          "mean_m3s": 0.02000454533923539,
+          "std_m3s": 5.457952577915359e-06,
+          "min_m3s": 0.019997213761796074,
+          "max_m3s": 0.02001379044968515,
+          "sign_flips": 0,
+          "drift_m3s": 4.836101951885552e-06
+        },
+        "J2": {
+          "mean_m3s": 0.013258810151522568,
+          "std_m3s": 1.7895013015761934e-05,
+          "min_m3s": 0.013227748697300134,
+          "max_m3s": 0.013283733515352275,
+          "sign_flips": 0,
+          "drift_m3s": 1.5500377531344617e-05
+        },
+        "J3": {
+          "mean_m3s": 0.0012339864571042389,
+          "std_m3s": 0.002081916589405362,
+          "min_m3s": -0.0008973348128683703,
+          "max_m3s": 0.008130594223949392,
+          "sign_flips": 6,
+          "drift_m3s": -0.0007253492588885944
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.06540004140119587,
+        "J1": {
+          "mean_m3s": 0.03062532338216363,
+          "std_m3s": 5.344765078580592e-07,
+          "min_m3s": 0.03062438166612519,
+          "max_m3s": 0.030626704506827723,
+          "sign_flips": 0,
+          "drift_m3s": -3.7450230551058783e-07
+        },
+        "J2": {
+          "mean_m3s": 0.02551992255941837,
+          "std_m3s": 2.613943740442905e-06,
+          "min_m3s": 0.025516322207355887,
+          "max_m3s": 0.025524124150971737,
+          "sign_flips": 0,
+          "drift_m3s": 2.318831180701808e-06
+        },
+        "J3": {
+          "mean_m3s": -0.022000685490989186,
+          "std_m3s": 1.8962735920580633e-06,
+          "min_m3s": -0.022005505175463725,
+          "max_m3s": -0.021994884453848396,
+          "sign_flips": 0,
+          "drift_m3s": -1.2067699060210046e-06
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.11566658431804172,
+        "J1": {
+          "mean_m3s": 0.034402924596213205,
+          "std_m3s": 1.0098175526920443e-06,
+          "min_m3s": 0.03440111256331379,
+          "max_m3s": 0.034404834739709796,
+          "sign_flips": 0,
+          "drift_m3s": 7.271434350544781e-07
+        },
+        "J2": {
+          "mean_m3s": 0.03018142696423729,
+          "std_m3s": 4.968824158989366e-07,
+          "min_m3s": 0.030180583903967773,
+          "max_m3s": 0.03018289247037108,
+          "sign_flips": 0,
+          "drift_m3s": -1.196284785294488e-07
+        },
+        "J3": {
+          "mean_m3s": -0.030309108186901954,
+          "std_m3s": 8.031831065516518e-07,
+          "min_m3s": -0.03031109025619526,
+          "max_m3s": -0.030308107134963853,
+          "sign_flips": 0,
+          "drift_m3s": -4.88716155339769e-07
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:49"
+  },
+  "S3_slot_w03": {
+    "scenario": "S3_slot_w03",
+    "description": "S3 + slot + under-relaxation w = 0.3",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5109918030002518,
+    "forcing": "rain",
+    "rain_m3": 168.07,
+    "surface_inflow_m3": 0.0,
+    "downstream_outflow_m3": 0.0,
+    "surface_final_m3": 341.3191000760988,
+    "network_final_m3": 43.50680448521413,
+    "outfall_net_m3": -213.65916705662565,
+    "exchanged_total_m3": -173.28410049489187,
+    "exchanged_per_node_m3": {
+      "J1": 17.766032206259997,
+      "J2": 13.595840478040317,
+      "J3": -204.6459731791922
+    },
+    "mass_error_m3": -3.096737504687269,
+    "mass_error_pct_of_rain": -1.8425284135701012,
+    "outfall_gross_inflow_m3": 308.3247058036918,
+    "mass_error_pct_of_inflow": -0.6500360870851791,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.1458195124563765,
+    "surface_side_error_m3": 0.03500041879308924,
+    "network_side_error_m3": -3.131737923480358,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 405.5105759698863,
+      "final_storage": 1536.2572205230979,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 365.0184332515068,
+      "routing_error": -0.7433512576732193,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 0.02316101272059318,
+      "max": 0.499750726736238,
+      "p95": 0.23048247329061033
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 195,
+      "J3": 21
+    },
+    "max_depth_m": 0.4590206761803639,
+    "max_depth_at_end_m": 0.4590206761803639,
+    "flooded_area_m2_gt_5cm": 1712.0,
+    "steady_states": [],
+    "finished_at": "2026-10-20T18:46:49"
+  },
+  "S1_v1": {
+    "scenario": "S1_v1",
+    "description": "Coupled, free-flowing network [legacy exchange law v1]",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.5748714629999085,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -127,129 +2305,13 @@
     "max_depth_at_end_m": 0.3020239952840367,
     "flooded_area_m2_gt_5cm": 688.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:06"
+    "finished_at": "2026-10-20T18:46:50"
   },
-  "S2": {
-    "scenario": "S2",
-    "description": "Coupled, surcharged network",
+  "S2_slot_v1": {
+    "scenario": "S2_slot_v1",
+    "description": "S2 + SWMM slot method [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 2.3439612739998665,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 24450.18987440233,
-    "network_final_m3": 7.935368543321158,
-    "outfall_net_m3": 273.81601477960396,
-    "exchanged_total_m3": -24141.812777547355,
-    "exchanged_per_node_m3": {
-      "J1": -8115.49699864066,
-      "J2": -8046.432283795314,
-      "J3": -7979.88349511138
-    },
-    "mass_error_m3": -24563.871257725255,
-    "mass_error_pct_of_rain": -14615.26224651946,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": -14615.26224651946,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 7.591436559262759,
-    "surface_side_error_m3": -140.3070968549764,
-    "network_side_error_m3": -24423.56416087028,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 968.5342343801534,
-      "final_storage": 280.2036915014533,
-      "flooding": 44.05685953947005,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 25385.62655317455,
-      "routing_error": -2526.4033495173153,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 0.11008563093827337,
-      "max": 0.45970394543456905,
-      "p95": 0.2702051737074271
-    },
-    "capped_steps": 1,
-    "sign_flips": {
-      "J1": 1028,
-      "J2": 1018,
-      "J3": 1080
-    },
-    "max_depth_m": 3.8338483253416253,
-    "max_depth_at_end_m": 3.8338483253416253,
-    "flooded_area_m2_gt_5cm": 8400.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:08"
-  },
-  "S3": {
-    "scenario": "S3",
-    "description": "Coupled, backwater from the outfall",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.9169629399998485,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 1568.1323207440125,
-    "network_final_m3": 42.13301621206719,
-    "outfall_net_m3": 519.4236563890531,
-    "exchanged_total_m3": -1338.4792685407167,
-    "exchanged_per_node_m3": {
-      "J1": -473.46112732373143,
-      "J2": -474.3398591689522,
-      "J3": -390.678282048033
-    },
-    "mass_error_m3": -1961.6189933451328,
-    "mass_error_pct_of_rain": -1167.144043163642,
-    "outfall_gross_inflow_m3": 33.085479611205336,
-    "mass_error_pct_of_inflow": -975.1755195217964,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 3.1942034541392905,
-    "surface_side_error_m3": -61.58305220329589,
-    "network_side_error_m3": -1900.035941141837,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 395.842927510574,
-      "final_storage": 1487.7477476012425,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.010297758142143898,
-      "outflow": 2251.0281661995296,
-      "routing_error": -479.31046220162557,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 0.0708963770666338,
-      "max": 0.4797425501710677,
-      "p95": 0.3227735765940451
-    },
-    "capped_steps": 3,
-    "sign_flips": {
-      "J1": 565,
-      "J2": 725,
-      "J3": 817
-    },
-    "max_depth_m": 0.8259990803994466,
-    "max_depth_at_end_m": 0.8259990803994466,
-    "flooded_area_m2_gt_5cm": 4944.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:09"
-  },
-  "S2_slot": {
-    "scenario": "S2_slot",
-    "description": "S2 + SWMM slot method",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.8091454999998859,
+    "wall_time_s": 0.6334853270000167,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -301,13 +2363,13 @@
     "max_depth_at_end_m": 0.31396674792100576,
     "flooded_area_m2_gt_5cm": 748.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:10"
+    "finished_at": "2026-10-20T18:46:51"
   },
-  "S3_slot": {
-    "scenario": "S3_slot",
-    "description": "S3 + SWMM slot method",
+  "S3_slot_v1": {
+    "scenario": "S3_slot_v1",
+    "description": "S3 + SWMM slot method [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.8734448659997724,
+    "wall_time_s": 0.6519893459999366,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -359,129 +2421,13 @@
     "max_depth_at_end_m": 0.44838482101395094,
     "flooded_area_m2_gt_5cm": 1612.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:12"
+    "finished_at": "2026-10-20T18:46:52"
   },
-  "S2_slot_lim": {
-    "scenario": "S2_slot_lim",
-    "description": "S2 + slot + equalisation limiter",
+  "S2_rec_dt1_v1": {
+    "scenario": "S2_rec_dt1_v1",
+    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 1 s [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.5710214999999152,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 72.58085995304046,
-    "network_final_m3": 3.461229992925803,
-    "outfall_net_m3": 92.09027337640471,
-    "exchanged_total_m3": 95.45414079162722,
-    "exchanged_per_node_m3": {
-      "J1": 13.830748738950998,
-      "J2": 20.64300175541332,
-      "J3": 60.9803902972629
-    },
-    "mass_error_m3": -0.06236332237098452,
-    "mass_error_pct_of_rain": -0.037105564568920404,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": -0.037105564568920404,
-    "limited_steps": 1237,
-    "max_abs_dq_m3s": 0.04665036132968732,
-    "surface_side_error_m3": 0.034999255332309076,
-    "network_side_error_m3": -0.0973625777032936,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 95.45012934016506,
-      "final_storage": 122.21857319653257,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 92.09027337640431,
-      "routing_error": -0.10607816415386662,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000480492872e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 0,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 0,
-      "J3": 0
-    },
-    "max_depth_m": 0.31418693818901566,
-    "max_depth_at_end_m": 0.31418693818901566,
-    "flooded_area_m2_gt_5cm": 748.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:12"
-  },
-  "S3_slot_lim": {
-    "scenario": "S3_slot_lim",
-    "description": "S3 + slot + equalisation limiter",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.6815591330000643,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 198.44488437306433,
-    "network_final_m3": 43.57696791615377,
-    "outfall_net_m3": -71.11355724539285,
-    "exchanged_total_m3": -30.409884103428567,
-    "exchanged_per_node_m3": {
-      "J1": 13.83074902807677,
-      "J2": -0.03247886011182505,
-      "J3": -44.20815427139351
-    },
-    "mass_error_m3": -2.838295043825241,
-    "mass_error_pct_of_rain": -1.6887576865741898,
-    "outfall_gross_inflow_m3": 158.63461254694874,
-    "mass_error_pct_of_inflow": -0.86876491326469,
-    "limited_steps": 1964,
-    "max_abs_dq_m3s": 0.008032073011664226,
-    "surface_side_error_m3": 0.03499973036423398,
-    "network_side_error_m3": -2.8732947741894748,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 248.42003056003466,
-      "final_storage": 1538.7347428020398,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.010297758142143898,
-      "outflow": 207.65943241970652,
-      "routing_error": -1.1335941111662917,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000480492872e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 0,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 1,
-      "J3": 5
-    },
-    "max_depth_m": 0.3790057968236962,
-    "max_depth_at_end_m": 0.3790057968236962,
-    "flooded_area_m2_gt_5cm": 1100.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:13"
-  },
-  "S2_rec_dt1": {
-    "scenario": "S2_rec_dt1",
-    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 1 s",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7337812420000773,
+    "wall_time_s": 0.5848257100005867,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -533,129 +2479,13 @@
     "max_depth_at_end_m": 0.31414366763252666,
     "flooded_area_m2_gt_5cm": 748.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:14"
+    "finished_at": "2026-10-20T18:46:53"
   },
-  "S2_rec_dt5": {
-    "scenario": "S2_rec_dt5",
-    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 5 s",
-    "exchange_interval_s": 5.0,
-    "wall_time_s": 0.5240092909998566,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 72.55885489322966,
-    "network_final_m3": 3.60517532192057,
-    "outfall_net_m3": 91.94851754656327,
-    "exchanged_total_m3": 95.47614582427808,
-    "exchanged_per_node_m3": {
-      "J1": 13.831709432780361,
-      "J2": 20.614111372377145,
-      "J3": 61.03032501912057
-    },
-    "mass_error_m3": -0.04254776171350727,
-    "mass_error_pct_of_rain": -0.02531550051377835,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": -0.02531550051377835,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.01709901160381183,
-    "surface_side_error_m3": 0.03499928249225093,
-    "network_side_error_m3": -0.0775470442057582,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 96.54295109749914,
-      "final_storage": 127.30138848589584,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 93.01929540521019,
-      "routing_error": -0.08431208184136452,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000481598161e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 149,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 0,
-      "J3": 60
-    },
-    "max_depth_m": 0.31484018568349903,
-    "max_depth_at_end_m": 0.31484018568349903,
-    "flooded_area_m2_gt_5cm": 748.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:15"
-  },
-  "S2_rec_dt30": {
-    "scenario": "S2_rec_dt30",
-    "description": "S2 + slot + under-relaxation w = 0.1, exchange every 30 s",
-    "exchange_interval_s": 30.0,
-    "wall_time_s": 0.42398891499988167,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 121.19900357706842,
-    "network_final_m3": 1.4013751950058557,
-    "outfall_net_m3": 45.79164911302135,
-    "exchanged_total_m3": 46.8359983012252,
-    "exchanged_per_node_m3": {
-      "J1": 4.993898792760761,
-      "J2": 7.2138780882947895,
-      "J3": 34.62822142016965
-    },
-    "mass_error_m3": -0.3220278850956362,
-    "mass_error_pct_of_rain": -0.19160343017530565,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": -0.19160343017530565,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.0013954273994844172,
-    "surface_side_error_m3": 0.03499812170636574,
-    "network_side_error_m3": -0.3570260068020019,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 46.83091314158744,
-      "final_storage": 49.48358739427456,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 45.79164911302108,
-      "routing_error": -0.7729682024970153,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000484756129e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 252,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 0,
-      "J3": 0
-    },
-    "max_depth_m": 0.3386005370795484,
-    "max_depth_at_end_m": 0.3386005370795484,
-    "flooded_area_m2_gt_5cm": 908.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:16"
-  },
-  "S3_rec_dt1": {
-    "scenario": "S3_rec_dt1",
-    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 1 s",
+  "S3_rec_dt1_v1": {
+    "scenario": "S3_rec_dt1_v1",
+    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 1 s [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.9020917000002555,
+    "wall_time_s": 0.615793826999834,
     "forcing": "rain",
     "rain_m3": 168.07,
     "surface_inflow_m3": 0.0,
@@ -707,181 +2537,13 @@
     "max_depth_at_end_m": 0.44771684613605167,
     "flooded_area_m2_gt_5cm": 1604.0,
     "steady_states": [],
-    "finished_at": "2026-10-20T18:09:17"
+    "finished_at": "2026-10-20T18:46:53"
   },
-  "S3_rec_dt5": {
-    "scenario": "S3_rec_dt5",
-    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 5 s",
-    "exchange_interval_s": 5.0,
-    "wall_time_s": 0.6934403539999039,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 303.82417905847757,
-    "network_final_m3": 43.501604114930075,
-    "outfall_net_m3": -176.16852044611002,
-    "exchanged_total_m3": -135.78917900606822,
-    "exchanged_per_node_m3": {
-      "J1": 13.8317083653835,
-      "J2": -10.695174620934937,
-      "J3": -138.9257127505168
-    },
-    "mass_error_m3": -3.0872627272976274,
-    "mass_error_pct_of_rain": -1.8368910140403567,
-    "outfall_gross_inflow_m3": 262.13005799839436,
-    "mass_error_pct_of_inflow": -0.7176341959742716,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.04167923243557306,
-    "surface_side_error_m3": 0.03499994759064862,
-    "network_side_error_m3": -3.122262674888276,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 351.10925887902033,
-      "final_storage": 1536.0735916288866,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.010297758142143898,
-      "outflow": 310.62561145625637,
-      "routing_error": -0.8594653877284308,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 0.01563107518672461,
-      "max": 0.4993011587030196,
-      "p95": 0.04779618165557603
-    },
-    "capped_steps": 175,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 9,
-      "J3": 1
-    },
-    "max_depth_m": 0.43991550552991576,
-    "max_depth_at_end_m": 0.43991550552991576,
-    "flooded_area_m2_gt_5cm": 1576.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:18"
-  },
-  "S3_rec_dt30": {
-    "scenario": "S3_rec_dt30",
-    "description": "S3 + slot + under-relaxation w = 0.1, exchange every 30 s",
-    "exchange_interval_s": 30.0,
-    "wall_time_s": 1.0518973569996888,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 326.1982770656819,
-    "network_final_m3": 43.68552446938272,
-    "outfall_net_m3": -199.41673905204982,
-    "exchanged_total_m3": -158.16327474157117,
-    "exchanged_per_node_m3": {
-      "J1": -1.5240878514938867,
-      "J2": -73.12944374367642,
-      "J3": -83.50974314640088
-    },
-    "mass_error_m3": -2.397062483014821,
-    "mass_error_pct_of_rain": -1.4262286446211823,
-    "outfall_gross_inflow_m3": 236.6508953202794,
-    "mass_error_pct_of_inflow": -0.592275444814354,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.03936261706133372,
-    "surface_side_error_m3": 0.03499767588925806,
-    "network_side_error_m3": -2.432060158904079,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 272.8033569532578,
-      "final_storage": 1542.5679544273557,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.010297758142143898,
-      "outflow": 231.45849370094518,
-      "routing_error": -0.8578952652180893,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 0.023345835573006467,
-      "max": 0.4932165973550582,
-      "p95": 0.22633028111522432
-    },
-    "capped_steps": 211,
-    "sign_flips": {
-      "J1": 2,
-      "J2": 1,
-      "J3": 3
-    },
-    "max_depth_m": 0.4505745394634797,
-    "max_depth_at_end_m": 0.4505745394634797,
-    "flooded_area_m2_gt_5cm": 1680.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:19"
-  },
-  "Q0": {
-    "scenario": "Q0",
-    "description": "Inflow, no network",
+  "Q1_rec_v1": {
+    "scenario": "Q1_rec_v1",
+    "description": "Inflow, free-flowing network, recommended scheme [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7225742209998316,
-    "forcing": "inflow",
-    "rain_m3": 0.0,
-    "surface_inflow_m3": 355.5,
-    "downstream_outflow_m3": 301.8548412253954,
-    "surface_final_m3": 53.689768920166415,
-    "network_final_m3": 0.0,
-    "outfall_net_m3": 0.0,
-    "exchanged_total_m3": 0,
-    "exchanged_per_node_m3": {},
-    "mass_error_m3": -0.04461014556181908,
-    "mass_error_pct_of_rain": NaN,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": -0.012548564152410431,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.0,
-    "surface_side_error_m3": -0.04461014556181908,
-    "network_side_error_m3": 0.0,
-    "swmm_routing_stats": {},
-    "overshoot_s": {
-      "mean": 5.000000480492872e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 0,
-    "sign_flips": {},
-    "max_depth_m": 0.07464058397727058,
-    "max_depth_at_end_m": 0.06740137114195477,
-    "flooded_area_m2_gt_5cm": 400.0,
-    "steady_states": [
-      {
-        "t_end_s": 1200.0,
-        "inflow_m3s": 0.05,
-        "outflow_m3s": 0.047795941523609144
-      },
-      {
-        "t_end_s": 2400.0,
-        "inflow_m3s": 0.1,
-        "outflow_m3s": 0.09992617194695413
-      },
-      {
-        "t_end_s": 3600.0,
-        "inflow_m3s": 0.15,
-        "outflow_m3s": 0.14994285315041755
-      }
-    ],
-    "finished_at": "2026-10-20T18:09:20"
-  },
-  "Q1_rec": {
-    "scenario": "Q1_rec",
-    "description": "Inflow, free-flowing network, recommended scheme",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7285532289997718,
+    "wall_time_s": 0.494501881999895,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -1021,159 +2683,13 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:09:21"
+    "finished_at": "2026-10-20T18:46:54"
   },
-  "Q2_naive": {
-    "scenario": "Q2_naive",
-    "description": "Inflow, surcharged network, naive (EXTRAN)",
+  "Q2_slot_v1": {
+    "scenario": "Q2_slot_v1",
+    "description": "Inflow, surcharged network, slot only [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 1.5852280260000953,
-    "forcing": "inflow",
-    "rain_m3": 0.0,
-    "surface_inflow_m3": 355.5,
-    "downstream_outflow_m3": 15054.41460380772,
-    "surface_final_m3": 604.8043929872963,
-    "network_final_m3": 7.935194727291361,
-    "outfall_net_m3": 190.1034773978445,
-    "exchanged_total_m3": -15143.466645074679,
-    "exchanged_per_node_m3": {
-      "J1": -4900.176955508013,
-      "J2": -5085.926855651306,
-      "J3": -5157.36283391536
-    },
-    "mass_error_m3": -15501.757668920152,
-    "mass_error_pct_of_rain": NaN,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": -4360.550680427609,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 7.039434929405807,
-    "surface_side_error_m3": -160.25235172033717,
-    "network_side_error_m3": -15341.505317199815,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 356.2208203741118,
-      "final_storage": 280.1975539297797,
-      "flooding": 0.4645431875453655,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 15685.606417129915,
-      "routing_error": -4305.694410787046,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 0.1655928826144454,
-      "max": 0.4984456681377196,
-      "p95": 0.40307280353349595
-    },
-    "capped_steps": 5,
-    "sign_flips": {
-      "J1": 903,
-      "J2": 971,
-      "J3": 1077
-    },
-    "max_depth_m": 0.936805009841919,
-    "max_depth_at_end_m": 0.4700715261474926,
-    "flooded_area_m2_gt_5cm": 4304.0,
-    "steady_states": [
-      {
-        "t_end_s": 1200.0,
-        "inflow_m3s": 0.05,
-        "outflow_m3s": 5.268437304427331,
-        "J1": {
-          "mean_m3s": -1.761932151997201,
-          "std_m3s": 1.601232497954016,
-          "min_m3s": -6.645769591629178,
-          "max_m3s": 0.3613866276837682,
-          "sign_flips": 77,
-          "drift_m3s": 0.019686460386336924
-        },
-        "J2": {
-          "mean_m3s": -1.8202219030780744,
-          "std_m3s": 1.6327000386550963,
-          "min_m3s": -6.642361475544544,
-          "max_m3s": 0.35187350982110216,
-          "sign_flips": 99,
-          "drift_m3s": 0.028586778209386265
-        },
-        "J3": {
-          "mean_m3s": -1.8213061362467526,
-          "std_m3s": 1.6797286035454453,
-          "min_m3s": -6.638678010138565,
-          "max_m3s": 0.3802318432379919,
-          "sign_flips": 107,
-          "drift_m3s": 0.04546255867841453
-        }
-      },
-      {
-        "t_end_s": 2400.0,
-        "inflow_m3s": 0.1,
-        "outflow_m3s": 5.029972475162787,
-        "J1": {
-          "mean_m3s": -1.4908202058502615,
-          "std_m3s": 1.3852280162543331,
-          "min_m3s": -6.644039359170388,
-          "max_m3s": 0.34231017041716605,
-          "sign_flips": 86,
-          "drift_m3s": 0.19828916376877115
-        },
-        "J2": {
-          "mean_m3s": -1.6467443065712617,
-          "std_m3s": 1.4704618880393765,
-          "min_m3s": -6.63897829927855,
-          "max_m3s": 0.36851882924796936,
-          "sign_flips": 98,
-          "drift_m3s": 0.09299901101155217
-        },
-        "J3": {
-          "mean_m3s": -1.7159440983042324,
-          "std_m3s": 1.5533691218395222,
-          "min_m3s": -6.576453870459116,
-          "max_m3s": 0.398230810882565,
-          "sign_flips": 110,
-          "drift_m3s": 0.058852176392077515
-        }
-      },
-      {
-        "t_end_s": 3600.0,
-        "inflow_m3s": 0.15,
-        "outflow_m3s": 5.3909919735093474,
-        "J1": {
-          "mean_m3s": -1.6586332990886972,
-          "std_m3s": 1.5289381487746312,
-          "min_m3s": -6.644067293924382,
-          "max_m3s": 0.34565224038918185,
-          "sign_flips": 94,
-          "drift_m3s": -0.23404643033173067
-        },
-        "J2": {
-          "mean_m3s": -1.7636822011883277,
-          "std_m3s": 1.5911655682234833,
-          "min_m3s": -6.642348118941391,
-          "max_m3s": 0.3713231438022248,
-          "sign_flips": 103,
-          "drift_m3s": -0.2103499709448977
-        },
-        "J3": {
-          "mean_m3s": -1.830130056805793,
-          "std_m3s": 1.6576512067582725,
-          "min_m3s": -6.638780188344972,
-          "max_m3s": 0.38112425571512304,
-          "sign_flips": 107,
-          "drift_m3s": -0.15249170060359885
-        }
-      }
-    ],
-    "finished_at": "2026-10-20T18:09:23"
-  },
-  "Q2_slot": {
-    "scenario": "Q2_slot",
-    "description": "Inflow, surcharged network, slot only",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7764370300001247,
+    "wall_time_s": 0.4327468350002164,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -1313,13 +2829,13 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:09:24"
+    "finished_at": "2026-10-20T18:46:55"
   },
-  "Q2_rec": {
-    "scenario": "Q2_rec",
-    "description": "Inflow, surcharged network, recommended scheme",
+  "Q2_rec_v1": {
+    "scenario": "Q2_rec_v1",
+    "description": "Inflow, surcharged network, recommended scheme [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.6931835699997464,
+    "wall_time_s": 0.537520011000197,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -1459,597 +2975,13 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:09:25"
+    "finished_at": "2026-10-20T18:46:56"
   },
-  "Q2_rec_dt5": {
-    "scenario": "Q2_rec_dt5",
-    "description": "Q2_rec with exchange every 5 s",
-    "exchange_interval_s": 5.0,
-    "wall_time_s": 0.5041102269997282,
-    "forcing": "inflow",
-    "rain_m3": 0.0,
-    "surface_inflow_m3": 355.5,
-    "downstream_outflow_m3": 193.29957545541487,
-    "surface_final_m3": 47.09863092655218,
-    "network_final_m3": 8.499458243979246,
-    "outfall_net_m3": 101.79967487339233,
-    "exchanged_total_m3": 115.1464053756422,
-    "exchanged_per_node_m3": {
-      "J1": 79.31506183485808,
-      "J2": 64.90495510491188,
-      "J3": -29.073611564127756
-    },
-    "mass_error_m3": 4.802660500661375,
-    "mass_error_pct_of_rain": NaN,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": 1.3509593532099509,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.010695973069984304,
-    "surface_side_error_m3": -0.04461175760923197,
-    "network_side_error_m3": 4.847272258270621,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 152.2088462399976,
-      "final_storage": 300.12211313486034,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 138.87692397633816,
-      "routing_error": 3.1749680885082565,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000481598161e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 611,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 0,
-      "J3": 3
-    },
-    "max_depth_m": 0.08480416906922983,
-    "max_depth_at_end_m": 0.08480416906922983,
-    "flooded_area_m2_gt_5cm": 392.0,
-    "steady_states": [
-      {
-        "t_end_s": 1200.0,
-        "inflow_m3s": 0.05,
-        "outflow_m3s": 0.014579075847824344,
-        "J1": {
-          "mean_m3s": 0.015392414179181444,
-          "std_m3s": 3.973797570770174e-06,
-          "min_m3s": 0.01538711812543639,
-          "max_m3s": 0.015399396435331142,
-          "sign_flips": 0,
-          "drift_m3s": 3.485401486293116e-06
-        },
-        "J2": {
-          "mean_m3s": 0.011457178178754152,
-          "std_m3s": 1.4126331118020741e-05,
-          "min_m3s": 0.011430449333044577,
-          "max_m3s": 0.011481737840080003,
-          "sign_flips": 0,
-          "drift_m3s": 1.1857040966213594e-05
-        },
-        "J3": {
-          "mean_m3s": 0.008215804909650248,
-          "std_m3s": 1.2856711895441189e-05,
-          "min_m3s": 0.008189200596803115,
-          "max_m3s": 0.008234895704592834,
-          "sign_flips": 0,
-          "drift_m3s": 1.094987664461769e-05
-        }
-      },
-      {
-        "t_end_s": 2400.0,
-        "inflow_m3s": 0.1,
-        "outflow_m3s": 0.0658319677919154,
-        "J1": {
-          "mean_m3s": 0.025021734379398534,
-          "std_m3s": 1.4167436264142813e-06,
-          "min_m3s": 0.025019280711769436,
-          "max_m3s": 0.025023460797925168,
-          "sign_flips": 0,
-          "drift_m3s": 1.2458250340449672e-06
-        },
-        "J2": {
-          "mean_m3s": 0.020738925603487415,
-          "std_m3s": 1.610993636146862e-06,
-          "min_m3s": 0.020736822353894128,
-          "max_m3s": 0.020741876286101222,
-          "sign_flips": 0,
-          "drift_m3s": 1.377749844544418e-06
-        },
-        "J3": {
-          "mean_m3s": -0.011667751780017523,
-          "std_m3s": 0.004012278241278175,
-          "min_m3s": -0.016290623590125772,
-          "max_m3s": -0.006499355347205417,
-          "sign_flips": 0,
-          "drift_m3s": -2.624505603678398e-06
-        }
-      },
-      {
-        "t_end_s": 3600.0,
-        "inflow_m3s": 0.15,
-        "outflow_m3s": 0.11568259277994962,
-        "J1": {
-          "mean_m3s": 0.029866724338135166,
-          "std_m3s": 7.141978899744205e-07,
-          "min_m3s": 0.02986547609166242,
-          "max_m3s": 0.029868414103944474,
-          "sign_flips": 0,
-          "drift_m3s": 4.95158342845442e-07
-        },
-        "J2": {
-          "mean_m3s": 0.027625838635346314,
-          "std_m3s": 4.3965302126557765e-07,
-          "min_m3s": 0.027625305272081846,
-          "max_m3s": 0.02762699996872679,
-          "sign_flips": 0,
-          "drift_m3s": 2.3621962302530775e-07
-        },
-        "J3": {
-          "mean_m3s": -0.023232256836256477,
-          "std_m3s": 0.00396062020618793,
-          "min_m3s": -0.02787901304433906,
-          "max_m3s": -0.018198191596387636,
-          "sign_flips": 0,
-          "drift_m3s": -5.027315765106233e-07
-        }
-      }
-    ],
-    "finished_at": "2026-10-20T18:09:25"
-  },
-  "Q3_slot": {
-    "scenario": "Q3_slot",
-    "description": "Inflow, backwater, slot only",
+  "Q2_rec_rs025_v1": {
+    "scenario": "Q2_rec_rs025_v1",
+    "description": "Q2_rec with SWMM routing step 0.25 s [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7915158859996154,
-    "forcing": "inflow",
-    "rain_m3": 0.0,
-    "surface_inflow_m3": 355.5,
-    "downstream_outflow_m3": 385.07604755732973,
-    "surface_final_m3": 65.92007086512633,
-    "network_final_m3": 43.55643263402812,
-    "outfall_net_m3": -135.87532481388615,
-    "exchanged_total_m3": -95.45150690307861,
-    "exchanged_per_node_m3": {
-      "J1": 81.46668059175339,
-      "J2": 52.625925159177164,
-      "J3": -229.54411265400915
-    },
-    "mass_error_m3": -3.1772262425980102,
-    "mass_error_pct_of_rain": NaN,
-    "outfall_gross_inflow_m3": 228.28641143505953,
-    "mass_error_pct_of_inflow": -0.5442446381695962,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.3841690582789357,
-    "surface_side_error_m3": -0.044611519377440345,
-    "network_side_error_m3": -3.13261472322057,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 441.6745466935773,
-      "final_storage": 1538.0096269077726,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.010297758142143898,
-      "outflow": 401.1733422778349,
-      "routing_error": -0.6916709580634173,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000480492872e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 325,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 606,
-      "J3": 53
-    },
-    "max_depth_m": 0.12898067375657263,
-    "max_depth_at_end_m": 0.09760559614267095,
-    "flooded_area_m2_gt_5cm": 612.0,
-    "steady_states": [
-      {
-        "t_end_s": 1200.0,
-        "inflow_m3s": 0.05,
-        "outflow_m3s": 0.0145698580953164,
-        "J1": {
-          "mean_m3s": 0.015393410339667556,
-          "std_m3s": 4.234241926211542e-06,
-          "min_m3s": 0.015387337417756311,
-          "max_m3s": 0.015400339057728973,
-          "sign_flips": 0,
-          "drift_m3s": 3.757335448826768e-06
-        },
-        "J2": {
-          "mean_m3s": 0.01146165350403097,
-          "std_m3s": 1.4155888052046163e-05,
-          "min_m3s": 0.011436605238182558,
-          "max_m3s": 0.011486302579826285,
-          "sign_flips": 0,
-          "drift_m3s": 1.2174096121392308e-05
-        },
-        "J3": {
-          "mean_m3s": 0.008218157871249394,
-          "std_m3s": 1.2651333387293463e-05,
-          "min_m3s": 0.008191946884341198,
-          "max_m3s": 0.00823722862224418,
-          "sign_flips": 0,
-          "drift_m3s": 1.078424874293403e-05
-        }
-      },
-      {
-        "t_end_s": 2400.0,
-        "inflow_m3s": 0.1,
-        "outflow_m3s": 0.03722622531778446,
-        "J1": {
-          "mean_m3s": 0.025422313166659074,
-          "std_m3s": 1.8245788633974329e-06,
-          "min_m3s": 0.025419186003605238,
-          "max_m3s": 0.025424592242128712,
-          "sign_flips": 0,
-          "drift_m3s": 1.5026297715305115e-06
-        },
-        "J2": {
-          "mean_m3s": 0.02065980808493571,
-          "std_m3s": 1.709132473023557e-06,
-          "min_m3s": 0.020657368027506257,
-          "max_m3s": 0.020662357871809433,
-          "sign_flips": 0,
-          "drift_m3s": 1.5478569553861732e-06
-        },
-        "J3": {
-          "mean_m3s": 0.016305446920431007,
-          "std_m3s": 1.2032086362513947e-06,
-          "min_m3s": 0.01630356188330913,
-          "max_m3s": 0.016307890572390567,
-          "sign_flips": 0,
-          "drift_m3s": 9.85456662033063e-07
-        }
-      },
-      {
-        "t_end_s": 3600.0,
-        "inflow_m3s": 0.15,
-        "outflow_m3s": 0.37567363397739123,
-        "J1": {
-          "mean_m3s": 0.03082672767694239,
-          "std_m3s": 6.849340307562007e-07,
-          "min_m3s": 0.03082540245698376,
-          "max_m3s": 0.030828870654610617,
-          "sign_flips": 0,
-          "drift_m3s": 3.712292678155482e-07
-        },
-        "J2": {
-          "mean_m3s": 0.013250577236202613,
-          "std_m3s": 0.12738984685630497,
-          "min_m3s": -0.16569991109836685,
-          "max_m3s": 0.12076301395228653,
-          "sign_flips": 199,
-          "drift_m3s": 2.102078940618285e-07
-        },
-        "J3": {
-          "mean_m3s": -0.2698333777234389,
-          "std_m3s": 0.0004127255689645809,
-          "min_m3s": -0.27029533138829215,
-          "max_m3s": -0.2692926701044299,
-          "sign_flips": 0,
-          "drift_m3s": -3.673228865519462e-08
-        }
-      }
-    ],
-    "finished_at": "2026-10-20T18:09:27"
-  },
-  "Q3_rec": {
-    "scenario": "Q3_rec",
-    "description": "Inflow, backwater, recommended scheme",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.8534311769999476,
-    "forcing": "inflow",
-    "rain_m3": 0.0,
-    "surface_inflow_m3": 355.5,
-    "downstream_outflow_m3": 385.1742150167029,
-    "surface_final_m3": 66.30783937489409,
-    "network_final_m3": 43.53515070898802,
-    "outfall_net_m3": -136.23581224474543,
-    "exchanged_total_m3": -95.93744406092574,
-    "exchanged_per_node_m3": {
-      "J1": 81.31867390150106,
-      "J2": 50.45807795717439,
-      "J3": -227.7141959196012
-    },
-    "mass_error_m3": -3.281392855839613,
-    "mass_error_pct_of_rain": NaN,
-    "outfall_gross_inflow_m3": 228.52478914974685,
-    "mass_error_pct_of_inflow": -0.561858489023528,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.018140039700619587,
-    "surface_side_error_m3": -0.04461033067127573,
-    "network_side_error_m3": -3.236782525168337,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 390.45844350519275,
-      "final_storage": 1537.258146503814,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.010297758142143898,
-      "outflow": 350.0419877565859,
-      "routing_error": -0.798651188267252,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000480492872e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 0,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 176,
-      "J3": 9
-    },
-    "max_depth_m": 0.12980793588894812,
-    "max_depth_at_end_m": 0.09785427221049758,
-    "flooded_area_m2_gt_5cm": 612.0,
-    "steady_states": [
-      {
-        "t_end_s": 1200.0,
-        "inflow_m3s": 0.05,
-        "outflow_m3s": 0.014572078480644754,
-        "J1": {
-          "mean_m3s": 0.015393187976222009,
-          "std_m3s": 4.176715448305252e-06,
-          "min_m3s": 0.015387441709311524,
-          "max_m3s": 0.01540005975184088,
-          "sign_flips": 0,
-          "drift_m3s": 3.700165915341072e-06
-        },
-        "J2": {
-          "mean_m3s": 0.011460914290780647,
-          "std_m3s": 1.4189921226949217e-05,
-          "min_m3s": 0.01143541486683808,
-          "max_m3s": 0.011486109217445055,
-          "sign_flips": 0,
-          "drift_m3s": 1.2179240603930191e-05
-        },
-        "J3": {
-          "mean_m3s": 0.008217750708005645,
-          "std_m3s": 1.2771322329871585e-05,
-          "min_m3s": 0.008191242409333358,
-          "max_m3s": 0.008236824125313874,
-          "sign_flips": 0,
-          "drift_m3s": 1.0879145371263735e-05
-        }
-      },
-      {
-        "t_end_s": 2400.0,
-        "inflow_m3s": 0.1,
-        "outflow_m3s": 0.03722822562227521,
-        "J1": {
-          "mean_m3s": 0.025422310224388456,
-          "std_m3s": 1.7527635384148086e-06,
-          "min_m3s": 0.025419181075298846,
-          "max_m3s": 0.025424388647773574,
-          "sign_flips": 0,
-          "drift_m3s": 1.5344249483448258e-06
-        },
-        "J2": {
-          "mean_m3s": 0.020659795088177103,
-          "std_m3s": 1.6811782732022625e-06,
-          "min_m3s": 0.020657448771751033,
-          "max_m3s": 0.020662529845514276,
-          "sign_flips": 0,
-          "drift_m3s": 1.494999802294228e-06
-        },
-        "J3": {
-          "mean_m3s": 0.016305475183200517,
-          "std_m3s": 1.1658922510680715e-06,
-          "min_m3s": 0.01630379803720273,
-          "max_m3s": 0.016307782423408863,
-          "sign_flips": 0,
-          "drift_m3s": 9.674941674545079e-07
-        }
-      },
-      {
-        "t_end_s": 3600.0,
-        "inflow_m3s": 0.15,
-        "outflow_m3s": 0.37700406213192766,
-        "J1": {
-          "mean_m3s": 0.03082668873590002,
-          "std_m3s": 5.445739684301794e-07,
-          "min_m3s": 0.030825467653382434,
-          "max_m3s": 0.0308279655732755,
-          "sign_flips": 0,
-          "drift_m3s": 3.2902778680093947e-07
-        },
-        "J2": {
-          "mean_m3s": 0.010827268939868047,
-          "std_m3s": 0.01866940843784465,
-          "min_m3s": -0.02153343685614157,
-          "max_m3s": 0.04238088635138816,
-          "sign_flips": 60,
-          "drift_m3s": -4.914294562148418e-05
-        },
-        "J3": {
-          "mean_m3s": -0.268881691103806,
-          "std_m3s": 0.001619652426506829,
-          "min_m3s": -0.2730063680431328,
-          "max_m3s": -0.26479216974233605,
-          "sign_flips": 0,
-          "drift_m3s": 2.9905473555968953e-05
-        }
-      }
-    ],
-    "finished_at": "2026-10-20T18:09:28"
-  },
-  "Q2_rec_rs05": {
-    "scenario": "Q2_rec_rs05",
-    "description": "Q2_rec with SWMM routing step 0.5 s",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.6708713819998593,
-    "forcing": "inflow",
-    "rain_m3": 0.0,
-    "surface_inflow_m3": 355.5,
-    "downstream_outflow_m3": 193.99179510046997,
-    "surface_final_m3": 45.9328014309532,
-    "network_final_m3": 8.502917525568849,
-    "outfall_net_m3": 102.24188847243143,
-    "exchanged_total_m3": 115.62001410531887,
-    "exchanged_per_node_m3": {
-      "J1": 81.31865289293187,
-      "J2": 65.99084152432513,
-      "J3": -31.689480311938127
-    },
-    "mass_error_m3": 4.830597470576549,
-    "mass_error_pct_of_rain": NaN,
-    "outfall_gross_inflow_m3": 0.0,
-    "mass_error_pct_of_inflow": 1.3588178538893247,
-    "limited_steps": 0,
-    "max_abs_dq_m3s": 0.009781238391656486,
-    "surface_side_error_m3": -0.04461063674204979,
-    "network_side_error_m3": 4.875208107318599,
-    "swmm_routing_stats": {
-      "dry_weather_inflow": 0.0,
-      "evaporation_loss": 0.0,
-      "external_inflow": 155.2758035831849,
-      "final_storage": 300.24426290850454,
-      "flooding": 0.0,
-      "groundwater_inflow": 0.0,
-      "II_inflow": 0.0,
-      "initial_storage": 0.00431337214166017,
-      "outflow": 141.90614909016702,
-      "routing_error": 3.1343294841234326,
-      "reacted": 0.0,
-      "seepage_loss": 0.0,
-      "wet_weather_inflow": 0.0
-    },
-    "overshoot_s": {
-      "mean": 5.000000480492872e-07,
-      "max": 5.000001692678779e-07,
-      "p95": 5.000001692678779e-07
-    },
-    "capped_steps": 0,
-    "sign_flips": {
-      "J1": 0,
-      "J2": 0,
-      "J3": 43
-    },
-    "max_depth_m": 0.0746406174466756,
-    "max_depth_at_end_m": 0.06075144012720557,
-    "flooded_area_m2_gt_5cm": 388.0,
-    "steady_states": [
-      {
-        "t_end_s": 1200.0,
-        "inflow_m3s": 0.05,
-        "outflow_m3s": 0.014572078480644754,
-        "J1": {
-          "mean_m3s": 0.015393187976222009,
-          "std_m3s": 4.176715448305252e-06,
-          "min_m3s": 0.015387441709311524,
-          "max_m3s": 0.01540005975184088,
-          "sign_flips": 0,
-          "drift_m3s": 3.700165915341072e-06
-        },
-        "J2": {
-          "mean_m3s": 0.011460914290780647,
-          "std_m3s": 1.4189921226949217e-05,
-          "min_m3s": 0.01143541486683808,
-          "max_m3s": 0.011486109217445055,
-          "sign_flips": 0,
-          "drift_m3s": 1.2179240603930191e-05
-        },
-        "J3": {
-          "mean_m3s": 0.008217750708005645,
-          "std_m3s": 1.2771322329871585e-05,
-          "min_m3s": 0.008191242409333358,
-          "max_m3s": 0.008236824125313874,
-          "sign_flips": 0,
-          "drift_m3s": 1.0879145371263735e-05
-        }
-      },
-      {
-        "t_end_s": 2400.0,
-        "inflow_m3s": 0.1,
-        "outflow_m3s": 0.06582010472631131,
-        "J1": {
-          "mean_m3s": 0.02542230959931937,
-          "std_m3s": 1.7523999943836993e-06,
-          "min_m3s": 0.025419193476363827,
-          "max_m3s": 0.025424418577645914,
-          "sign_flips": 0,
-          "drift_m3s": 1.5319231350570395e-06
-        },
-        "J2": {
-          "mean_m3s": 0.0206597950466275,
-          "std_m3s": 1.6765101495494229e-06,
-          "min_m3s": 0.020657459588082475,
-          "max_m3s": 0.020662530470988028,
-          "sign_flips": 0,
-          "drift_m3s": 1.4934548279860183e-06
-        },
-        "J3": {
-          "mean_m3s": -0.011957717260158809,
-          "std_m3s": 0.0032874528116547705,
-          "min_m3s": -0.017297640370859214,
-          "max_m3s": -0.006463852295590785,
-          "sign_flips": 0,
-          "drift_m3s": 1.2881708140032033e-05
-        }
-      },
-      {
-        "t_end_s": 3600.0,
-        "inflow_m3s": 0.15,
-        "outflow_m3s": 0.11569270556027429,
-        "J1": {
-          "mean_m3s": 0.030826594555756537,
-          "std_m3s": 8.463678779193491e-07,
-          "min_m3s": 0.030825147220105868,
-          "max_m3s": 0.03082825606522296,
-          "sign_flips": 0,
-          "drift_m3s": 5.656993671276922e-07
-        },
-        "J2": {
-          "mean_m3s": 0.02842608534629008,
-          "std_m3s": 5.429100094164139e-07,
-          "min_m3s": 0.02842518027902572,
-          "max_m3s": 0.028427213415896633,
-          "sign_flips": 0,
-          "drift_m3s": 3.074983070359971e-07
-        },
-        "J3": {
-          "mean_m3s": -0.02498839085869551,
-          "std_m3s": 0.001700503731545251,
-          "min_m3s": -0.027216602484121284,
-          "max_m3s": -0.022231508832811674,
-          "sign_flips": 0,
-          "drift_m3s": -9.862411233220458e-06
-        }
-      }
-    ],
-    "finished_at": "2026-10-20T18:09:29"
-  },
-  "Q2_rec_rs025": {
-    "scenario": "Q2_rec_rs025",
-    "description": "Q2_rec with SWMM routing step 0.25 s",
-    "exchange_interval_s": 1.0,
-    "wall_time_s": 0.6092734590001783,
+    "wall_time_s": 0.524954851000075,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -2189,64 +3121,298 @@
         }
       }
     ],
-    "finished_at": "2026-10-20T18:09:29"
+    "finished_at": "2026-10-20T18:46:56"
   },
-  "S3_slot_w03": {
-    "scenario": "S3_slot_w03",
-    "description": "S3 + slot + under-relaxation w = 0.3",
+  "Q3_slot_v1": {
+    "scenario": "Q3_slot_v1",
+    "description": "Inflow, backwater, slot only [legacy exchange law v1]",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.7332398730000023,
-    "forcing": "rain",
-    "rain_m3": 168.07,
-    "surface_inflow_m3": 0.0,
-    "downstream_outflow_m3": 0.0,
-    "surface_final_m3": 320.1439848716034,
-    "network_final_m3": 43.57093338250479,
-    "outfall_net_m3": -192.71187394433798,
-    "exchanged_total_m3": -152.1089849939198,
+    "wall_time_s": 0.5808179820005535,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 385.07604755732973,
+    "surface_final_m3": 65.92007086512633,
+    "network_final_m3": 43.55643263402812,
+    "outfall_net_m3": -135.87532481388615,
+    "exchanged_total_m3": -95.45150690307861,
     "exchanged_per_node_m3": {
-      "J1": 13.830693700161348,
-      "J2": 2.614999794050928,
-      "J3": -168.55467848813205
+      "J1": 81.46668059175339,
+      "J2": 52.625925159177164,
+      "J3": -229.54411265400915
     },
-    "mass_error_m3": -2.933044309770196,
-    "mass_error_pct_of_rain": -1.7451325696258677,
-    "outfall_gross_inflow_m3": 279.9160654020277,
-    "mass_error_pct_of_inflow": -0.6547177549234816,
+    "mass_error_m3": -3.1772262425980102,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 228.28641143505953,
+    "mass_error_pct_of_inflow": -0.5442446381695962,
     "limited_steps": 0,
-    "max_abs_dq_m3s": 0.07871257207850654,
-    "surface_side_error_m3": 0.03500012231640426,
-    "network_side_error_m3": -2.9680444320866,
+    "max_abs_dq_m3s": 0.3841690582789357,
+    "surface_side_error_m3": -0.044611519377440345,
+    "network_side_error_m3": -3.13261472322057,
     "swmm_routing_stats": {
       "dry_weather_inflow": 0.0,
       "evaporation_loss": 0.0,
-      "external_inflow": 374.5119475678747,
-      "final_storage": 1538.521658986751,
+      "external_inflow": 441.6745466935773,
+      "final_storage": 1538.0096269077726,
       "flooding": 0.0,
       "groundwater_inflow": 0.0,
       "II_inflow": 0.0,
       "initial_storage": 0.010297758142143898,
-      "outflow": 333.8065887865015,
-      "routing_error": -0.765070582135996,
+      "outflow": 401.1733422778349,
+      "routing_error": -0.6916709580634173,
       "reacted": 0.0,
       "seepage_loss": 0.0,
       "wet_weather_inflow": 0.0
     },
     "overshoot_s": {
-      "mean": 0.01925016914791038,
-      "max": 0.4997974567777419,
-      "p95": 0.17130518487756463
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
     },
-    "capped_steps": 1,
+    "capped_steps": 325,
     "sign_flips": {
       "J1": 0,
-      "J2": 269,
-      "J3": 21
+      "J2": 606,
+      "J3": 53
     },
-    "max_depth_m": 0.44866444445908193,
-    "max_depth_at_end_m": 0.44866444445908193,
-    "flooded_area_m2_gt_5cm": 1644.0,
-    "steady_states": [],
-    "finished_at": "2026-10-20T18:09:30"
+    "max_depth_m": 0.12898067375657263,
+    "max_depth_at_end_m": 0.09760559614267095,
+    "flooded_area_m2_gt_5cm": 612.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.0145698580953164,
+        "J1": {
+          "mean_m3s": 0.015393410339667556,
+          "std_m3s": 4.234241926211542e-06,
+          "min_m3s": 0.015387337417756311,
+          "max_m3s": 0.015400339057728973,
+          "sign_flips": 0,
+          "drift_m3s": 3.757335448826768e-06
+        },
+        "J2": {
+          "mean_m3s": 0.01146165350403097,
+          "std_m3s": 1.4155888052046163e-05,
+          "min_m3s": 0.011436605238182558,
+          "max_m3s": 0.011486302579826285,
+          "sign_flips": 0,
+          "drift_m3s": 1.2174096121392308e-05
+        },
+        "J3": {
+          "mean_m3s": 0.008218157871249394,
+          "std_m3s": 1.2651333387293463e-05,
+          "min_m3s": 0.008191946884341198,
+          "max_m3s": 0.00823722862224418,
+          "sign_flips": 0,
+          "drift_m3s": 1.078424874293403e-05
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.03722622531778446,
+        "J1": {
+          "mean_m3s": 0.025422313166659074,
+          "std_m3s": 1.8245788633974329e-06,
+          "min_m3s": 0.025419186003605238,
+          "max_m3s": 0.025424592242128712,
+          "sign_flips": 0,
+          "drift_m3s": 1.5026297715305115e-06
+        },
+        "J2": {
+          "mean_m3s": 0.02065980808493571,
+          "std_m3s": 1.709132473023557e-06,
+          "min_m3s": 0.020657368027506257,
+          "max_m3s": 0.020662357871809433,
+          "sign_flips": 0,
+          "drift_m3s": 1.5478569553861732e-06
+        },
+        "J3": {
+          "mean_m3s": 0.016305446920431007,
+          "std_m3s": 1.2032086362513947e-06,
+          "min_m3s": 0.01630356188330913,
+          "max_m3s": 0.016307890572390567,
+          "sign_flips": 0,
+          "drift_m3s": 9.85456662033063e-07
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.37567363397739123,
+        "J1": {
+          "mean_m3s": 0.03082672767694239,
+          "std_m3s": 6.849340307562007e-07,
+          "min_m3s": 0.03082540245698376,
+          "max_m3s": 0.030828870654610617,
+          "sign_flips": 0,
+          "drift_m3s": 3.712292678155482e-07
+        },
+        "J2": {
+          "mean_m3s": 0.013250577236202613,
+          "std_m3s": 0.12738984685630497,
+          "min_m3s": -0.16569991109836685,
+          "max_m3s": 0.12076301395228653,
+          "sign_flips": 199,
+          "drift_m3s": 2.102078940618285e-07
+        },
+        "J3": {
+          "mean_m3s": -0.2698333777234389,
+          "std_m3s": 0.0004127255689645809,
+          "min_m3s": -0.27029533138829215,
+          "max_m3s": -0.2692926701044299,
+          "sign_flips": 0,
+          "drift_m3s": -3.673228865519462e-08
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:57"
+  },
+  "Q3_rec_v1": {
+    "scenario": "Q3_rec_v1",
+    "description": "Inflow, backwater, recommended scheme [legacy exchange law v1]",
+    "exchange_interval_s": 1.0,
+    "wall_time_s": 0.8542405409998537,
+    "forcing": "inflow",
+    "rain_m3": 0.0,
+    "surface_inflow_m3": 355.5,
+    "downstream_outflow_m3": 385.1742150167029,
+    "surface_final_m3": 66.30783937489409,
+    "network_final_m3": 43.53515070898802,
+    "outfall_net_m3": -136.23581224474543,
+    "exchanged_total_m3": -95.93744406092574,
+    "exchanged_per_node_m3": {
+      "J1": 81.31867390150106,
+      "J2": 50.45807795717439,
+      "J3": -227.7141959196012
+    },
+    "mass_error_m3": -3.281392855839613,
+    "mass_error_pct_of_rain": NaN,
+    "outfall_gross_inflow_m3": 228.52478914974685,
+    "mass_error_pct_of_inflow": -0.561858489023528,
+    "limited_steps": 0,
+    "max_abs_dq_m3s": 0.018140039700619587,
+    "surface_side_error_m3": -0.04461033067127573,
+    "network_side_error_m3": -3.236782525168337,
+    "swmm_routing_stats": {
+      "dry_weather_inflow": 0.0,
+      "evaporation_loss": 0.0,
+      "external_inflow": 390.45844350519275,
+      "final_storage": 1537.258146503814,
+      "flooding": 0.0,
+      "groundwater_inflow": 0.0,
+      "II_inflow": 0.0,
+      "initial_storage": 0.010297758142143898,
+      "outflow": 350.0419877565859,
+      "routing_error": -0.798651188267252,
+      "reacted": 0.0,
+      "seepage_loss": 0.0,
+      "wet_weather_inflow": 0.0
+    },
+    "overshoot_s": {
+      "mean": 5.000000480492872e-07,
+      "max": 5.000001692678779e-07,
+      "p95": 5.000001692678779e-07
+    },
+    "capped_steps": 0,
+    "sign_flips": {
+      "J1": 0,
+      "J2": 176,
+      "J3": 9
+    },
+    "max_depth_m": 0.12980793588894812,
+    "max_depth_at_end_m": 0.09785427221049758,
+    "flooded_area_m2_gt_5cm": 612.0,
+    "steady_states": [
+      {
+        "t_end_s": 1200.0,
+        "inflow_m3s": 0.05,
+        "outflow_m3s": 0.014572078480644754,
+        "J1": {
+          "mean_m3s": 0.015393187976222009,
+          "std_m3s": 4.176715448305252e-06,
+          "min_m3s": 0.015387441709311524,
+          "max_m3s": 0.01540005975184088,
+          "sign_flips": 0,
+          "drift_m3s": 3.700165915341072e-06
+        },
+        "J2": {
+          "mean_m3s": 0.011460914290780647,
+          "std_m3s": 1.4189921226949217e-05,
+          "min_m3s": 0.01143541486683808,
+          "max_m3s": 0.011486109217445055,
+          "sign_flips": 0,
+          "drift_m3s": 1.2179240603930191e-05
+        },
+        "J3": {
+          "mean_m3s": 0.008217750708005645,
+          "std_m3s": 1.2771322329871585e-05,
+          "min_m3s": 0.008191242409333358,
+          "max_m3s": 0.008236824125313874,
+          "sign_flips": 0,
+          "drift_m3s": 1.0879145371263735e-05
+        }
+      },
+      {
+        "t_end_s": 2400.0,
+        "inflow_m3s": 0.1,
+        "outflow_m3s": 0.03722822562227521,
+        "J1": {
+          "mean_m3s": 0.025422310224388456,
+          "std_m3s": 1.7527635384148086e-06,
+          "min_m3s": 0.025419181075298846,
+          "max_m3s": 0.025424388647773574,
+          "sign_flips": 0,
+          "drift_m3s": 1.5344249483448258e-06
+        },
+        "J2": {
+          "mean_m3s": 0.020659795088177103,
+          "std_m3s": 1.6811782732022625e-06,
+          "min_m3s": 0.020657448771751033,
+          "max_m3s": 0.020662529845514276,
+          "sign_flips": 0,
+          "drift_m3s": 1.494999802294228e-06
+        },
+        "J3": {
+          "mean_m3s": 0.016305475183200517,
+          "std_m3s": 1.1658922510680715e-06,
+          "min_m3s": 0.01630379803720273,
+          "max_m3s": 0.016307782423408863,
+          "sign_flips": 0,
+          "drift_m3s": 9.674941674545079e-07
+        }
+      },
+      {
+        "t_end_s": 3600.0,
+        "inflow_m3s": 0.15,
+        "outflow_m3s": 0.37700406213192766,
+        "J1": {
+          "mean_m3s": 0.03082668873590002,
+          "std_m3s": 5.445739684301794e-07,
+          "min_m3s": 0.030825467653382434,
+          "max_m3s": 0.0308279655732755,
+          "sign_flips": 0,
+          "drift_m3s": 3.2902778680093947e-07
+        },
+        "J2": {
+          "mean_m3s": 0.010827268939868047,
+          "std_m3s": 0.01866940843784465,
+          "min_m3s": -0.02153343685614157,
+          "max_m3s": 0.04238088635138816,
+          "sign_flips": 60,
+          "drift_m3s": -4.914294562148418e-05
+        },
+        "J3": {
+          "mean_m3s": -0.268881691103806,
+          "std_m3s": 0.001619652426506829,
+          "min_m3s": -0.2730063680431328,
+          "max_m3s": -0.26479216974233605,
+          "sign_flips": 0,
+          "drift_m3s": 2.9905473555968953e-05
+        }
+      }
+    ],
+    "finished_at": "2026-10-20T18:46:58"
   }
 }

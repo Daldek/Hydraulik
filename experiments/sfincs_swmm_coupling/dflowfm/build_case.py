@@ -50,7 +50,10 @@ PIPES = [("C1", "J1", "J2"), ("C2", "J2", "J3"), ("C3", "J3", "OUT")]
 SCENARIO_NETWORK = {
     "DQ1": {"diameters": {"C1": 0.6, "C2": 0.6, "C3": 0.6}, "stage": None},
     "DQ2": {"diameters": cs.BOTTLENECK, "stage": None},
-    "DQ3": {"diameters": {"C1": 0.6, "C2": 0.6, "C3": 0.6}, "stage": cs.BACKWATER_STAGE},
+    "DQ3": {
+        "diameters": {"C1": 0.6, "C2": 0.6, "C3": 0.6},
+        "stage": cs.BACKWATER_STAGE,
+    },
 }
 
 
@@ -151,7 +154,9 @@ def build(scenario: str, run_dir: Path) -> Path:
             length = float(np.hypot(*(geometry[1] - geometry[0])))
             count = max(2, int(round(length / NODE_SPACING_M)) + 1)
             network.mesh1d_add_branch(
-                Branch(geometry=geometry, branch_offsets=np.linspace(0.0, length, count)),
+                Branch(
+                    geometry=geometry, branch_offsets=np.linspace(0.0, length, count)
+                ),
                 name=pipe,
             )
             definition = f"circle_{pipe}"
@@ -199,7 +204,10 @@ def build(scenario: str, run_dir: Path) -> Path:
 
         boundaries.append(boundary_block("waterlevelbnd", node_id("OUT")))
         invert_out = invert_m("OUT")
-        stage = setup["stage"] or [(0.0, invert_out), (cs.SIMULATION_DURATION_S, invert_out)]
+        stage = setup["stage"] or [
+            (0.0, invert_out),
+            (cs.SIMULATION_DURATION_S, invert_out),
+        ]
         forcings.append(forcing_block(node_id("OUT"), "waterlevelbnd", "m", stage))
 
         # One 1D2D link per manhole: manhole node <-> 2D cell containing it.
@@ -210,10 +218,18 @@ def build(scenario: str, run_dir: Path) -> Path:
         for name in MANHOLES:
             x, y = xy(name)
             n1d.append(
-                int(np.argmin(np.hypot(mesh1d.mesh1d_node_x - x, mesh1d.mesh1d_node_y - y)))
+                int(
+                    np.argmin(
+                        np.hypot(mesh1d.mesh1d_node_x - x, mesh1d.mesh1d_node_y - y)
+                    )
+                )
             )
             n2d.append(
-                int(np.argmin(np.hypot(mesh2d.mesh2d_face_x - x, mesh2d.mesh2d_face_y - y)))
+                int(
+                    np.argmin(
+                        np.hypot(mesh2d.mesh2d_face_x - x, mesh2d.mesh2d_face_y - y)
+                    )
+                )
             )
         network._link1d2d.meshkernel.contacts_set(
             mk.Contacts(np.array(n1d, dtype=np.int32), np.array(n2d, dtype=np.int32))
