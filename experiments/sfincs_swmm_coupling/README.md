@@ -115,6 +115,8 @@ Rozwiązanie zastosowane w teście:
 | G. Wymiana półniejawna (p. 3.8) | S2, S3, Q2, Q3 z pojemnością węzła stałą i mierzoną; wariant mierzony także z `Δt_c` = 5 s |
 | H. Sam krok SWMM 0,5 s (p. 3.8) | S2, S3, Q2, Q3 z `SLOT` bez relaksacji; S2, S3 zalecane z krokiem SWMM 0,5 s |
 | I. Wrażliwość (p. 3.9) | jeden czynnik naraz wokół Q2 z zalecaną stabilizacją (`V_*`): średnica, liczba węzłów, głębokość sieci, natężenie dopływu, krok wymiany, krok SWMM, powierzchnia i współczynniki wpustu; sieć swobodna (`V1_*`) dla wpustu, dopływu i liczby węzłów; cofka (`V3_*`) dla kroku wymiany |
+| J. `EXTRAN` z pełną stabilizacją (p. 3.10) | bazy wrażliwości i S2/S3 z `EXTRAN`, relaksacją 0,1 i krokiem SWMM 0,5/0,25 s |
+| K. Wybicie liczone przez SWMM (p. 3.11) | bazy wrażliwości i S2/S3: `EXTRAN` z relaksacją i bez, `SLOT` z relaksacją |
 | F. Wzory v1 dla porównania (p. 2.8) | S1, S2/S3 `SLOT`, S2/S3 zalecany, Q1–Q3 w wariantach `SLOT` i zalecanym, z sufiksem `_v1` |
 
 ### 2.7 Wariant z dopływem powierzchniowym
@@ -465,16 +467,73 @@ Wnioski:
    zalecany zestaw jest więc dobry do screeningu krótkich zdarzeń. Przy długim,
    rozległym przeciążeniu błąd sieci staje się istotny.
 
+### 3.11 Wybicie liczone przez SWMM
+
+Zamiast odbierać wodę z węzła pod ciśnieniem ujemnym dopływem bocznym, węzły nie mogą
+się nadpiętrzyć powyżej terenu (`SurDepth` = 0). Nadmiar wody SWMM wylewa sam
+(*flooding*). Koordynator co krok odczytuje wylaną objętość
+(`Node.statistics["flooding_volume"]`, m³) i oddaje ją SFINCS-owi jako źródło w komórce
+nad studzienką w następnym kroku. Objętość „w drodze” jest śledzona, więc bilans
+domyka się dokładnie mimo opóźnienia o jeden krok. Wpływ z powierzchni do sieci
+liczony jest jak dotąd (wzory v2), z tą różnicą, że wyłącznie w kierunku sieci.
+
+| Przypadek | Wariant | Wymiana razem [m³/s] | Maks. σ [m³/s] | Błąd ciągłości SWMM | Błąd całkowity |
+|---|---|---|---|---|---|
+| baza (Q2) | dotychczasowy (`SLOT`, relaksacja 0,1) | 0,0343 | 0 | +2,80% | +1,38% |
+| | wybicie przez SWMM, `EXTRAN`, relaksacja 0,1 | 0,0315 | 0 | **0,00%** | **−0,01%** |
+| | wybicie przez SWMM, `EXTRAN`, **bez relaksacji** | 0,0315 | 0 | +0,01% | 0,00% |
+| | wybicie przez SWMM, `SLOT` | 0,0336 | 0 | +1,18% | +1,33% |
+| 12 węzłów | dotychczasowy | 0,0578 | 0,0031 | +9,55% | +6,56% |
+| | wybicie przez SWMM, `EXTRAN` | 0,0546 | **0** | +0,03% | +0,09% |
+| sieć na 4 m | dotychczasowy | 0,0507 | 0,0001 | +6,08% | +3,14% |
+| | wybicie przez SWMM, `EXTRAN` | 0,0440 | 0 | +0,02% | +0,01% |
+| cofka (Q3) | dotychczasowy | −0,261 | 0 | −0,66% | −0,51% |
+| | wybicie przez SWMM, `EXTRAN` | **−0,523** | 0,007 | −0,67% | −0,81% |
+| sieć swobodna (Q1) | wszystkie warianty | 0,0950 | 0 | −0,85% | −0,56% |
+
+Z opadem: S2 (przeciążenie) 95,8 m³ wymiany, 2–4 zmiany znaku w węźle (wcześniej 20),
+błąd SWMM −0,03%. S3 (cofka): wypływ z sieci −402 m³ zamiast −170 m³.
+
+Wnioski:
+
+1. **Przy przeciążeniu wariant rozwiązuje oba problemy naraz.** Bilans sieci jest
+   dokładny (0,00–0,03%), oscylacji nie ma, także przy 12 węzłach, i **relaksacja
+   przestaje być potrzebna** (wynik z relaksacją i bez jest identyczny). Interfejs
+   pozostaje dokładny (błąd po stronie powierzchni bez zmian).
+2. **Zmienia się fizyka: ciśnienie w węźle nie może przekroczyć terenu.** Wymiana przy
+   przeciążeniu jest o 5–13% mniejsza, bo sieć traci napór ponad terenem. To bliższe
+   typowej studzience z niezabezpieczonym włazem; dotychczasowy wariant odpowiadał
+   włazowi szczelnemu.
+3. **Przy cofce wypływ jest dwa razy większy** (−0,52 zamiast −0,26 m³/s). Wypływ nie
+   jest już ograniczony otworem włazu (wzór otworu ze współczynnikiem 0,167), tylko
+   przepustowością przewodów. To najpewniej przeszacowanie, bo pomija straty na
+   włazie, które Rubinato i in. (2017) skalibrowali właśnie dla wybijającej studzienki.
+4. `SLOT` z wybiciem przez SWMM nadal gubi wodę (1,2–3,2%), choć mniej, bo przepływ
+   ciśnieniowy jest ograniczony do poziomu terenu.
+5. Koszt: ok. 1,4 razy dłuższy czas obliczeń niż wariant dotychczasowy (krok SWMM
+   0,5 s w obu).
+
+**Możliwe dalsze usprawnienie (nietestowane):** odwzorować otwór włazu jako element
+sieci SWMM, np. otwór (*orifice*) z węzła do sztucznego wylotu, którego poziom wody
+koordynator ustawia co krok na poziom wody w komórce SFINCS-a. Straty na włazie liczyłby
+wtedy SWMM niejawnie, razem z resztą sieci. Wymaga to sprawdzenia, czy pyswmm pozwala
+zmieniać poziom wody na wylocie w trakcie obliczeń.
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian
    w kodzie żadnego z modeli**.
 2. Wymiana objętości liczonych z faktycznego czasu SFINCS-a zapewnia **dokładne
    zachowanie masy na interfejsie** mimo adaptacyjnego kroku SFINCS-a.
-3. Stabilność decyduje o użyteczności. Działający zestaw w tym teście to:
-   ciągłe wzory wymiany (v2) + `SLOT` w SWMM + relaksacja wymiany (w ≈ 0,1)
-   + `Δt_c` ≈ 1 s + krok obliczeniowy SWMM 0,5 s. Wymiana półniejawna
-   tego zestawu nie poprawia (p. 3.8). Wzory ciągłe usuwają oscylacje
+3. Stabilność decyduje o użyteczności. Są dwa działające zestawy:
+   - **wybicie liczone przez SWMM** (`EXTRAN`, węzły bez nadpiętrzenia ponad teren)
+     + ciągłe wzory wpływu (v2) + krok SWMM 0,5 s + `Δt_c` ≈ 1 s: dokładny bilans,
+     brak oscylacji bez relaksacji; przeszacowuje wypływ przy cofce (p. 3.11);
+   - **wybicie przez koordynator**: `SLOT` + relaksacja 0,1 + krok SWMM 0,5 s:
+     wypływ ograniczony skalibrowanym wzorem otworu, ale `SLOT` gubi 2–17% wody przy
+     przepływie ciśnieniowym (p. 3.10), a ustawienia tłumienia nie są uniwersalne
+     (p. 3.9).
+   Wymiana półniejawna żadnego z nich nie poprawia (p. 3.8). Wzory ciągłe usuwają oscylacje
    w węzłach, w których ciśnienie krąży wokół terenu, a krótszy krok SWMM usuwa je
    w węzłach pod ciśnieniem (p. 3.5–3.6). Zachowanie przy szybko zmiennych
    przepływach wymaga jeszcze sprawdzenia.

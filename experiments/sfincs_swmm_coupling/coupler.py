@@ -437,6 +437,10 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         sink_cells = [sfincs.cell_index(x, y) for x, y in cs.outflow_points()]
     sink_m3 = 0.0
 
+    flooding_mode = scenario.spill_mode == "swmm_flooding"
+    pending_m3 = {name: 0.0 for name in cells}  # flooded, not yet on the surface
+    flooded_m3 = {name: 0.0 for name in cells}  # cumulative SWMM flooding
+
     wall_start = time.perf_counter()
     k = 0
     while True:
@@ -445,7 +449,7 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
             break
         t_old = sfincs.current_time()
 
-        q_now = {}
+        q_now, q_in, spill_rate = {}, {}, {}
         for name, cell in cells.items():
             head = nodes[name].head
             if scenario.semi_implicit == "measured" and head_previous[name] is not None:
@@ -474,6 +478,10 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
                     float(zs[cell]), grounds[name], head, scenario.exchange_law
                 )
             head_previous[name] = head
+            if flooding_mode:
+                # Spills come from SWMM's own flooding, never from a negative
+                # lateral inflow: only surface -> node discharge is imposed.
+                q = max(q, 0.0)
             q = w * q + (1.0 - w) * q_previous[name]
             if scenario.equalisation_limiter and head > grounds[name]:
                 area_eq = (cell_area_m2 * cs.NODE_SURFACE_AREA_M2) / (
@@ -491,9 +499,11 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
                 if q > limit:
                     q = limit
                     capped_steps += 1
-            q_now[name] = q
             q_previous[name] = q
-            qext[cell] = -q
+            q_in[name] = q
+            spill_rate[name] = pending_m3[name] / dt_c if flooding_mode else 0.0
+            q_now[name] = q - spill_rate[name]
+            qext[cell] = -q_now[name]
 
         sink_q = 0.0
         for cell in sink_cells:
@@ -509,11 +519,13 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         sink_m3 += sink_q * (t_new - t_old)
 
         if scenario.coupled:
-            for name, q in q_now.items():
-                volume = q * (t_new - t_old)
-                exchanged_m3[name] += volume
-                volume_previous[name] = volume
-                nodes[name].generated_inflow(volume / dt_c)
+            for name in q_now:
+                volume_in = q_in[name] * (t_new - t_old)
+                volume_spilled = spill_rate[name] * (t_new - t_old)
+                pending_m3[name] -= volume_spilled
+                exchanged_m3[name] += volume_in - volume_spilled
+                volume_previous[name] = volume_in - volume_spilled
+                nodes[name].generated_inflow(volume_in / dt_c)
             for _ in range(int(dt_c) // cs.SWMM_ROUTING_STEP_S):
                 try:
                     next(sim)
@@ -529,6 +541,13 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
                 outfall_out_m3 += volume
                 outfall_gross_in_m3 += max(-volume, 0.0)
                 outfall_flow = flow_new
+            if flooding_mode:
+                # Water SWMM floods out of a full node goes back to the surface
+                # cell over the next interval (exact volume, one-step lag).
+                for name, node in nodes.items():
+                    flooded = node.statistics["flooding_volume"]
+                    pending_m3[name] += flooded - flooded_m3[name]
+                    flooded_m3[name] = flooded
             swmm_elapsed = (sim.current_time - swmm_start).total_seconds()
             if abs(swmm_elapsed - t_target) > 1e-6:
                 raise RuntimeError(f"SWMM at {swmm_elapsed} s, expected {t_target} s")
@@ -569,7 +588,10 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
     out = series["outfall_m3"][-1]
     sink = series["sink_m3"][-1]
     conceptual = rain - surface if scenario.conceptual_drainage_mm_h else 0.0
-    total_error = rain + inflow - surface - network - out - sink - conceptual
+    pending_total = sum(pending_m3.values())
+    total_error = (
+        rain + inflow - surface - network - out - sink - conceptual - pending_total
+    )
     exchanged_total = sum(exchanged_m3.values())
 
     q_arrays = {name: np.array(series[f"q_{name}"]) for name in cells}
@@ -607,7 +629,10 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         "surface_side_error_m3": (
             rain + inflow - surface - exchanged_total - sink - conceptual
         ),
-        "network_side_error_m3": exchanged_total - network - out,
+        "network_side_error_m3": exchanged_total - pending_total - network - out,
+        "spill_mode": scenario.spill_mode,
+        "swmm_flooded_m3": sum(flooded_m3.values()),
+        "pending_spill_m3": pending_total,
         "swmm_routing_stats": swmm_stats,
         "overshoot_s": {
             "mean": float(np.mean(overshoot_s)),
