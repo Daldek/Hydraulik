@@ -1,0 +1,125 @@
+{
+  "base_replay_slot_rs1": {
+    "scenario": "V_base",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 1
+    },
+    "routing_error_pct": 2.793
+  },
+  "base_replay_slot_rs05": {
+    "scenario": "V_base",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 2.795
+  },
+  "base_replay_slot_rs025": {
+    "scenario": "V_base",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.25
+    },
+    "routing_error_pct": 2.795
+  },
+  "base_replay_slot_tight": {
+    "scenario": "V_base",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5,
+      "HEAD_TOLERANCE": 5e-05,
+      "MAX_TRIALS": 50
+    },
+    "routing_error_pct": 2.789
+  },
+  "base_replay_extran_rs05": {
+    "scenario": "V_base",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 0.046
+  },
+  "base_positive_slot_rs05": {
+    "scenario": "V_base",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 9.37
+  },
+  "base_positive_extran_rs05": {
+    "scenario": "V_base",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 0.0
+  },
+  "base_positive_slot_tight": {
+    "scenario": "V_base",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5,
+      "HEAD_TOLERANCE": 5e-05,
+      "MAX_TRIALS": 50
+    },
+    "routing_error_pct": 9.364
+  },
+  "nodes12_replay_slot_rs05": {
+    "scenario": "V_nodes_12",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 9.554
+  },
+  "nodes12_positive_slot_rs05": {
+    "scenario": "V_nodes_12",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 16.774
+  },
+  "nodes12_positive_slot_tight": {
+    "scenario": "V_nodes_12",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5,
+      "HEAD_TOLERANCE": 5e-05,
+      "MAX_TRIALS": 50
+    },
+    "routing_error_pct": 16.764
+  },
+  "depth4_positive_slot_rs05": {
+    "scenario": "V_depth_4",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 9.232
+  },
+  "free_replay_slot_rs05": {
+    "scenario": "V1_base",
+    "inflow": "signed",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": -0.849
+  }
+}
