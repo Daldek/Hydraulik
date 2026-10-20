@@ -8,6 +8,7 @@ traced back to this file.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -124,7 +125,11 @@ class Scenario:
         "exchange": spills leave a surcharged node as negative lateral inflow
         computed by the coupler; "swmm_flooding": nodes cannot surcharge above
         the rim, SWMM floods the excess itself and the coupler returns the
-        flooded volume to the surface cell.
+        flooded volume to the surface cell; "swmm_orifice": each node spills
+        through a gated bottom orifice in its rim (area ``inlet_area_m2``,
+        Rubinato orifice coefficient) into an outfall whose stage the coupler
+        sets to the surface water level, so SWMM computes the spill and its
+        losses implicitly.
     semi_implicit : str or None
         Semi-implicit exchange (one linearised backward-Euler step) with the
         node storage area "fixed" (SWMM MIN_SURFAREA) or "measured" from the
@@ -160,6 +165,7 @@ BACKWATER_STAGE = [(0.0, 7.0), (1800.0, 7.0), (2700.0, 9.6), (3600.0, 9.6)]
 
 
 RECOMMENDED_RELAXATION = 0.1
+RUBINATO_ORIFICE_COEFFICIENT = 0.167  # also used for the SWMM spill orifice
 
 CASES = {
     "S2": {"pipe_diameters_m": BOTTLENECK},
@@ -479,6 +485,29 @@ for _base in [
         )
 SCENARIOS.update(FLOODING_RUNS)
 
+# Spill through a SWMM orifice to a surface-stage outfall (L), EXTRAN.
+ORIFICE_RUNS = {}
+for _base in [
+    "V_base",
+    "V_nodes_12",
+    "V_depth_4",
+    "V3_base",
+    "V1_base",
+    "S2_rec_rs05",
+    "S3_rec_rs05",
+]:
+    for _w, _tag in ((RECOMMENDED_RELAXATION, "orifice"), (1.0, "orifice_norelax")):
+        _name = f"{_base}_{_tag}"
+        ORIFICE_RUNS[_name] = replace(
+            SCENARIOS[_base],
+            name=_name,
+            description=f"{SCENARIOS[_base].description}, spill = SWMM orifice to surface stage, EXTRAN, w = {_w:g}",
+            surcharge_method="EXTRAN",
+            relaxation=_w,
+            spill_mode="swmm_orifice",
+        )
+SCENARIOS.update(ORIFICE_RUNS)
+
 
 # Legacy (v1) exchange law for a subset, to quantify the effect of the
 # continuous formulation (v2) that all other scenarios use.
@@ -635,10 +664,25 @@ def write_swmm_case(run_dir: Path, scenario: Scenario) -> Path:
     """Write the SWMM input file and return its path."""
     nodes = exchange_nodes(scenario)
     depth = scenario.node_depth_m
+    ground = {name: surface_elevation_m(x, y) for name, (x, y) in nodes.items()}
     surcharge_depth = (
         0.0 if scenario.spill_mode == "swmm_flooding" else NODE_SURCHARGE_DEPTH_M
     )
-    ground = {name: surface_elevation_m(x, y) for name, (x, y) in nodes.items()}
+    spill_outfalls = spill_orifices = spill_xsections = ""
+    if scenario.spill_mode == "swmm_orifice":
+        side = math.sqrt(scenario.inlet_area_m2)
+        coefficient = RUBINATO_ORIFICE_COEFFICIENT * scenario.inlet_coefficient_scale
+        spill_outfalls = "".join(
+            f"S_{name:<4} {ground[name]:.4f} FIXED {ground[name]:.4f} NO\n"
+            for name in nodes
+        )
+        spill_orifices = "[ORIFICES]\n;;Name From To Type Offset Qcoeff Gated CloseTime\n" + "".join(
+            f"O_{name:<4} {name:<4} S_{name:<4} BOTTOM {depth:.4f} {coefficient:.4f} YES 0\n"
+            for name in nodes
+        )
+        spill_xsections = "".join(
+            f"O_{name:<4} RECT_CLOSED {side:.4f} {side:.4f} 0 0\n" for name in nodes
+        )
     outfall_invert = surface_elevation_m(OUTFALL_X_M, DRAINAGE_LINE_Y_M) - depth
 
     junctions = "".join(
@@ -698,13 +742,14 @@ MIN_SURFAREA         {NODE_SURFACE_AREA_M2}
 {junctions}
 [OUTFALLS]
 ;;Name  Invert Type [Stage/Series] Gated
-{outfall}
+{outfall}{spill_outfalls}
 [CONDUITS]
 ;;Name From To Length Roughness InOffset OutOffset InitFlow MaxFlow
 {conduits}
+{spill_orifices}
 [XSECTIONS]
 ;;Link Shape Geom1 Geom2 Geom3 Geom4 Barrels
-{xsections}
+{xsections}{spill_xsections}
 {timeseries}
 [REPORT]
 NODES ALL
