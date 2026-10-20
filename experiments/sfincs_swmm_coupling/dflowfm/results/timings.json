@@ -1,0 +1,37 @@
+{
+  "DQ0": {
+    "wall_time_s": 37.27453582799899,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  },
+  "DQ1": {
+    "wall_time_s": 38.997539171001335,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  },
+  "DQ2": {
+    "wall_time_s": 38.95380808000118,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  },
+  "DQ3": {
+    "wall_time_s": 39.25673565800025,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  },
+  "DQ1_inlet": {
+    "wall_time_s": 40.523143287000494,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  },
+  "DQ2_inlet": {
+    "wall_time_s": 39.61484490800103,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  },
+  "DQ3_inlet": {
+    "wall_time_s": 39.832404787000996,
+    "exit_code": -11,
+    "map_end_s": 3600.0
+  }
+}

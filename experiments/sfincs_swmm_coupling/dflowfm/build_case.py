@@ -270,6 +270,8 @@ def build(scenario: str, run_dir: Path) -> Path:
     (run_dir / "boundaries.bc").write_text("".join(forcings))
     mdu = model.filepath.read_text()
     mdu = re.sub(r"(?im)^(extForceFileNew\s*=).*$", r"\1 boundaries.ext", mdu)
+    # HYDROLIB-core 1.5.0 still writes keywords that the current kernel rejects.
+    mdu = re.sub(r"(?im)^\s*(qhrelax|wrishp_enc)\s*=.*\n", "", mdu)
     model.filepath.write_text(mdu)
 
     if has_network and street_inlet:

@@ -829,7 +829,7 @@
     "scenario": "Q0",
     "description": "Inflow, no network",
     "exchange_interval_s": 1.0,
-    "wall_time_s": 0.4087403660005293,
+    "wall_time_s": 0.408912284001417,
     "forcing": "inflow",
     "rain_m3": 0.0,
     "surface_inflow_m3": 355.5,
@@ -875,7 +875,7 @@
         "outflow_m3s": 0.14994285315041755
       }
     ],
-    "finished_at": "2026-10-20T18:46:34"
+    "finished_at": "2026-10-20T20:07:02"
   },
   "Q1_rec": {
     "scenario": "Q1_rec",
