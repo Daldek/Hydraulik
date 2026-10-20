@@ -206,6 +206,9 @@ Obserwacje:
 | S2, sieć przeciążona | 72,2 | 0,314 | 748 |
 | S3, cofka | 318,2 | 0,448 | 1604 |
 
+Moduł koncepcyjnego drenażu (`urban_drainage`) jest na gałęzi głównej SFINCS-a od
+2026-09-23 i nie wszedł jeszcze do żadnego wydania (ostatnie: v2.4.1, 2026-08-18).
+
 Model koncepcyjny odbiera wodę tam, gdzie spadła. Sieć odbiera ją tylko we wpustach,
 część wody je omija i gromadzi się niżej (rys. 3). Przy cofce sieć wprowadza na
 powierzchnię wodę z odbiornika (278 m³ wpłynęło wylotem). Tego wbudowany model
@@ -280,7 +283,11 @@ Obserwacje:
 - Jedna domena idealizowana, jeden opad, jedna komórka na węzeł wymiany.
 - Tryb regularny SFINCS-a. W trybie subgrid głębokość przy wpuście trzeba liczyć
   względem `subgrid_z_zmin`, a nie `zb`; nie testowane.
-- Współczynniki przelewu i otworu przyjęte z typowych wartości, bez kalibracji.
+- Współczynniki przelewu i otworu (0,4 i 0,6 dla kratki 0,5 × 0,5 m) przyjęte bez
+  kalibracji. Jedyny zestaw skalibrowany dla studzienki (Rubinato i in. 2017,
+  J. Hydrol., doi:10.1016/j.jhydrol.2017.06.024) to ok. 0,54 (przelew swobodny),
+  0,056 (przelew zatopiony) i 0,167 (otwór), odniesione do powierzchni i obwodu
+  włazu. Szczegóły: `reports/`.
 - W większości przebiegów krok SFINCS-a był ograniczony przez `dtmax` (stałe 0,5 s).
   Przestrzał czasu był realnie testowany tylko w S3 (do 0,5 s).
 - Tylko Linux; kompilacja `libsfincs.so` na Windows i macOS niesprawdzona.
