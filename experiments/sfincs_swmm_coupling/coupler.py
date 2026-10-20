@@ -39,10 +39,23 @@ import numpy as np
 import case_setup as cs
 
 GRAVITY = 9.81
-INLET_AREA_M2 = 0.25  # 0.5 m x 0.5 m opening
+# Legacy exchange law (v1): 0.5 m x 0.5 m grate, textbook coefficients,
+# discontinuous switch between weir and orifice when the node head crosses
+# the ground level.
+INLET_AREA_M2 = 0.25
 INLET_PERIMETER_M = 2.0
 WEIR_COEFFICIENT = 0.4  # Q = Cw * P * h^1.5 * sqrt(2g)
 ORIFICE_COEFFICIENT = 0.6  # Q = Co * A * sqrt(2g * dh)
+
+# Continuous exchange law (v2, default). Coefficients calibrated for a
+# manhole by Rubinato et al. (2017, J. Hydrol. 552:421-432,
+# doi:10.1016/j.jhydrol.2017.06.024), referenced - as in Itzi - to the node
+# surface area A and the perimeter of a circle of that area, P = 2*sqrt(pi*A).
+MANHOLE_AREA_M2 = cs.NODE_SURFACE_AREA_M2
+MANHOLE_PERIMETER_M = 2.0 * math.sqrt(math.pi * MANHOLE_AREA_M2)
+RUBINATO_WEIR_COEFFICIENT = 0.54  # Q = 2/3 * Cw * P * h^1.5 * sqrt(2g)
+RUBINATO_ORIFICE_COEFFICIENT = 0.167  # Q = Co * A * sqrt(2g * dh)
+ORIFICE_LINEAR_BELOW_M = 0.01  # orifice law linearised for |dh| below this
 EQUALISATION_FRACTION = 0.5  # beta: share of the equalising volume allowed per interval
 
 
@@ -118,10 +131,13 @@ class SfincsBmi:
         return area.value
 
 
-def exchange_discharge(zs_m: float, ground_m: float, head_m: float) -> float:
+def exchange_discharge(
+    zs_m: float, ground_m: float, head_m: float, law: str = "continuous"
+) -> float:
     """Exchange discharge between surface and network node [m3/s].
 
     Positive values mean flow from the surface into the network.
+    ``law`` selects the continuous formulation (default) or the legacy one.
 
     Parameters
     ----------
@@ -131,7 +147,11 @@ def exchange_discharge(zs_m: float, ground_m: float, head_m: float) -> float:
         Surface (bed) elevation of the exchange cell.
     head_m : float
         Hydraulic head in the network node.
+    law : str
+        "continuous" (v2) or "legacy" (v1).
     """
+    if law == "continuous":
+        return continuous_exchange_discharge(zs_m, ground_m, head_m)
     depth = max(zs_m - ground_m, 0.0)
     if head_m <= ground_m:
         # Free inflow: weir at shallow depth, orifice at larger depth.
@@ -153,6 +173,57 @@ def exchange_discharge(zs_m: float, ground_m: float, head_m: float) -> float:
     return (
         -ORIFICE_COEFFICIENT * INLET_AREA_M2 * math.sqrt(2 * GRAVITY * (head_m - zs_m))
     )
+
+
+def orifice_discharge(head_difference_m: float) -> float:
+    """Orifice law Co*A*sqrt(2g*dh), linearised for small dh (bounded slope)."""
+    dh = abs(head_difference_m)
+    coefficient = (
+        RUBINATO_ORIFICE_COEFFICIENT * MANHOLE_AREA_M2 * math.sqrt(2 * GRAVITY)
+    )
+    if dh < ORIFICE_LINEAR_BELOW_M:
+        return (
+            coefficient
+            * math.sqrt(ORIFICE_LINEAR_BELOW_M)
+            * dh
+            / ORIFICE_LINEAR_BELOW_M
+        )
+    return coefficient * math.sqrt(dh)
+
+
+def continuous_exchange_discharge(zs_m: float, ground_m: float, head_m: float) -> float:
+    """Exchange discharge that is continuous in zs and the node head [m3/s].
+
+    Positive values mean flow from the surface into the network.
+
+    - Node head above the surface level: the node spills (orifice law).
+    - Otherwise inflow over the manhole rim: a free weir, reduced by the
+      Villemonte (1947) submergence factor once the node head rises above
+      the rim, and capped by the orifice law for the head difference.
+
+    Every branch tends to the same value at its boundary (zero at zs = H,
+    the free-weir value at H = rim), so the discharge has no jumps.
+    """
+    if head_m >= zs_m:
+        return -orifice_discharge(head_m - zs_m)
+    upstream_depth = zs_m - ground_m
+    if upstream_depth <= 0.0:
+        return 0.0
+    weir = (
+        2.0
+        / 3.0
+        * RUBINATO_WEIR_COEFFICIENT
+        * MANHOLE_PERIMETER_M
+        * upstream_depth**1.5
+        * math.sqrt(2 * GRAVITY)
+    )
+    downstream_depth = head_m - ground_m
+    if downstream_depth > 0.0:
+        ratio = downstream_depth / upstream_depth
+        weir *= (1.0 - ratio**1.5) ** 0.385
+    # Below the rim the water falls freely into the manhole: the orifice head
+    # is the surface depth, not the difference with the (lower) node head.
+    return min(weir, orifice_discharge(zs_m - max(head_m, ground_m)))
 
 
 def analytical_rain_volume_m3(t_s: float) -> float:
@@ -305,7 +376,9 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         q_now = {}
         for name, cell in cells.items():
             head = nodes[name].head
-            q = exchange_discharge(float(zs[cell]), grounds[name], head)
+            q = exchange_discharge(
+                float(zs[cell]), grounds[name], head, scenario.exchange_law
+            )
             q = w * q + (1.0 - w) * q_previous[name]
             if scenario.equalisation_limiter and head > grounds[name]:
                 area_eq = (cell_area_m2 * cs.NODE_SURFACE_AREA_M2) / (
