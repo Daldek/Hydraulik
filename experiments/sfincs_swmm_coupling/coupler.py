@@ -26,6 +26,7 @@ Usage: python coupler.py <scenario> <run_dir> <libsfincs.so>
 from __future__ import annotations
 
 import ctypes
+from dataclasses import dataclass
 import json
 import math
 import os
@@ -51,10 +52,25 @@ ORIFICE_COEFFICIENT = 0.6  # Q = Co * A * sqrt(2g * dh)
 # manhole by Rubinato et al. (2017, J. Hydrol. 552:421-432,
 # doi:10.1016/j.jhydrol.2017.06.024), referenced - as in Itzi - to the node
 # surface area A and the perimeter of a circle of that area, P = 2*sqrt(pi*A).
-MANHOLE_AREA_M2 = cs.NODE_SURFACE_AREA_M2
-MANHOLE_PERIMETER_M = 2.0 * math.sqrt(math.pi * MANHOLE_AREA_M2)
 RUBINATO_WEIR_COEFFICIENT = 0.54  # Q = 2/3 * Cw * P * h^1.5 * sqrt(2g)
 RUBINATO_ORIFICE_COEFFICIENT = 0.167  # Q = Co * A * sqrt(2g * dh)
+
+
+@dataclass(frozen=True)
+class Inlet:
+    """Geometry and coefficients of the continuous exchange law (v2)."""
+
+    area_m2: float = cs.NODE_SURFACE_AREA_M2
+    weir_coefficient: float = RUBINATO_WEIR_COEFFICIENT
+    orifice_coefficient: float = RUBINATO_ORIFICE_COEFFICIENT
+
+    @property
+    def perimeter_m(self) -> float:
+        return 2.0 * math.sqrt(math.pi * self.area_m2)
+
+
+# One scenario runs per process; run() sets the inlet of that scenario here.
+INLET = Inlet()
 ORIFICE_LINEAR_BELOW_M = 0.01  # orifice law linearised for |dh| below this
 
 # Semi-implicit exchange in delta form: Q_k = Q_{k-1} + (Q0 - Q_{k-1}) / (1 + K),
@@ -184,9 +200,7 @@ def exchange_discharge(
 def orifice_discharge(head_difference_m: float) -> float:
     """Orifice law Co*A*sqrt(2g*dh), linearised for small dh (bounded slope)."""
     dh = abs(head_difference_m)
-    coefficient = (
-        RUBINATO_ORIFICE_COEFFICIENT * MANHOLE_AREA_M2 * math.sqrt(2 * GRAVITY)
-    )
+    coefficient = INLET.orifice_coefficient * INLET.area_m2 * math.sqrt(2 * GRAVITY)
     if dh < ORIFICE_LINEAR_BELOW_M:
         return (
             coefficient
@@ -218,8 +232,8 @@ def continuous_exchange_discharge(zs_m: float, ground_m: float, head_m: float) -
     weir = (
         2.0
         / 3.0
-        * RUBINATO_WEIR_COEFFICIENT
-        * MANHOLE_PERIMETER_M
+        * INLET.weir_coefficient
+        * INLET.perimeter_m
         * upstream_depth**1.5
         * math.sqrt(2 * GRAVITY)
     )
@@ -278,9 +292,9 @@ def analytical_rain_volume_m3(t_s: float) -> float:
     return area * (rate * full + ramp_volume)
 
 
-def analytical_inflow_volume_m3(t_s: float) -> float:
+def analytical_inflow_volume_m3(t_s: float, scenario: cs.Scenario) -> float:
     """Surface inflow volume up to time t (piecewise-linear hydrograph)."""
-    points = cs.INFLOW_HYDROGRAPH_M3S
+    points = cs.inflow_hydrograph(scenario)
     volume = 0.0
     for (t0, q0), (t1, q1) in zip(points, points[1:]):
         if t_s <= t0:
@@ -291,14 +305,15 @@ def analytical_inflow_volume_m3(t_s: float) -> float:
     return volume
 
 
-def steady_state_statistics(series: dict, nodes: list[str]) -> list[dict]:
+def steady_state_statistics(
+    series: dict, nodes: list[str], scenario: cs.Scenario
+) -> list[dict]:
     """Mean, spread and sign flips of the exchange at the end of each step."""
     t = np.array(series["t"])
+    hydrograph = cs.inflow_hydrograph(scenario)
     step_ends = [
         t1
-        for (_, q0), (t1, q1) in zip(
-            cs.INFLOW_HYDROGRAPH_M3S, cs.INFLOW_HYDROGRAPH_M3S[1:]
-        )
+        for (_, q0), (t1, q1) in zip(hydrograph, hydrograph[1:])
         if q0 == q1 and q0 > 0.0
     ]
     statistics = []
@@ -307,7 +322,7 @@ def steady_state_statistics(series: dict, nodes: list[str]) -> list[dict]:
         half = (t > t_end - cs.STEADY_WINDOW_S / 2) & (t <= t_end)
         entry = {
             "t_end_s": t_end,
-            "inflow_m3s": float(np.interp(t_end, *zip(*cs.INFLOW_HYDROGRAPH_M3S))),
+            "inflow_m3s": float(np.interp(t_end, *zip(*hydrograph))),
             "outflow_m3s": float(np.mean(np.array(series["sink_q"])[window])),
         }
         for name in nodes:
@@ -331,6 +346,13 @@ def network_volume_m3(nodes, links) -> float:
 
 
 def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
+    global INLET
+    INLET = Inlet(
+        area_m2=scenario.inlet_area_m2,
+        weir_coefficient=RUBINATO_WEIR_COEFFICIENT * scenario.inlet_coefficient_scale,
+        orifice_coefficient=RUBINATO_ORIFICE_COEFFICIENT
+        * scenario.inlet_coefficient_scale,
+    )
     run_dir.mkdir(parents=True, exist_ok=True)
     cs.write_sfincs_case(run_dir, scenario)
     swmm_inp = cs.write_swmm_case(run_dir, scenario) if scenario.coupled else None
@@ -362,10 +384,11 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         sim.start()
         swmm_start = sim.start_time
         all_nodes = Nodes(sim)
-        nodes = {name: all_nodes[name] for name in cs.EXCHANGE_NODES_XY}
-        links = [Links(sim)[c] for c in ("C1", "C2", "C3")]
+        exchange_nodes = cs.exchange_nodes(scenario)
+        nodes = {name: all_nodes[name] for name in exchange_nodes}
+        links = [Links(sim)[c] for c, _, _ in cs.pipes(scenario)]
         outfall_link = links[-1]  # positive flow = network -> outfall
-        for name, (x, y) in cs.EXCHANGE_NODES_XY.items():
+        for name, (x, y) in exchange_nodes.items():
             cells[name] = sfincs.cell_index(x, y)
             grounds[name] = float(zb[cells[name]])
             cell_area_m2 = sfincs.cell_area(cells[name])
@@ -538,7 +561,7 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
     # Mass balance at the final time.
     t_final = series["t_sfincs"][-1]
     if scenario.forcing == "inflow":
-        rain, inflow = 0.0, analytical_inflow_volume_m3(t_final)
+        rain, inflow = 0.0, analytical_inflow_volume_m3(t_final, scenario)
     else:
         rain, inflow = analytical_rain_volume_m3(t_final), 0.0
     surface = series["surface_m3"][-1]
@@ -599,7 +622,7 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         ),
         "flooded_area_m2_gt_5cm": float(np.sum((zs_max - zb) > 0.05) * cell_area_m2),
         "steady_states": (
-            steady_state_statistics(series, list(cells))
+            steady_state_statistics(series, list(cells), scenario)
             if scenario.forcing == "inflow"
             else []
         ),
