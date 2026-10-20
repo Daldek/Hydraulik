@@ -437,7 +437,10 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         sink_cells = [sfincs.cell_index(x, y) for x, y in cs.outflow_points()]
     sink_m3 = 0.0
 
-    flooding_mode = scenario.spill_mode == "swmm_flooding"
+    flooding_mode = scenario.spill_mode in ("swmm_flooding", "swmm_orifice")
+    spill_outfalls = {}
+    if scenario.spill_mode == "swmm_orifice":
+        spill_outfalls = {name: all_nodes[f"S_{name}"] for name in cells}
     pending_m3 = {name: 0.0 for name in cells}  # flooded, not yet on the surface
     flooded_m3 = {name: 0.0 for name in cells}  # cumulative SWMM flooding
 
@@ -526,6 +529,9 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
                 exchanged_m3[name] += volume_in - volume_spilled
                 volume_previous[name] = volume_in - volume_spilled
                 nodes[name].generated_inflow(volume_in / dt_c)
+            # The spill outfalls see the current surface water level.
+            for name, outfall in spill_outfalls.items():
+                outfall.outfall_stage(max(float(zs[cells[name]]), grounds[name]))
             for _ in range(int(dt_c) // cs.SWMM_ROUTING_STEP_S):
                 try:
                     next(sim)
@@ -545,7 +551,10 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
                 # Water SWMM floods out of a full node goes back to the surface
                 # cell over the next interval (exact volume, one-step lag).
                 for name, node in nodes.items():
-                    flooded = node.statistics["flooding_volume"]
+                    if spill_outfalls:
+                        flooded = spill_outfalls[name].cumulative_inflow
+                    else:
+                        flooded = node.statistics["flooding_volume"]
                     pending_m3[name] += flooded - flooded_m3[name]
                     flooded_m3[name] = flooded
             swmm_elapsed = (sim.current_time - swmm_start).total_seconds()

@@ -117,6 +117,7 @@ Rozwiązanie zastosowane w teście:
 | I. Wrażliwość (p. 3.9) | jeden czynnik naraz wokół Q2 z zalecaną stabilizacją (`V_*`): średnica, liczba węzłów, głębokość sieci, natężenie dopływu, krok wymiany, krok SWMM, powierzchnia i współczynniki wpustu; sieć swobodna (`V1_*`) dla wpustu, dopływu i liczby węzłów; cofka (`V3_*`) dla kroku wymiany |
 | J. `EXTRAN` z pełną stabilizacją (p. 3.10) | bazy wrażliwości i S2/S3 z `EXTRAN`, relaksacją 0,1 i krokiem SWMM 0,5/0,25 s |
 | K. Wybicie liczone przez SWMM (p. 3.11) | bazy wrażliwości i S2/S3: `EXTRAN` z relaksacją i bez, `SLOT` z relaksacją |
+| L. Właz jako element SWMM (p. 3.12) | bazy wrażliwości i S2/S3: otwór z klapą zwrotną do wylotu z poziomem wody z SFINCS-a, `EXTRAN`, z relaksacją i bez |
 | F. Wzory v1 dla porównania (p. 2.8) | S1, S2/S3 `SLOT`, S2/S3 zalecany, Q1–Q3 w wariantach `SLOT` i zalecanym, z sufiksem `_v1` |
 
 ### 2.7 Wariant z dopływem powierzchniowym
@@ -513,11 +514,49 @@ Wnioski:
 5. Koszt: ok. 1,4 razy dłuższy czas obliczeń niż wariant dotychczasowy (krok SWMM
    0,5 s w obu).
 
-**Możliwe dalsze usprawnienie (nietestowane):** odwzorować otwór włazu jako element
-sieci SWMM, np. otwór (*orifice*) z węzła do sztucznego wylotu, którego poziom wody
-koordynator ustawia co krok na poziom wody w komórce SFINCS-a. Straty na włazie liczyłby
-wtedy SWMM niejawnie, razem z resztą sieci. Wymaga to sprawdzenia, czy pyswmm pozwala
-zmieniać poziom wody na wylocie w trakcie obliczeń.
+Próbę odwzorowania strat na włazie elementem sieci SWMM opisuje p. 3.12.
+
+### 3.12 Właz jako element sieci SWMM
+
+Każda studzienka dostaje w szczycie otwór (`BOTTOM` orifice z klapą zwrotną; powierzchnia
+1,167 m², współczynnik 0,167) prowadzący do sztucznego wylotu na poziomie terenu.
+Koordynator co krok ustawia poziom wody na tym wylocie na poziom wody w komórce SFINCS-a
+(`Outfall.outfall_stage`, czyli `swmm_setValue(swmm_NODE_HEAD)`; wylot przechodzi wtedy
+w tryb stałego poziomu). Wybicie i straty na włazie liczy SWMM niejawnie, metodą
+`EXTRAN`. Wylaną objętość koordynator mierzy na wylocie (`Node.cumulative_inflow`, m³)
+i oddaje SFINCS-owi jak w p. 3.11. Wpływ z powierzchni liczy jak dotąd.
+
+| Przypadek | Wybicie przez koordynator (`SLOT`) | Wylewanie przez SWMM (`EXTRAN`) | **Właz jako otwór SWMM (`EXTRAN`)** |
+|---|---|---|---|
+| baza: wymiana [m³/s] / błąd SWMM | 0,0343 / +2,8% | 0,0315 / 0,0% | 0,0322 / **+13,3%** |
+| 12 węzłów | 0,0578 / +9,6% | 0,0546 / 0,0% | 0,0556 / **+16,0%** |
+| sieć na 4 m | 0,0507 / +6,1% | 0,0440 / 0,0% | 0,0445 / **+25,9%** |
+| cofka: wymiana [m³/s] / błąd SWMM | −0,261 / −0,7% | −0,523 / −0,7% | **−0,253** / +8,0% |
+| oscylacje w stanach ustalonych | σ do 0,003 | brak (cofka 0,007) | brak (12 węzłów bez relaksacji 0,011; 4 m: 0,009) |
+
+Test samego SWMM z narzuconymi dopływami (`swmm_only.py`, testy `lid_*`):
+
+| Sieć bazowa + … | Błąd ciągłości SWMM |
+|---|---|
+| otwór w szczycie studzienki, `EXTRAN`, krok 0,5 / 0,1 s | +12,85 / +12,85% |
+| to samo, `SLOT` | +2,71% |
+| krótki przewód (1 m) ze stratami K = 1/C_o² zamiast otworu, `EXTRAN` | +14,26% |
+| same dodatkowe wyloty, bez połączenia z węzłami | 0,00% |
+| wylewanie przez SWMM (p. 3.11) | 0,00% |
+
+Wnioski:
+
+1. **Fizycznie wariant robi to, co miał.** Przy cofce wypływ (−0,253 m³/s) jest prawie
+   taki jak ze skalibrowanym wzorem otworu (−0,261), a nie dwa razy większy jak przy
+   wylewaniu przez SWMM (−0,523). Obliczenia są stabilne.
+2. **Ale SWMM 5.2.4 gubi przy nim wodę (8–26%), także bez SFINCS-a.** Strata pojawia
+   się zawsze, gdy z węzła pod ciśnieniem wychodzi na poziomie terenu dodatkowe
+   połączenie (otwór albo przewód) do wylotu. Nie zależy od kroku obliczeniowego, klapy
+   zwrotnej ani typu wylotu. Narasta w fazach przejściowych, a w stanie ustalonym
+   przepływy się bilansują. Przyczyny w kodzie SWMM nie ustaliłem.
+3. Wariant jest więc na dziś **nieużyteczny**. Zostaje wylewanie przez SWMM (p. 3.11),
+   które przy cofce przeszacowuje wypływ. Dla screeningu powodziowego jest to
+   przeszacowanie po bezpiecznej stronie.
 
 ## 4. Wnioski
 
@@ -525,7 +564,8 @@ zmieniać poziom wody na wylocie w trakcie obliczeń.
    w kodzie żadnego z modeli**.
 2. Wymiana objętości liczonych z faktycznego czasu SFINCS-a zapewnia **dokładne
    zachowanie masy na interfejsie** mimo adaptacyjnego kroku SFINCS-a.
-3. Stabilność decyduje o użyteczności. Są dwa działające zestawy:
+3. Stabilność decyduje o użyteczności. Są dwa działające zestawy (trzeci, właz jako
+   element SWMM, zawodzi przez utratę wody w SWMM, p. 3.12):
    - **wybicie liczone przez SWMM** (`EXTRAN`, węzły bez nadpiętrzenia ponad teren)
      + ciągłe wzory wpływu (v2) + krok SWMM 0,5 s + `Δt_c` ≈ 1 s: dokładny bilans,
      brak oscylacji bez relaksacji; przeszacowuje wypływ przy cofce (p. 3.11);
@@ -599,6 +639,10 @@ pyswmm 2.2.0 / SWMM 5.2.4:
    wylot oddaje mniej, niż wpływa, przy stałej objętości). Niezależna od kroku
    obliczeniowego i tolerancji iteracji. `EXTRAN` w tych samych warunkach jest
    dokładny. Warto zgłosić do EPA (powtarzalny przykład: `swmm_only.py`).
+10. **SWMM 5.2.4, `EXTRAN`: utrata masy przy połączeniu z węzła pod ciśnieniem do
+    wylotu na wysokości szczytu węzła** (otwór albo krótki przewód; +12,9–14,3%
+    w teście bez sprzężenia). Same wyloty bez połączenia: 0,00%. Powtarzalny przykład:
+    testy `lid_*` w `swmm_only.py`.
 
 ## 7. Odtworzenie
 

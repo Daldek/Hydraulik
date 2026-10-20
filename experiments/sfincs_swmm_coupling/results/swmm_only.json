@@ -121,5 +121,59 @@
       "ROUTING_STEP": 0.5
     },
     "routing_error_pct": -0.849
+  },
+  "lid_orifice_extran": {
+    "scenario": "V_base_orifice",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 12.852
+  },
+  "lid_orifice_extran_rs01": {
+    "scenario": "V_base_orifice",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.1
+    },
+    "routing_error_pct": 12.852
+  },
+  "lid_orifice_slot": {
+    "scenario": "V_base_orifice",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "SLOT",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 2.706
+  },
+  "lid_conduit_extran": {
+    "scenario": "V_base_orifice",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 14.259
+  },
+  "lid_outfalls_only_extran": {
+    "scenario": "V_base_orifice",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 0.0
+  },
+  "flooding_extran": {
+    "scenario": "V_base_flood_extran",
+    "inflow": "positive",
+    "options": {
+      "SURCHARGE_METHOD": "EXTRAN",
+      "ROUTING_STEP": 0.5
+    },
+    "routing_error_pct": 0.0
   }
 }

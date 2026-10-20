@@ -13,6 +13,7 @@ Usage: python swmm_only.py   (needs runs/<scenario>/series.npz of the coupled ru
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import replace
 from pathlib import Path
@@ -107,6 +108,39 @@ TESTS = {
         "signed",
         {"SURCHARGE_METHOD": "SLOT", "ROUTING_STEP": 0.5},
     ),
+    # Spill links at the manhole rim (network of the "swmm_orifice" mode).
+    "lid_orifice_extran": (
+        "V_base_orifice",
+        "positive",
+        {"SURCHARGE_METHOD": "EXTRAN", "ROUTING_STEP": 0.5},
+    ),
+    "lid_orifice_extran_rs01": (
+        "V_base_orifice",
+        "positive",
+        {"SURCHARGE_METHOD": "EXTRAN", "ROUTING_STEP": 0.1},
+    ),
+    "lid_orifice_slot": (
+        "V_base_orifice",
+        "positive",
+        {"SURCHARGE_METHOD": "SLOT", "ROUTING_STEP": 0.5},
+    ),
+    "lid_conduit_extran": (
+        "V_base_orifice",
+        "positive",
+        {"SURCHARGE_METHOD": "EXTRAN", "ROUTING_STEP": 0.5},
+        "lid_conduit",
+    ),
+    "lid_outfalls_only_extran": (
+        "V_base_orifice",
+        "positive",
+        {"SURCHARGE_METHOD": "EXTRAN", "ROUTING_STEP": 0.5},
+        "drop_spill_links",
+    ),
+    "flooding_extran": (
+        "V_base_flood_extran",
+        "positive",
+        {"SURCHARGE_METHOD": "EXTRAN", "ROUTING_STEP": 0.5},
+    ),
 }
 
 
@@ -152,6 +186,42 @@ def build_inp(test: str, scenario: cs.Scenario, inflows, options: dict) -> Path:
     return path
 
 
+def apply_variant(text: str, variant: str | None) -> str:
+    """Optional changes of the spill links at the manhole rim."""
+    if variant == "drop_spill_links":
+        # Keep the surface-stage outfalls, remove the orifices to them.
+        text = re.sub(r"(?ms)^\[ORIFICES\].*?(?=^\[XSECTIONS\])", "", text)
+        return re.sub(r"(?m)^O_\S+\s+RECT_CLOSED.*\n", "", text)
+    if variant == "lid_conduit":
+        # Replace each orifice by a 1 m conduit with local losses that give
+        # the same law Q = Co*A*sqrt(2g dh): total loss coefficient 1/Co^2.
+        diameter = 2.0 * math.sqrt(cs.NODE_SURFACE_AREA_M2 / math.pi)
+        k_total = 1.0 / cs.RUBINATO_ORIFICE_COEFFICIENT**2
+        links = re.findall(
+            r"(?m)^O_(\S+)\s+(\S+)\s+(\S+)\s+BOTTOM\s+(\S+)\s+\S+\s+YES\s+0$", text
+        )
+        text = re.sub(r"(?ms)^\[ORIFICES\].*?(?=^\[XSECTIONS\])", "", text)
+        text = re.sub(r"(?m)^O_\S+\s+RECT_CLOSED.*\n", "", text)
+        conduits = "".join(
+            f"L_{n} {a} {b} 1.0 0.013 {offset} 0 0 0\n" for n, a, b, offset in links
+        )
+        text = text.replace("\n[XSECTIONS]", conduits + "\n[XSECTIONS]", 1)
+        sections = "".join(
+            f"L_{n} CIRCULAR {diameter:.4f} 0 0 0 1\n" for n, *_ in links
+        )
+        text = re.sub(
+            r"(?m)^(;;Link Shape[^\n]*\n)",
+            lambda m: m.group(1) + sections,
+            text,
+            count=1,
+        )
+        losses = "".join(
+            f"L_{n} {k_total / 2:.3f} {k_total / 2:.3f} 0 YES\n" for n, *_ in links
+        )
+        return text + "\n[LOSSES]\n;;Link Kentry Kexit Kavg Flap\n" + losses
+    return text
+
+
 def continuity_error_pct(report: Path) -> float:
     matches = re.findall(r"Continuity Error \(%\) \.+\s+(-?[\d.]+)", report.read_text())
     return float(matches[-1])  # the last one is flow routing
@@ -159,9 +229,11 @@ def continuity_error_pct(report: Path) -> float:
 
 def main() -> None:
     results = {}
-    for test, (scenario_name, mode, options) in TESTS.items():
+    for test, (scenario_name, mode, options, *variant) in TESTS.items():
         scenario = cs.SCENARIOS[scenario_name]
-        inp = build_inp(test, scenario, inflow_series(scenario_name, mode), options)
+        source = "V_base" if scenario_name.startswith("V_base_") else scenario_name
+        inp = build_inp(test, scenario, inflow_series(source, mode), options)
+        inp.write_text(apply_variant(inp.read_text(), variant[0] if variant else None))
         report = inp.with_suffix(".rpt")
         with Simulation(str(inp), str(report), str(inp.with_suffix(".out"))) as sim:
             for _ in sim:
