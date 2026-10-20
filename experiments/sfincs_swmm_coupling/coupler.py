@@ -56,6 +56,12 @@ MANHOLE_PERIMETER_M = 2.0 * math.sqrt(math.pi * MANHOLE_AREA_M2)
 RUBINATO_WEIR_COEFFICIENT = 0.54  # Q = 2/3 * Cw * P * h^1.5 * sqrt(2g)
 RUBINATO_ORIFICE_COEFFICIENT = 0.167  # Q = Co * A * sqrt(2g * dh)
 ORIFICE_LINEAR_BELOW_M = 0.01  # orifice law linearised for |dh| below this
+
+# Semi-implicit exchange in delta form: Q_k = Q_{k-1} + (Q0 - Q_{k-1}) / (1 + K),
+# a linearised backward-Euler step for the change of the exchange discharge.
+DERIVATIVE_STEP_M = 1e-4  # finite-difference step for dQ/dzs and dQ/dH
+MEASURED_NODE_AREA_MIN_M2 = 0.01  # bounds of the measured node storage area
+MEASURED_NODE_AREA_MAX_M2 = 1.0e4
 EQUALISATION_FRACTION = 0.5  # beta: share of the equalising volume allowed per interval
 
 
@@ -226,6 +232,42 @@ def continuous_exchange_discharge(zs_m: float, ground_m: float, head_m: float) -
     return min(weir, orifice_discharge(zs_m - max(head_m, ground_m)))
 
 
+def semi_implicit_discharge(
+    zs_m: float,
+    ground_m: float,
+    head_m: float,
+    law: str,
+    interval_s: float,
+    surface_area_m2: float,
+    node_area_m2: float,
+    q_previous_m3s: float,
+) -> float:
+    """Exchange discharge from a linearised implicit step in delta form.
+
+    Changing the exchange by dQ over one interval lowers the surface by
+    dQ*dt/A_s and raises the node head by dQ*dt/A_n. Evaluating the exchange
+    law at those levels, linearised, gives
+        Q_k = Q_{k-1} + (Q0 - Q_{k-1}) / (1 + K),
+        K = dt * (dQ/dzs / A_s - dQ/dH / A_n) >= 0,
+    i.e. under-relaxation with w = 1/(1+K) derived from the stiffness of the
+    link. K is large only where the law is stiff (small head difference, small
+    node storage). Only the change of Q is damped, so a steady state is not
+    biased (a non-delta form Q = Q0/(1+K) reduces steady exchange).
+    """
+    q0 = exchange_discharge(zs_m, ground_m, head_m, law)
+    e = DERIVATIVE_STEP_M
+    dq_dzs = (
+        exchange_discharge(zs_m + e, ground_m, head_m, law)
+        - exchange_discharge(zs_m - e, ground_m, head_m, law)
+    ) / (2 * e)
+    dq_dh = (
+        exchange_discharge(zs_m, ground_m, head_m + e, law)
+        - exchange_discharge(zs_m, ground_m, head_m - e, law)
+    ) / (2 * e)
+    stiffness = interval_s * (dq_dzs / surface_area_m2 - dq_dh / node_area_m2)
+    return q_previous_m3s + (q0 - q_previous_m3s) / (1.0 + max(stiffness, 0.0))
+
+
 def analytical_rain_volume_m3(t_s: float) -> float:
     """Rain volume over the whole domain up to time t (matches sfincs.prcp)."""
     area = cs.N_CELLS_X * cs.N_CELLS_Y * cs.CELL_SIZE_M**2
@@ -357,6 +399,13 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
     zs_max = np.array(zs, copy=True)
     q_previous = {name: 0.0 for name in cells}
     w = scenario.relaxation
+    # Node storage area for the semi-implicit scheme: fixed (SWMM MIN_SURFAREA)
+    # or measured from the head response to the volume injected last interval.
+    node_area = {name: cs.NODE_SURFACE_AREA_M2 for name in cells}
+    head_previous = {name: None for name in cells}
+    volume_previous = {name: 0.0 for name in cells}
+    for name in cells:
+        series[f"area_{name}"] = []
 
     # Free outflow at the downstream edge (inflow forcing only): the coupler
     # removes the water standing in the last column and books its volume.
@@ -376,9 +425,32 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
         q_now = {}
         for name, cell in cells.items():
             head = nodes[name].head
-            q = exchange_discharge(
-                float(zs[cell]), grounds[name], head, scenario.exchange_law
-            )
+            if scenario.semi_implicit == "measured" and head_previous[name] is not None:
+                volume = volume_previous[name]
+                rise = head - head_previous[name]
+                # Only a response in the direction of the injected volume is
+                # attributed to it; otherwise the last estimate is kept.
+                if abs(volume) > 1e-6 and abs(rise) > 1e-6 and volume * rise > 0:
+                    node_area[name] = min(
+                        max(volume / rise, MEASURED_NODE_AREA_MIN_M2),
+                        MEASURED_NODE_AREA_MAX_M2,
+                    )
+            if scenario.semi_implicit:
+                q = semi_implicit_discharge(
+                    float(zs[cell]),
+                    grounds[name],
+                    head,
+                    scenario.exchange_law,
+                    dt_c,
+                    cell_area_m2,
+                    node_area[name],
+                    q_previous[name],
+                )
+            else:
+                q = exchange_discharge(
+                    float(zs[cell]), grounds[name], head, scenario.exchange_law
+                )
+            head_previous[name] = head
             q = w * q + (1.0 - w) * q_previous[name]
             if scenario.equalisation_limiter and head > grounds[name]:
                 area_eq = (cell_area_m2 * cs.NODE_SURFACE_AREA_M2) / (
@@ -417,6 +489,7 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
             for name, q in q_now.items():
                 volume = q * (t_new - t_old)
                 exchanged_m3[name] += volume
+                volume_previous[name] = volume
                 nodes[name].generated_inflow(volume / dt_c)
             for _ in range(int(dt_c) // cs.SWMM_ROUTING_STEP_S):
                 try:
@@ -449,6 +522,7 @@ def run(scenario: cs.Scenario, run_dir: Path, library_path: str) -> dict:
             series[f"q_{name}"].append(q_now[name])
             series[f"head_{name}"].append(nodes[name].head)
             series[f"zs_{name}"].append(float(zs[cell]))
+            series[f"area_{name}"].append(node_area[name])
         k += 1
 
     wall_s = time.perf_counter() - wall_start
