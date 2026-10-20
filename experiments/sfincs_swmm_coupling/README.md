@@ -429,6 +429,42 @@ przeciążona bez wybicia też ma 2,2%). Hipoteza o ujemnym wpływie bocznym si�
 potwierdziła; bardziej prawdopodobne źródło to przepływ ciśnieniowy w metodzie `SLOT`.
 **To jest teraz główny otwarty problem** przy dłuższych symulacjach i większych sieciach.
 
+### 3.10 Sam SWMM: skąd błąd ciągłości
+
+Sieci z testów policzono w samym SWMM, bez SFINCS-a (`swmm_only.py`,
+`results/swmm_only.json`). Do węzłów podano narzucone dopływy: wymianę zapisaną
+w sprzężeniu (ze znakiem, czyli z wybiciem) albo tylko jej część dodatnią. Błąd
+ciągłości odczytano z raportu SWMM 5.2.4 (najnowsze wydanie; w gałęzi rozwojowej od
+2023 r. brak zmian dotyczących `SLOT` i ciągłości).
+
+| Test (sam SWMM) | `SLOT` | `EXTRAN` |
+|---|---|---|
+| baza, odtworzona wymiana | **+2,79%** (w sprzężeniu +2,80%) | +0,05% |
+| baza, krok SWMM 1 / 0,5 / 0,25 s | +2,79 / +2,80 / +2,80% | – |
+| baza, tolerancja iteracji 5·10⁻⁵ m, 50 iteracji | +2,79% | – |
+| baza, tylko dopływy dodatnie | +9,37% | **0,00%** |
+| 12 węzłów, odtworzona wymiana | +9,55% (w sprzężeniu +9,55%) | – |
+| 12 węzłów, tylko dopływy dodatnie | +16,77% | – |
+| sieć swobodna, odtworzona wymiana | −0,85% | – |
+
+To **faktyczna utrata wody**, a nie błąd w księgowaniu. W stanie ustalonym, przy stałej
+objętości w sieci, wylot oddaje mniej, niż wpływa: 0,0646 → 0,0632 m³/s (baza, −2%),
+0,0803 → 0,0763 m³/s (12 węzłów, −5%). Z `EXTRAN` przepływy się zgadzają.
+
+Wnioski:
+
+1. **Błąd ciągłości jest własnością metody `SLOT` w SWMM 5.2.4**, a nie sprzężenia.
+   Nie zależy od kroku obliczeniowego ani od tolerancji iteracji. Rośnie z zasięgiem
+   i czasem trwania przepływu ciśnieniowego, a nie z objętością wody wybijającej
+   z węzłów (sama woda dodawana daje nawet większy błąd).
+2. **`EXTRAN` jest dokładny, ale w sprzężeniu dalej się rozbiega**, także z relaksacją
+   0,1 i krokiem SWMM 0,5 lub 0,25 s (błędy bilansu od kilkudziesięciu do kilkuset
+   procent we wszystkich przypadkach z przeciążeniem). Działa tylko w sieci swobodnej.
+3. Dylemat: `SLOT` jest stabilny, ale przy przeciążeniu gubi 2–17% wody wpływającej
+   do sieci, a `EXTRAN` jest dokładny, ale niestabilny przy jawnej wymianie. Obecny
+   zalecany zestaw jest więc dobry do screeningu krótkich zdarzeń. Przy długim,
+   rozległym przeciążeniu błąd sieci staje się istotny.
+
 ## 4. Wnioski
 
 1. Sprzężenie SFINCS–SWMM przez istniejące BMI SFINCS-a jest **wykonalne bez zmian
@@ -470,6 +506,8 @@ potwierdziła; bardziej prawdopodobne źródło to przepływ ciśnieniowy w meto
 - Błąd ciągłości SWMM przy przepływie ciśnieniowym (2,8% w bazie, do 9,6% przy 12
   węzłach) ma niewyjaśnioną przyczynę (p. 3.9).
 - Ustawienia stabilizacji (w = 0,1, krok SWMM 0,5 s) nie są uniwersalne (p. 3.9).
+- Metoda `SLOT` w SWMM 5.2.4 gubi wodę przy przepływie ciśnieniowym (2–17%),
+  a `EXTRAN` jest niestabilny w jawnym sprzężeniu (p. 3.10).
 - Odpływ swobodny w wariancie z dopływem jest konstrukcją koordynatora (odbiór wody
   z ostatniej kolumny), a nie natywnym brzegiem SFINCS-a.
 
@@ -497,6 +535,11 @@ pyswmm 2.2.0 / SWMM 5.2.4:
 7. `SystemStats.routing_stats["final_storage"]` jest zwracane w ft³ mimo
    `FLOW_UNITS CMS` (S1: 0,619 m³ ↔ 21,86; ×35,31). Pozostałe pola są w m³.
 8. `step_advance` przyjmuje tylko całe sekundy.
+9. **SWMM 5.2.4, `SURCHARGE_METHOD SLOT`: utrata masy przy ustalonym przepływie
+   ciśnieniowym** (2% przy jednym przewodzie z przewężeniem, 5% przy 12 węzłach;
+   wylot oddaje mniej, niż wpływa, przy stałej objętości). Niezależna od kroku
+   obliczeniowego i tolerancji iteracji. `EXTRAN` w tych samych warunkach jest
+   dokładny. Warto zgłosić do EPA (powtarzalny przykład: `swmm_only.py`).
 
 ## 7. Odtworzenie
 

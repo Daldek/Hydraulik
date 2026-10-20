@@ -422,6 +422,29 @@ for _factor in ("area", "coef", "inflow", "nodes"):
         SENSITIVITY_RUNS[_scenario.name] = _scenario
 SCENARIOS.update(SENSITIVITY_RUNS)
 
+# EXTRAN instead of SLOT with the full stabilisation (J): SWMM-only tests show
+# that SLOT loses water in sustained pressurised flow, EXTRAN does not.
+EXTRAN_RUNS = {}
+for _base in ["V_base", "V_nodes_12", "V_depth_4", "V3_base", "V1_base"]:
+    for _step in (0.5, 0.25):
+        _name = f"{_base}_extran_rs{_step:g}".replace(".", "")
+        EXTRAN_RUNS[_name] = replace(
+            SCENARIOS[_base],
+            name=_name,
+            description=f"{SCENARIOS[_base].description}, EXTRAN, SWMM step {_step:g} s",
+            surcharge_method="EXTRAN",
+            swmm_routing_step_s=_step,
+        )
+for _base in ["S2_rec_rs05", "S3_rec_rs05"]:
+    _name = f"{_base}_extran"
+    EXTRAN_RUNS[_name] = replace(
+        SCENARIOS[_base],
+        name=_name,
+        description=SCENARIOS[_base].description + ", EXTRAN",
+        surcharge_method="EXTRAN",
+    )
+SCENARIOS.update(EXTRAN_RUNS)
+
 
 # Legacy (v1) exchange law for a subset, to quantify the effect of the
 # continuous formulation (v2) that all other scenarios use.
