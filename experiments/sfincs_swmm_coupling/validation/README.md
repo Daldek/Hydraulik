@@ -110,12 +110,75 @@ ale w jego repozytorium (`ItziModel/itzi`) nie ma danych EA.
 | Zbiór | Co zawiera | Gdzie | Licencja |
 |---|---|---|---|
 | A Coruña, CITEEC: Sañudo i in. (2024), *Hydrol. Processes* 38(1), doi:10.1002/hyp.15068 | ulica 100 m² (skrzyżowanie w kształcie T) połączona z kanalizacją, symulator deszczu; geometria, NMT, wpusty, studzienki, wylot, wyniki | Zenodo, doi:10.5281/zenodo.7941067 | CC BY 4.0 |
-| WASHTREET (ten sam ośrodek) | hydraulika, spłukiwanie i transport osadów | Zenodo 3935914 i rekordy powiązane | do sprawdzenia |
-| Sheffield: Rubinato i in. | wymiana w obu kierunkach przez studzienkę, model fizyczny | Zenodo (rekordy wskazane w przeglądzie literatury) | do sprawdzenia |
+| WASHTREET (ten sam ośrodek) | hydraulika, spłukiwanie i transport osadów | Zenodo 3256325, 3754092, 3935914 (wersje), 3241337 (NMT z fotogrametrii) | CC BY 4.0 |
+| Sheffield: Martins i in. (2018) | stały przepływ przez 10 typów kratek, pola prędkości PIV | Zenodo 2605134 | CC BY 4.0 |
 
-Wszystkie te zbiory są na Zenodo. Z tego środowiska Zenodo jest na razie
-niedostępne, bo sieć odrzuca połączenie.
+### 2.1 A Coruña (Zenodo 7941067): co zawiera zbiór
 
-Pod względem metody zbiór z A Coruña jest bardziej wartościowy niż test 8B.
-Zawiera zmierzone przepływy przez wpusty i studzienki, czyli dokładnie to,
-co liczy sprzężenie.
+Pobrane 2026-10-20, sumy MD5 zgodne z Zenodo. Bez archiwum multimediów.
+
+- **Powierzchnia:** NMT `SURFACE.asc`, oczko 5 cm, 306 × 99 komórek,
+  ok. 64 m², rzędne 2,59–3,12 m.
+  - Ulica: dwie jezdnie po 2,5 m i chodniki po 30 cm.
+  - Krawężnik 6 cm.
+  - Spadek poprzeczny 2%, podłużny 1%.
+  - Dachy mają osobne NMT z oczkiem 5 mm.
+- **Deszcz:** symulator, mapy natężenia dla 30, 50 i 80 mm/h (oczko 5 cm).
+  - Mapy mają lokalnie wartości ujemne (artefakty interpolacji).
+  - Hietogramy:
+    - H1–H3: deszcz stały przez 240 s;
+    - H4–H5: przerywany;
+    - H6: zmienny.
+  - W serii 2 (T07–T12) dochodzi dopływ 1 L/s z każdego z dwóch
+    generatorów spływu (SD1, SD2).
+- **Kanalizacja:** współrzędne, rzędne dna i topologia w tab. 3 opisu.
+  - 4 studzienki, przewód główny 240 mm, poprzeczny 194 mm.
+  - Wylot przez przelew trójkątny.
+- **Wpusty:**
+  - cztery kratki 0,5 × 0,2 m, każda połączona z najbliższą studzienką;
+  - kratka poprzeczna 2,5 × 0,13 m.
+  - Prześwit kratek nie jest podany.
+- **Dachy:** woda trafia rynną do wpustów dachowych i dalej do studzienek.
+  Odpływ z dachów jest zmierzony, więc można go podać wprost do SWMM.
+- **Pomiary:** baza SQLite, testy T01–T12, 600 s, krok 0,2 s:
+  - przepływ przez wpusty 1–4 (szeregi czasowe);
+  - wpust 5 i dopływy do studzienek tylko jako wartości ustalone dla H1–H3;
+  - odpływ z sieci;
+  - odpływ z dachów;
+  - głębokości w 9 punktach ulicy (0,2–14 mm).
+- **Jednostki:** nagłówki kolumn podają `[m3/s]`, ale wartości są w L/s.
+  Sprawdzenie dla T03 (80 mm/h przez 240 s):
+  - opad na mapie natężenia to ok. 480 L;
+  - suma odpływu przy założeniu L/s to ok. 460 L;
+  - przy założeniu m³/s wyszłoby 460 m³, co jest niemożliwe.
+
+Czego ten zbiór nie testuje: wybicia z sieci. Przepływy rzędu kilku L/s nie
+wypełniają przewodów, więc wymiana idzie tylko z powierzchni do sieci.
+
+### 2.2 Sheffield (Zenodo 2605134): co zawiera zbiór
+
+Martins i in. (2018), *Water Resources Research*, doi:10.1029/2018WR022782.
+
+- Model w skali 1:6 z jedną studzienką.
+- 10 konfiguracji kratek (8 wzorów, dwa z nich testowane także po obrocie
+  o 90°).
+- Stały przepływ powierzchniowy 2,75–10 L/s.
+- Zmierzony stały przepływ przez kratkę (`FlowExchangeGrate*.csv`).
+- Pola prędkości PIV wokół kratki.
+
+Wymiana idzie tylko z powierzchni do sieci. Zbiór nadaje się do
+sprawdzenia samego wzoru wpustu (przejście z przelewu na otwór), nie do
+testu dynamiki sprzężenia.
+
+Rekord 1464864 zawiera tylko PDF artykułu (Rubinato i in. 2018,
+*J. Hydroinformatics*), bez danych pomiarowych.
+
+### 2.3 Wniosek
+
+Żaden z otwartych zbiorów pomiarowych nie obejmuje wybicia z sieci w
+warunkach nieustalonych.
+
+- A Coruña sprawdza kierunek z powierzchni do sieci w pełnym łańcuchu:
+  opad → spływ → wpusty → sieć → wylot.
+- Wybicie sprawdza tylko test 8B EA. To porównanie modeli, a dane są
+  dostępne na prośbę.
