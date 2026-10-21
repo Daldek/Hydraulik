@@ -708,4 +708,5 @@ SFINCS_LIBRARY=<katalog-instalacji>/lib/libsfincs.so .venv/bin/python run_all.py
 | `coupler.py` | koordynator: wrapper BMI SFINCS-a, wzory wymiany, bilans |
 | `run_all.py` | uruchamia każdy scenariusz w osobnym procesie |
 | `plots.py` | rysunki do `figures/` |
+| `viz/export_3d.py` | ponowny przebieg jednego scenariusza z mapami SFINCS co 10 s i eksport do JSON dla widoku 3D |
 | `results/summary.json` | wyniki wszystkich scenariuszy |
