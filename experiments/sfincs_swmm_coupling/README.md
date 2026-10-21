@@ -677,8 +677,83 @@ pyswmm 2.2.0 / SWMM 5.2.4:
     wylotu na wysokości szczytu węzła** (otwór albo krótki przewód; +12,9–14,3%
     w teście bez sprzężenia). Same wyloty bez połączenia: 0,00%. Powtarzalny przykład:
     testy `lid_*` w `swmm_only.py`.
+11. **SWMM 5.2.4, `EXTRAN`: skok wysokości ciśnienia przy przejściu węzła w przepływ
+    pod ciśnieniem.** Gdy woda w studzience dochodzi do wierzchu przewodów, ciśnienie
+    rośnie o 1,3–1,4 m w ciągu 1 s, a bez limitu na terenie nawet o 3,9 m (do 2,5 m
+    nad teren). Skok jest niezależny od kroku obliczeniowego (0,5 i 0,1 s),
+    `INERTIAL_DAMPING`, tolerancji iteracji i `MIN_SURFAREA`. `SLOT` go nie ma.
+    Powtarzalny przykład bez sprzężenia: `swmm_spikes.py`. Szczegóły: p. 7.1.
 
-## 7. Odtworzenie
+## 7. Do rozwiązania przy implementacji w Hydrauliku
+
+Ustalenia z eksperymentu, których Hydraulik nie może pominąć. Żadne z nich nie jest
+jeszcze wdrożone.
+
+### 7.1 Szum w wynikach sieci: skoki ciśnienia przy przejściu w przepływ pod ciśnieniem (priorytet)
+
+**Problem.** W wariancie zalecanym (`EXTRAN`, SurDepth = 0, p. 4) wysokość ciśnienia
+w studzience skacze o 1,3–1,4 m w ciągu 1 s, gdy woda dochodzi do wierzchu przewodów.
+
+- Skok kończy się na poziomie terenu.
+- SWMM przez 1–2 s wylewa wodę, a sprzężenie oddaje ją na ulicę.
+- Przykład w `V3_base_flood_extran_norelax`: J3 w 35,2 min, J2 w 36,5 min, J1 w 36,8
+  oraz w 38,1–38,6 min.
+
+**Przyczyna.** To błąd SWMM, nie sprzężenia (`swmm_spikes.py`, p. 6, obserwacja 11).
+
+**Skutki.**
+
+- **Bilans wody:** pomijalne. Fałszywe wybicie to 0,16 m³ przy 199 m³ dopływu.
+- **Wyniki screeningu:** fałszywe.
+  - Maksymalne ciśnienie każdej studzienki, która przechodzi w przepływ pod ciśnieniem,
+    równa się terenowi.
+  - SWMM notuje wybicie w studzienkach, które w rzeczywistości nie wybijają.
+- **Skala:** w 7 przebiegach wariantu zalecanego (30 studzienek) skok ponad 0,5 m
+  w 1 s wystąpił w 26–27 studzienkach. W 5–6 z nich zawyżył maksimum o więcej niż
+  5 cm, maksymalnie o 0,5 m.
+
+**Kierunek rozwiązania (do potwierdzenia przy implementacji).**
+
+1. **Maksima ciśnienia i głębokości w sieci:** podawać najwyższą wartość utrzymaną bez
+   przerwy przez co najmniej T sekund, czyli maksimum z minimum w oknie T.
+   - T to parametr konfiguracji, wstępnie 10 s.
+   - Obok podawać surowe maksimum.
+   - Gdy oba różnią się o więcej niż ok. 5 cm, oznaczać wynik jako „możliwy skok
+     numeryczny”.
+2. **Flaga „studzienka wybija”:** stawiać ją tylko wtedy, gdy wybicie trwa co najmniej
+   T i przekracza próg objętości. Próg trzeba ustalić.
+   - Fałszywe wybicia: 0,01–0,10 m³ w 1–2 s.
+   - Prawdziwe wybicie J3: 532 m³ przez 17 min.
+3. **Nie używać percentyli (np. p99).** Zależą od długości symulacji. Ten sam zmierzony
+   szczyt (A Coruña T04, IN2, maksimum 0,055 L/s) daje p99 = 0,054, 0,039 i 0,005 L/s
+   w zapisie o długości 10 min, 1 h i 6 h. Maksimum utrzymane 10 s daje za każdym razem
+   0,053 L/s.
+4. **Dobór T:**
+   - 5 s nie wystarcza: jeden skok w J1 trwa 5–10 s.
+   - 30 s obcina prawdziwe krótkie szczyty o ok. 20%.
+   - 10 s ścina je o 2–4%.
+   - T dobrano przy wymianie co 1 s i kroku SWMM 0,5 s. Trzeba je sprawdzić przy innych
+     krokach i w większych sieciach.
+5. **Alternatywa `SLOT`:** nie ma skoków, ale gubi 2–17% wody przy długotrwałym
+   przepływie pod ciśnieniem (p. 3.10).
+
+### 7.2 Inne ustalenia potrzebne przy implementacji
+
+- **Straty miejscowe.** Pliki SWMM eksperymentu nie mają sekcji `[LOSSES]`, więc straty
+  na wlotach i wylotach przewodów oraz w studzienkach są zerowe. Liczy się tylko tarcie
+  (Manning).
+  - Kanoniczny format wejścia powinien mieć współczynniki strat z niezerowymi wartościami
+    domyślnymi.
+  - Przykład: C3 w `V3_*` przy K = 0,5 na wlocie i 1,0 na wylocie przenosi 0,40 m³/s
+    zamiast 0,52 m³/s.
+- **Spójne warunki brzegowe przy cofce.** W `V3_*` dolna krawędź ulicy odprowadza wodę
+  swobodnie, choć leży niżej (9,0 m) niż narzucony poziom na wylocie (9,6 m), a wylot
+  nie ma klapy zwrotnej. W stanie ustalonym woda krąży w obiegu wylot → C3 → J3 →
+  ulica → krawędź (ok. 0,52 m³/s). Hydraulik powinien:
+  - wiązać brzeg powierzchni przy wylocie z poziomem wylotu;
+  - dawać możliwość klapy zwrotnej na wylocie.
+
+## 8. Odtworzenie
 
 Wersje: SFINCS `db08c6a37a956e1a9b14b6f3c65c05834b2b80ce`, pyswmm 2.2.0
 (swmm-toolkit 0.17.0, silnik SWMM 5.2.4), gfortran 13.3, netCDF-Fortran 4.5.4,
@@ -709,4 +784,5 @@ SFINCS_LIBRARY=<katalog-instalacji>/lib/libsfincs.so .venv/bin/python run_all.py
 | `run_all.py` | uruchamia każdy scenariusz w osobnym procesie |
 | `plots.py` | rysunki do `figures/` |
 | `viz/export_3d.py` | ponowny przebieg jednego scenariusza z mapami SFINCS co 10 s i eksport do JSON dla widoku 3D |
+| `swmm_spikes.py` | sam SWMM z odtworzonymi dopływami: skoki ciśnienia przy przejściu w przepływ pod ciśnieniem (p. 7.1) |
 | `results/summary.json` | wyniki wszystkich scenariuszy |
