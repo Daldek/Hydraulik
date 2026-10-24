@@ -26,3 +26,9 @@ follows [Semantic Versioning](https://semver.org/).
   `config show`), generated `AGENTS.md` and `llms.txt`, and the schemas of the
   documents (AGI-1.1, AGI-2.1 to AGI-2.4, AGI-3.1 to AGI-3.8, AGI-4.1 to
   AGI-4.4, AGI-7.1, AGI-7.2, AGI-8.1, AGI-8.2).
+- The SWMM network table and the SWMM input writer and reader, the exchange law,
+  diagnostics and balance of the coupling, the SFINCS regular-grid model writer
+  (checked on SFINCS v2.4.1 and main), the detection of the engines, a live test
+  that runs a written model on the real SFINCS and the weekly live workflow
+  (ADR-0002, ADR-0003, ADR-0004). These are library modules; their commands
+  follow.
