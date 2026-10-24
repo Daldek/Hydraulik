@@ -11,14 +11,15 @@
 | Output writer (`output.py`) | done | ADR-0001; used by the commands of steps 7 to 13 |
 | Command catalog, envelope, CLI, AGENTS.md, llms.txt, schemas | done | commands `commands *` and `config show`; the domain commands are added by steps 9 to 13 |
 | Exchange laws, diagnostics, balance (`coupling/`) | done | pure functions from the experiment; used by the coupler of step 11 |
-| SWMM, SFINCS, coupler, data adapters, model commands | planned | plan steps 9 to 13 |
+| SWMM network, INP writer and reader, report parser (`engines/swmm`) | done | ADR-0002; run on the real SWMM engine of pyswmm in `tests/integration` |
+| SFINCS, coupler, data adapters, model commands | planned | plan steps 10 to 13 |
 | Live tests | planned | plan step 14 |
 | Phase 2 items that need the author | blocked | see Open questions |
 
 ## Next
 
-1. Plan step 9 (SWMM: network model, INP writer and reader, report parser, runner),
-   then steps 10 to 14 of
+1. Plan step 10 (SFINCS: engine detection, model writer, runner, results reader,
+   BMI wrapper), then steps 11 to 14 of
    `docs/plans/2026-10-24-sfincs-swmm-integration.md`. Every new command: declare it
    in `catalog/commands.py`, regenerate `AGENTS.md` and `llms.txt`.
 
