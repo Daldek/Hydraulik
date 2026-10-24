@@ -88,6 +88,39 @@ REASONS_PL: Final[dict[str, str]] = {
     ),
     "source_data": "Nie udało się odczytać odpowiedzi źródła danych.",
     "hydrolog_failed": "Hydrolog nie policzył hietogramu.",
+    "invalid_bbox": (
+        "Prostokąt --bbox to min_x,min_y,max_x,max_y, minima poniżej maksimów."
+    ),
+    "invalid_crs": (
+        "Nie rozpoznano układu współrzędnych; podaj kod EPSG, np. EPSG:2180."
+    ),
+    "crs_missing": "Plik nie ma układu współrzędnych; przypisz go danym.",
+    "crs_not_supported": (
+        "Model wymaga układu rzutowanego w metrach z kodem EPSG (dla Polski EPSG:2180)."
+    ),
+    "raster_unreadable": (
+        "GDAL nie odczytał rastra; podaj GeoTIFF z układem współrzędnych."
+    ),
+    "vector_unreadable": (
+        "Nie odczytano warstwy wektorowej; sprawdź plik i nazwę warstwy."
+    ),
+    "empty_geometry": "Warstwa nie zawiera żadnej geometrii.",
+    "empty_domain": "Obszar modelu nie zawiera żadnej komórki.",
+    "grid_too_large": (
+        "Siatka miałaby ponad 25 mln komórek; zwiększ --dx-m lub zmniejsz obszar."
+    ),
+    "dem_gaps": "Część obszaru nie ma wysokości; podaj rastry pokrywające cały obszar.",
+    "manning_gaps": (
+        "Część obszaru nie ma współczynnika Manninga; raster musi pokrywać obszar."
+    ),
+    "cn_gaps": "Raster infiltracji nie pokrywa żadnej komórki obszaru.",
+    "invalid_retention": "Retencja SCS S jest w mm i nie może być ujemna.",
+    "outlet_outside_domain": "Odpływ (--outlet) nie dotyka obszaru modelu.",
+    "outlet_not_on_edge": (
+        "Odpływ leży wewnątrz obszaru; woda może wypłynąć tylko brzegiem."
+    ),
+    "station_outside_domain": "Stacja leży poza obszarem modelu.",
+    "invalid_station_table": "Tabela stacji jest niepoprawna (kolumny name, x_m, y_m).",
 }
 
 

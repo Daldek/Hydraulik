@@ -14,6 +14,7 @@ from typing import Final
 from hydraulik.exceptions import InputDataError, NotFoundError
 
 __all__ = [
+    "FILES",
     "INP_NAME",
     "LOG_NAME",
     "MAP_NAME",
@@ -28,6 +29,18 @@ INP_NAME: Final = "sfincs.inp"
 MAP_NAME: Final = "sfincs_map.nc"
 STATIONS_NAME: Final = "sfincs_his.nc"
 LOG_NAME: Final = "sfincs.log"
+
+FILES: Final = {
+    "inp": INP_NAME,
+    "index": "sfincs.ind",
+    "mask": "sfincs.msk",
+    "elevation": "sfincs.dep",
+    "manning": "sfincs.man",
+    "curve_number": "sfincs.scs",
+    "precip": "sfincs.precip",
+    "observations": "sfincs.obs",
+}
+"""File names of a model directory by role (the model writer and ``model build``)."""
 
 _TIME_FORMAT: Final = "%Y%m%d %H%M%S"
 

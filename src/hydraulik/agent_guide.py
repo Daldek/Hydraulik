@@ -79,6 +79,16 @@ FLOWS: Final[tuple[Flow, ...]] = (
         ),
     ),
     Flow(
+        "Build a model from your terrain",
+        (
+            (
+                "model build",
+                "Write the model directory from elevation rasters and the rain table "
+                "(add --check to plan)",
+            ),
+        ),
+    ),
+    Flow(
         "Run a model and read the result",
         (
             ("model run", "Run SFINCS on a model directory (add --check to plan)"),

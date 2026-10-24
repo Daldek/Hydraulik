@@ -108,8 +108,21 @@ The second call converts the document of `hydrolog precip hietogram --json`. The
 has `time_min,depth_mm`; a PMAXTP depth comes with a notice to name IMGW-PIB as its
 source.
 
-With a SFINCS model directory (one you wrote; `model build` is planned), a run and its
-results:
+A model is built from your terrain (GeoTIFFs in a metric CRS, for Poland EPSG:2180), the
+rain table and, when you have them, a Manning raster and a curve-number raster (or the
+SCS retention `S` in mm):
+
+```sh
+hydraulik model build --dem ./nmt_1m.tif --dx-m 5 --rain ./rain.csv \
+    --curve-number-raster ./cn.tif --outlet ./outlet.gpkg --output-dir ./model
+```
+
+The grid is aligned to `--dx-m`; a terrain finer than the grid is averaged to it. The
+domain is every cell with elevation, or `--geometry` (a polygon), or `--bbox` with
+`--crs`; a cell of the domain without elevation or Manning `n` is an error, and where
+the curve number has gaps there is no infiltration (a warning says how many cells).
+Without `--outlet` the boundary is closed and all the rain stays in the model. Then a
+run and its results:
 
 ```sh
 hydraulik engines check --require 'model run'
@@ -144,6 +157,7 @@ SWMM, the peaks of every node and conduit and, as a notice, a continuity error a
 | Render AGENTS.md, llms.txt or the block for another repository | `commands guide` | `hydraulik.render_guide` | `--inject` only |
 | Show the settings and their sources | `config show` | `hydraulik.show_config` | nothing |
 | Report the engines and packages found, and what each command needs | `engines check` | `hydraulik.check_engines` | nothing |
+| Write a SFINCS model directory from terrain, rain and optional rasters | `model build` | `hydraulik.build_model` | `--output-dir` |
 | Run SFINCS on a model directory, read its maxima and water balance | `model run` | `hydraulik.run_model` | `--output-dir` |
 | Read the maxima, flooded areas and water balance of a run | `results read` | `hydraulik.read_results` | nothing |
 | Write a map as a GeoTIFF or the station series as a CSV table | `results export` | `hydraulik.export_results` | `--output` |
