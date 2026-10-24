@@ -32,3 +32,11 @@ follows [Semantic Versioning](https://semver.org/).
   that runs a written model on the real SFINCS and the weekly live workflow
   (ADR-0002, ADR-0003, ADR-0004). These are library modules; their commands
   follow.
+- Running SFINCS on a model directory (an executable or a Docker image that is
+  already present): streamed progress, a timeout that also kills the container, the
+  `Error :` line of SFINCS and the end of its log in the error; and reading its
+  results: grid and masks, maximum depth and velocity, flooded areas, stations, the
+  water balance (rain, infiltration, storage, residual, flags) and GeoTIFF export. The
+  live tests pass on SFINCS v2.4.1 and on `main`; ADR-0004 has an erratum on the
+  masking of the map (`h` is not masked). These are library modules; their commands
+  follow.

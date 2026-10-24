@@ -46,4 +46,11 @@ closed basin infiltrates and stores what the SCS equation says to within 0.05 mm
 
 ## Errata
 
-None.
+- 2026-10-25: the second consequence above is too cautious. Checked on SFINCS v2.4.1
+  and on `main` (f3647fc): `zs`, `zsmax` and `hmax` are masked under `huthresh`, but
+  `h` (the water depth at every output time), `cumprcp` and `cuminf` are not. The
+  result reader books the stored water from `h`, so the balance of a run that is not
+  coupled closes to within 0.05 % of the rain in the live test, and only the maximum
+  depth under `huthresh` is missing from the file (a flooded-area threshold below
+  `huthresh` is refused). The BMI exposes `zs` and `zb`, so the coupler reads the
+  depth as `zs - zb`.
