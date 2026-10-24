@@ -34,6 +34,28 @@ uv add git+https://github.com/Daldek/Hydraulik                   # library
 Python 3.12 or newer. Extras: `model` (rasters and vectors), `sfincs` (read
 results), `swmm` (pyswmm), `rainfall` (Hydrolog and IMGWTools), `all`.
 
+### Settings
+
+Settings come from, in order: a command-line option, `HYDRAULIK_<KEY>` (the
+shared key `lang` also `NOGAT_LANG`), the `[hydraulik]` table of `nogat.toml` in
+the user configuration folder (or the file in `NOGAT_CONFIG`), the default. The
+key `sfincs.exe` is the variable `HYDRAULIK_SFINCS_EXE`. `hydraulik config show`
+lists every setting with its value and source. Hydraulik needs no credentials and
+keeps no store or cache.
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `NOGAT_CONFIG` | settings file | `nogat.toml` in the user configuration folder |
+| `HYDRAULIK_LANG`, `NOGAT_LANG` | language of human-readable output, `pl` or `en` | `pl` |
+| `HYDRAULIK_LOG_LEVEL` | `debug`, `info`, `warning`, `error` | `warning` |
+| `HYDRAULIK_SFINCS_EXE` | SFINCS executable | `sfincs` on `PATH` |
+| `HYDRAULIK_SFINCS_IMAGE` | Docker image used when there is no executable | `deltares/sfincs-cpu:sfincs-v2.4.1` |
+| `HYDRAULIK_SFINCS_LIBRARY` | `libsfincs` for the coupling | none |
+| `HYDRAULIK_SFINCS_QEXT_UNIT` | unit of `qext` in that library, `m3s` or `ms` | `m3s` |
+| `HYDRAULIK_SFINCS_TIMEOUT_S`, `HYDRAULIK_SFINCS_THREADS` | run timeout, OpenMP threads | 7200, all cores |
+| `HYDRAULIK_DOCKER_EXE` | Docker command | `docker` |
+| `HYDRAULIK_KARTOGRAF_EXE`, `HYDRAULIK_KARTOGRAF_TIMEOUT_S` | Kartograf command, download timeout | `kartograf` on `PATH`, 3600 |
+
 ## Engines are external
 
 Hydraulik never bundles, installs or downloads an engine (ECO-041). It looks for
