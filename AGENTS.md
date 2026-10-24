@@ -67,6 +67,7 @@ Codes come from the shared registry
 - `rainfall build` (`hydraulik.build_rainfall`): Write a design rain as a rain table from a Hydrolog shape and a PMAXTP depth. Details: `hydraulik commands schema --command 'rainfall build'`.
 - `model build` (`hydraulik.build_model`): Write a SFINCS model directory from your terrain, rain and optional rasters. Details: `hydraulik commands schema --command 'model build'`.
 - `model run` (`hydraulik.run_model`): Run SFINCS on a model directory and read its maxima and water balance. Details: `hydraulik commands schema --command 'model run'`.
+- `model couple` (`hydraulik.couple_model`): Run SFINCS and a SWMM sewer network together and book the water they exchange. Details: `hydraulik commands schema --command 'model couple'`.
 - `results read` (`hydraulik.read_results`): Read the maxima, flooded areas and water balance of a SFINCS run. Details: `hydraulik commands schema --command 'results read'`.
 - `results export` (`hydraulik.export_results`): Write a map of a run as a GeoTIFF, or the station series as a CSV table. Details: `hydraulik commands schema --command 'results export'`.
 - `swmm run` (`hydraulik.run_network`): Run a SWMM sewer network with an inflow hydrograph and read its peaks. Details: `hydraulik commands schema --command 'swmm run'`.
@@ -99,6 +100,10 @@ Codes come from the shared registry
 1. Run SFINCS on a model directory (add --check to plan): `hydraulik model run --model ./model --output-dir ./run --json`
 2. Read the maxima, flooded areas and water balance: `hydraulik results read --run ./run --json`
 3. Write a flood map as a GeoTIFF: `hydraulik results export --run ./run --variable max_depth --output ./hmax.tif --json`
+
+**Couple a model with a sewer network**
+
+1. Run SFINCS and the network together; first `engines check --require 'model couple'` (add --check to plan): `hydraulik model couple --model ./model --network ./network.csv --output-dir ./coupled --json`
 
 **Run a sewer network on its own**
 

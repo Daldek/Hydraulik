@@ -148,6 +148,23 @@ hydraulik swmm run --network ./network.csv --inflow ./inflow.csv --inflow-node J
 SWMM, the peaks of every node and conduit and, as a notice, a continuity error above
 5 %. `--inp` runs your own SWMM input (SI units) instead of a table.
 
+A model and a sewer network together (optional, it needs the SFINCS shared library that
+you build yourself with `--enable-shared`, `HYDRAULIK_SFINCS_LIBRARY`, and `pyswmm`):
+
+```sh
+hydraulik engines check --require 'model couple'
+hydraulik model couple --model ./model --network ./network.csv --output-dir ./coupled
+```
+
+Every `--exchange-interval-s` the nodes of the network take water from the SFINCS cell
+they lie on and hand back what SWMM floods out of a full node; the volumes are exchanged,
+not the rates, so the interface adds no mass error. The result books the water (rain,
+infiltration, surface, network, outfall, exchange) and flags a residual above 1 %. Set
+`HYDRAULIK_SFINCS_QEXT_UNIT=ms` for SFINCS v2.4.1 and `m3s` for newer builds: a wrong
+unit shows as a balance that does not close. The coupled run happens in a process of its
+own, because SFINCS keeps its state in global variables. It is a screening: the
+description of the inlets is the main uncertainty.
+
 ## Capabilities
 
 | Task | CLI | Python function | Writes |
@@ -163,6 +180,7 @@ SWMM, the peaks of every node and conduit and, as a notice, a continuity error a
 | Write a map as a GeoTIFF or the station series as a CSV table | `results export` | `hydraulik.export_results` | `--output` |
 | Write a design rain as a rain table (Hydrolog shape, PMAXTP depth) | `rainfall build` | `hydraulik.build_rainfall` | `--output` |
 | Run a SWMM sewer network with an inflow hydrograph, read its peaks | `swmm run` | `hydraulik.run_network` | `--output-dir` |
+| Run SFINCS and a SWMM network together, book the water they exchange | `model couple` | `hydraulik.couple_model` | `--output-dir` |
 
 Generic drivers for any command: `hydraulik.validate_command`,
 `hydraulik.check_command`, `hydraulik.run_command`.

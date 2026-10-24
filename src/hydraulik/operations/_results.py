@@ -5,13 +5,20 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from hydraulik.documents import ResultsDocument, notice
 from hydraulik.engines.sfincs.inp import MAP_NAME, STATIONS_NAME
 from hydraulik.exceptions import NotFoundError
 
-__all__ = ["DEFAULT_THRESHOLDS_M", "locate_results", "summarise"]
+__all__ = [
+    "DEFAULT_THRESHOLDS_M",
+    "describe_depth",
+    "describe_grid",
+    "describe_stations",
+    "locate_results",
+    "summarise",
+]
 
 DEFAULT_THRESHOLDS_M: Final = (0.1, 0.3)
 """Depths [m] for which the flooded area is reported when the caller gives none."""
@@ -65,6 +72,49 @@ def locate_results(run: str | os.PathLike[str]) -> tuple[Path, Path | None]:
     return map_path, his if his.is_file() else None
 
 
+def describe_grid(run: Any, stats: Any) -> dict[str, Any]:
+    """Return the ``grid`` entry of a results document for a read map."""
+    return {
+        "epsg": run.grid.epsg,
+        "dx_m": run.grid.dx_m,
+        "x0_m": run.grid.x0_m,
+        "y0_m": run.grid.y0_m,
+        "rows": run.grid.rows,
+        "columns": run.grid.columns,
+        "active_cells": int(run.active.sum()),
+        "area_m2": stats.active_area_m2,
+        "huthresh_m": run.huthresh_m,
+    }
+
+
+def describe_depth(stats: Any) -> dict[str, Any]:
+    """Return the ``depth`` entry of a results document for its statistics."""
+    return {
+        "max_depth_m": stats.max_depth_m,
+        "max_depth_x_m": stats.max_depth_x_m,
+        "max_depth_y_m": stats.max_depth_y_m,
+        "max_velocity_ms": stats.max_velocity_ms,
+        "flooded_area_m2": [
+            {"threshold_m": limit, "area_m2": area}
+            for limit, area in stats.flooded_area_m2.items()
+        ],
+    }
+
+
+def describe_stations(stations: Sequence[Any]) -> list[dict[str, Any]]:
+    """Return the ``stations`` entry of a results document."""
+    return [
+        {
+            "name": station.name,
+            "x_m": station.x_m,
+            "y_m": station.y_m,
+            "max_depth_m": station.max_depth_m,
+            "time_of_max_s": station.time_of_max_s,
+        }
+        for station in stations
+    ]
+
+
 def summarise(
     map_path: Path,
     stations_path: Path | None,
@@ -113,27 +163,8 @@ def summarise(
             "runtime_s": run.runtime_s,
             "average_dt_s": run.average_dt_s,
         },
-        grid={
-            "epsg": run.grid.epsg,
-            "dx_m": run.grid.dx_m,
-            "x0_m": run.grid.x0_m,
-            "y0_m": run.grid.y0_m,
-            "rows": run.grid.rows,
-            "columns": run.grid.columns,
-            "active_cells": int(run.active.sum()),
-            "area_m2": stats.active_area_m2,
-            "huthresh_m": run.huthresh_m,
-        },
-        depth={
-            "max_depth_m": stats.max_depth_m,
-            "max_depth_x_m": stats.max_depth_x_m,
-            "max_depth_y_m": stats.max_depth_y_m,
-            "max_velocity_ms": stats.max_velocity_ms,
-            "flooded_area_m2": [
-                {"threshold_m": limit, "area_m2": area}
-                for limit, area in stats.flooded_area_m2.items()
-            ],
-        },
+        grid=describe_grid(run, stats),
+        depth=describe_depth(stats),
         balance={
             "rain_m3": balance.rain_m3,
             "infiltration_m3": balance.infiltration_m3,
@@ -144,16 +175,7 @@ def summarise(
             "expected_rain_m3": balance.expected_rain_m3,
             "flags": list(balance.flags),
         },
-        stations=[
-            {
-                "name": station.name,
-                "x_m": station.x_m,
-                "y_m": station.y_m,
-                "max_depth_m": station.max_depth_m,
-                "time_of_max_s": station.time_of_max_s,
-            }
-            for station in stations
-        ],
+        stations=describe_stations(stations),
     )
     for flag in balance.flags:
         document.notices.append(

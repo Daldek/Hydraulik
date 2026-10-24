@@ -693,6 +693,265 @@ _MODEL_RUN = CommandSpec(
     },
 )
 
+_MODEL_COUPLE = CommandSpec(
+    name="model couple",
+    operation_id="hydraulik_model_couple",
+    function="hydraulik.couple_model",
+    summary=(
+        "Run SFINCS and a SWMM sewer network together and book the water they exchange."
+    ),
+    description=(
+        "Couples a SFINCS model directory (`model build`) with a SWMM network "
+        "(--network table, or your own SI input with --inp) through the SFINCS BMI "
+        "and pyswmm: every --exchange-interval-s the nodes take water from the cell "
+        "they lie on (weir and orifice law of Rubinato et al. 2017) and hand back "
+        "what SWMM floods out of a full node. The volumes are exchanged, not the "
+        "rates, so the interface adds no mass error; the result books every volume "
+        "(rain, infiltration, surface, network, outfall, exchange) and flags a "
+        "residual above 1 %. --mode swmm_flooding (default): the nodes have no "
+        "surcharge depth, SWMM floods them and the flooded volume returns to the "
+        "cell; --mode coordinator: the exchange law spills the node itself, with "
+        "relaxation. It needs the SFINCS shared library that you build with "
+        "--enable-shared (sfincs.library; sfincs.qext_unit is `ms` for v2.4.1 and "
+        "`m3s` for newer builds), pyswmm, and refuses before any work when one is "
+        "missing. The run happens in a process of its own. Use it to see how a "
+        "surcharging sewer returns water to the street; for the surface alone use "
+        "`model run`, for the network alone `swmm run`. It is a screening: the inlet "
+        "description moves the exchange by 10 to 30 %."
+    ),
+    options=(
+        OptionSpec(
+            name="model",
+            type="string",
+            required=True,
+            path_role="input",
+            examples=("./model",),
+            description=(
+                "Model directory with sfincs.inp (regular grid, binary input, "
+                "NetCDF output), written by `model build`."
+            ),
+        ),
+        OptionSpec(
+            name="network",
+            type="string",
+            path_role="input",
+            one_of="source",
+            examples=("./network.csv",),
+            description=(
+                "Network table (CSV) as for `swmm run`; x_m and y_m are in the CRS "
+                "of the model and rim_m is the ground. Exactly one of --network and "
+                "--inp."
+            ),
+        ),
+        OptionSpec(
+            name="inp",
+            type="string",
+            path_role="input",
+            one_of="source",
+            examples=("./sewer.inp",),
+            description=(
+                "Your own SWMM input (FLOW_UNITS CMS, [COORDINATES] in the CRS of the "
+                "model). It is run with a fixed routing step, a clock that matches "
+                "SFINCS and the SurDepth of the mode; the copy is network.inp. Exactly "
+                "one of --network and --inp."
+            ),
+        ),
+        OptionSpec(
+            name="exchange_interval_s",
+            type="integer",
+            unit="s",
+            min=1,
+            description=(
+                "Time between two exchanges (default 1); 1 s and 5 s agree to 1.5 %, "
+                "30 s halves the exchange of a surcharged network."
+            ),
+        ),
+        OptionSpec(
+            name="mode",
+            type="string",
+            enum=(
+                (
+                    "swmm_flooding",
+                    "SWMM floods a full node and the volume returns to the cell "
+                    "(default, EXTRAN)",
+                ),
+                (
+                    "coordinator",
+                    "the exchange law spills the node, with relaxation (SLOT)",
+                ),
+            ),
+            description="Who computes the spill from a full node.",
+        ),
+        OptionSpec(
+            name="relaxation",
+            type="number",
+            min=0.01,
+            max=1.0,
+            description=(
+                "Weight of the new discharge against the previous one (default 1 in "
+                "swmm_flooding, 0.1 in coordinator)."
+            ),
+        ),
+        OptionSpec(
+            name="rim_tolerance_m",
+            type="number",
+            unit="m",
+            min=0.0,
+            description=(
+                "Largest difference between the rim of a node and the bed of its "
+                "cell; a larger one is refused (default 0.1)."
+            ),
+        ),
+        OptionSpec(
+            name="node_area_m2",
+            type="number",
+            unit="m2",
+            min=0.01,
+            description=(
+                "Area of a node in the exchange law, also SWMM's MIN_SURFAREA "
+                "(default 1.167, a manhole)."
+            ),
+        ),
+        OptionSpec(
+            name="weir_coefficient",
+            type="number",
+            min=0.0,
+            description="C_w of the free weir (default 0.54, manhole).",
+        ),
+        OptionSpec(
+            name="orifice_coefficient",
+            type="number",
+            min=0.0,
+            description="C_o of the orifice (default 0.167, manhole).",
+        ),
+        OptionSpec(
+            name="routing_step_s",
+            type="number",
+            unit="s",
+            min=0.01,
+            max=1.0,
+            description=(
+                "SWMM's fixed routing step, at most the 1 s stride (default 0.5)."
+            ),
+        ),
+        OptionSpec(
+            name="surcharge_method",
+            type="string",
+            enum=(
+                ("EXTRAN", "exact in pressurised flow (default in swmm_flooding)"),
+                ("SLOT", "loses 2 to 17 % of the water (default in coordinator)"),
+            ),
+            description="Network table only: how SWMM treats pressurised flow.",
+        ),
+        OptionSpec(
+            name="output_dir",
+            type="string",
+            required=True,
+            path_role="output",
+            short="-o",
+            examples=("./coupled",),
+            description=(
+                "Directory for sfincs_map.nc, sfincs_his.nc (with stations), "
+                "sfincs.log, network.inp, network.rpt and coupling.csv (plain files, "
+                "created if missing)."
+            ),
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace files that already exist.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description=(
+                "Plan without effects: the files, the nodes on the domain and what "
+                "is missing (the library, pyswmm)."
+            ),
+        ),
+    ),
+    result_schema="hydraulik-couple/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True),
+    check="model couple",
+    rules=(
+        "Run `engines check --require 'model couple'` first: it needs libsfincs and "
+        "pyswmm.",
+        "Set sfincs.qext_unit to ms for SFINCS v2.4.1 and to m3s for newer builds; a "
+        "wrong unit shows as a balance that does not close.",
+        "Put each node's rim at the bed of its cell (within --rim-tolerance-m) and "
+        "give the coordinates in the CRS of the model.",
+        "Read the notices: a flagged balance, a continuity error above 5 %, an "
+        "oscillation or a numerical spike mean the result needs a second look.",
+    ),
+    examples=(
+        Example(
+            call=(
+                "hydraulik model couple --model ./model --network ./network.csv "
+                "--output-dir ./coupled --json"
+            ),
+            result={"schema": "hydraulik-couple/1"},
+        ),
+        Example(
+            call=(
+                "hydraulik model couple --model ./model --inp ./sewer.inp --mode "
+                "coordinator --output-dir ./coupled --check --json"
+            ),
+            result={"schema": "hydraulik-plan/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "data_error",
+        "unsupported",
+        "io_error",
+        "missing_dependency",
+        "calculation_error",
+        "terminated",
+        "cancelled",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Uruchamia SFINCS i sieć kanalizacyjną SWMM razem i księguje wymienianą "
+            "wodę."
+        ),
+        "description": (
+            "Sprzęga katalog modelu SFINCS (`model build`) z siecią SWMM (tabela "
+            "--network albo własny plik w jednostkach SI, --inp) przez BMI SFINCS i "
+            "pyswmm: co --exchange-interval-s węzły pobierają wodę z komórki, na "
+            "której leżą (prawo przelewu i otworu wg Rubinato i in. 2017) i oddają to, "
+            "co SWMM wylewa z pełnego węzła. Wymieniane są objętości, nie natężenia, "
+            "więc granica nie dodaje błędu masy; wynik księguje każdą objętość (opad, "
+            "infiltracja, powierzchnia, sieć, wylot, wymiana) i oflagowuje resztę "
+            "powyżej 1 %. --mode swmm_flooding (domyślnie): węzły nie mają głębokości "
+            "nadpiętrzenia, SWMM je wylewa, a wylana objętość wraca do komórki; "
+            "--mode coordinator: prawo wymiany samo wylewa węzeł, z relaksacją. "
+            "Wymaga biblioteki dzielonej SFINCS zbudowanej z --enable-shared "
+            "(sfincs.library; sfincs.qext_unit to `ms` dla v2.4.1 i `m3s` dla "
+            "nowszych), pyswmm i odmawia przed jakąkolwiek pracą, gdy czegoś brakuje. "
+            "Przebieg odbywa się w osobnym procesie. Użyj, aby zobaczyć, jak "
+            "przeciążona kanalizacja oddaje wodę na ulicę; samą powierzchnię liczy "
+            "`model run`, samą sieć `swmm run`. To rozpoznanie: opis wpustu zmienia "
+            "wymianę o 10 do 30 %."
+        ),
+        "rules": [
+            "Najpierw `engines check --require 'model couple'`: potrzebne są libsfincs "
+            "i pyswmm.",
+            "Ustaw sfincs.qext_unit na ms dla SFINCS v2.4.1 i na m3s dla nowszych; "
+            "zła jednostka objawia się bilansem, który się nie domyka.",
+            "Rzędną obrzeża każdego węzła ustaw na dnie jego komórki (w granicach "
+            "--rim-tolerance-m), a współrzędne podaj w układzie modelu.",
+            "Przeczytaj uwagi: oflagowany bilans, błąd ciągłości powyżej 5 %, "
+            "oscylacja lub szpilka numeryczna oznaczają, że wynik wymaga ponownego "
+            "przejrzenia.",
+        ],
+    },
+)
+
 _RESULTS_READ = CommandSpec(
     name="results read",
     operation_id="hydraulik_results_read",
@@ -1277,6 +1536,7 @@ COMMANDS: tuple[CommandSpec, ...] = (
     _RAINFALL_BUILD,
     _MODEL_BUILD,
     _MODEL_RUN,
+    _MODEL_COUPLE,
     _RESULTS_READ,
     _RESULTS_EXPORT,
     _SWMM_RUN,

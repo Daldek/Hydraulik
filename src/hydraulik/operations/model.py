@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
 from pathlib import Path
 
 from hydraulik.documents import PlanDocument, RunDocument
@@ -24,34 +23,14 @@ from hydraulik.operations._support import (
     file_dicts,
     missing_extras,
     require_extras,
+    stage_model,
 )
-from hydraulik.output import STAGING_DIR, Writer, plan_directory
+from hydraulik.output import Writer, plan_directory
 from hydraulik.settings import load_settings
 
 __all__ = ["run_model"]
 
 logger = logging.getLogger(__name__)
-
-
-def _stage_inputs(model: Path, staging: Path, outputs: tuple[str, ...]) -> None:
-    """Copy the model files into the directory SFINCS will run in.
-
-    The run happens in staging so that nothing reaches the output directory before it
-    has succeeded; files of a previous run and hidden entries (the staging directory
-    of the writer) are left out.
-    """
-    for entry in model.iterdir():
-        if (
-            entry.name.startswith(".")
-            or entry.name in outputs
-            or entry.name == STAGING_DIR
-        ):
-            continue
-        target = staging / entry.name
-        if entry.is_dir():
-            shutil.copytree(entry, target)
-        else:
-            shutil.copy2(entry, target)
 
 
 def run_model(
@@ -165,7 +144,7 @@ def run_model(
             last_logged = percent
 
     with Writer(plan) as writer:
-        _stage_inputs(folder, writer.staging, outputs)
+        stage_model(folder, writer.staging, outputs)
         info = run_sfincs(
             install,
             writer.staging,
