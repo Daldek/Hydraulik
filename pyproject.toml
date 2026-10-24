@@ -1,0 +1,150 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hydraulik"
+dynamic = ["version"]
+description = "Builds SFINCS flood models from Kartograf terrain and Hydrolog or IMGWTools rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Piotr de Bever", email = "git@debever.pl" }]
+requires-python = ">=3.12"
+keywords = [
+    "flood",
+    "sfincs",
+    "swmm",
+    "hydraulic-modelling",
+    "urban-drainage",
+    "pluvial-flooding",
+    "hydrology",
+    "gis",
+    "kartograf",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Hydrology",
+    "Typing :: Typed",
+]
+# The core is the catalog, the CLI, the settings and the output writer; every
+# feature that needs the scientific stack or an engine is an extra (DEV-6.5).
+dependencies = ["platformdirs>=4"]
+
+[project.optional-dependencies]
+# Terrain, land cover and domain rasters: build a SFINCS model from files.
+model = [
+    "numpy>=1.26",
+    "rasterio>=1.4",
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "pyproj>=3.6",
+]
+# Read SFINCS results (sfincs_map.nc, sfincs_his.nc).
+sfincs = ["numpy>=1.26", "netcdf4>=1.7"]
+# Run SWMM through pyswmm (the SWMM engine comes with its wheel).
+swmm = ["pyswmm>=2.0"]
+# Design rainfall: Hydrolog hyetographs and IMGWTools PMAXTP depths. The
+# producers are not on PyPI yet, so each is pinned to its release tag (REL-5.1).
+rainfall = [
+    "hydrolog @ git+https://github.com/Daldek/Hydrolog@v0.7.0",
+    "imgwtools @ git+https://github.com/Daldek/IMGWTools@v2.1.1",
+]
+all = [
+    "hydraulik[model,sfincs,swmm,rainfall]",
+]
+
+[project.scripts]
+hydraulik = "hydraulik.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Daldek/Hydraulik"
+Source = "https://github.com/Daldek/Hydraulik.git"
+Documentation = "https://github.com/Daldek/Hydraulik/blob/main/README.md"
+Changelog = "https://github.com/Daldek/Hydraulik/blob/main/docs/CHANGELOG.md"
+Issues = "https://github.com/Daldek/Hydraulik/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "jsonschema>=4.18",
+    "types-jsonschema",
+]
+
+[tool.hatch.version]
+path = "src/hydraulik/__init__.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hydraulik"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = [".claude"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+# Third-party packages of the extras that ship no type information.
+module = [
+    "rasterio",
+    "rasterio.*",
+    "geopandas",
+    "geopandas.*",
+    "shapely",
+    "shapely.*",
+    "netCDF4",
+    "pyswmm",
+    "pyswmm.*",
+    "hydrolog",
+    "hydrolog.*",
+    "imgwtools",
+    "imgwtools.*",
+    "jsonschema",
+    "jsonschema.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The default run and the gate exclude `live` (DEV-10.1); `-m live` replaces it.
+addopts = "--strict-markers -m 'not live'"
+markers = [
+    "live: needs an engine, a data tool or the network; run deliberately (-m live)",
+    "slow: more than ~10 s or Docker",
+    "db: needs a database (none in this project)",
+]
+
+[tool.coverage.run]
+source = ["hydraulik"]
+
+[tool.coverage.report]
+fail_under = 80
