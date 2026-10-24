@@ -36,19 +36,40 @@ involved, with a `live` test. Option names `path`, `root` and `store` are forbid
 contract test). Write source files with the `write` tool or a quoted heredoc, never with
 a Python string that holds backslashes.
 
-3. **`terrain download`**: Kartograf is called as a subprocess, never imported. Facts
-   from KartografAdopt7 on 2026-10-25: plain mode (`--output-dir`) does not exist yet,
-   `-o/--output` is still the store root and `--check-updates` the plan. So read
-   `kartograf commands schema --command "<group> <verb>" --json` (`result.commands[0]
-   .options[]`: `name`, `path_role` output = plain directory, root = store) and refuse
-   with `missing_dependency` (reason `engine_missing`) when no option has `path_role`
-   output; do not hard-code flags. The envelope `kartograf-result/1` (exit 0, 10, 11; an
-   error is the last line of stderr, `kartograf-error/1`) is stable. A file entry is
-   `e.get("path") or e.get("file", {}).get("path")`, `size_bytes` is optional,
-   `targets[]`, `conflicts[]` and `action` are unknown. Products: `elevation download
-   --product nmt`, `landcover download --product bdot10k`, `soil hsg --depth 0-5cm`
-   (HSG GeoTIFF uint8: 1 A, 2 B, 3 C, 4 D, 0 no data); one sub-directory per product.
-4. **`model build`** (`terrain/`, `model/`; the design is settled, nothing is written):
+3. **`terrain download`** (`data/kartograf.py`, `operations/terrain.py`): Kartograf is
+   called as a subprocess, never imported, and is targeted at the data-output
+   convention (DEV-19, ECO-051), not at what it has today. Checked on 2026-10-25 in the
+   working tree of Kartograf 0.8.0.dev0: `output_dir` is still `path_role: root` and
+   required, the plan is `check_updates`, a file entry is `{unit, country, file: {path,
+   status, label, sha256}}`, plain mode does not exist. So read `kartograf commands
+   schema --command "<group> <verb>" --json` (`result.commands[0].options[]`: `name`,
+   `path_role`), build the argv only from options the schema declares, and refuse with
+   `missing_dependency` (reason `engine_missing`, the hint says Kartograf must offer
+   `--output-dir`) when `output_dir` is not `path_role: output`. The contract to
+   implement: `kartograf <group> <verb> ... --output-dir DIR --json` gives
+   `kartograf-result/1` (exit 0, 10, 11; an error is the last stderr line,
+   `kartograf-error/1`) with `files[]` = `{path, size_bytes, sha256, status}` and
+   `skipped[]` = `{id, reason, message}`; `--check` gives a plan (`write`, `replace`,
+   `conflict`; its field names are not fixed, relay it). What a PL area needs today:
+   `elevation download --product nmt --country pl --resolution 1m --vertical-crs
+   EVRF2007 --sheet-system 1992` (or `--cutout --horizontal-crs EPSG:2180`, one
+   raster), `landcover download --product bdot10k`, `soil hsg --depth 0-5cm` (HSG
+   GeoTIFF uint8: 1 A, 2 B, 3 C, 4 D, 0 no data); the area is `--bbox` with
+   `--bbox-crs`, or `--geometry` with `--layer`. Command options: `bbox` + `crs` xor
+   `geometry` + `layer` (AGI-3.4), `products`, `output_dir`, `force`, `check`; one
+   sub-directory per product; result `hydraulik-terrain/1` with `files[]`. Tests: a fake
+   `kartograf` program (like `fake_sfincs` in `tests/synthetic.py`) that serves the
+   schema and writes files; the live test is marked `live` and skips itself while the
+   schema lacks plain mode.
+4. **`model build`** (`terrain/`, `model/`; the design is settled, nothing is written).
+   Step one, from rasters the user supplies, so that the Kartograf adapter plugs in
+   later: options `dem` (GeoTIFFs), `dx_m`, the domain as `bbox` + `crs` or `geometry` +
+   `layer` (default the valid cells of the DEM), `manning` (a number) xor
+   `manning_raster`, `curve_number_raster` xor `retention_mm_raster` (SCS S in mm,
+   CN = 25400 / (S + 254)), `rain` (the table of `rainfall build`), `recession_min`,
+   `outlet`, observation points, `output_dir`, `force`, `check`; result
+   `hydraulik-model/1`; it fills `ModelInputs` and calls `write_model`. Step two, land
+   cover and soil to the two rasters:
    grid aligned to `dx_m` from the domain polygon or the DEM extent; DEM reprojected
    with `rasterio.warp.reproject` (average when finer than the grid, bilinear
    otherwise), several files one after the other; BDOT10k classes painted on a finer
@@ -91,6 +112,14 @@ a Python string that holds backslashes.
 
 ## Open questions
 
+- English and Polish (AGI-9.2): machine output is English everywhere and Polish exists
+  only in the translation resources (`cli/messages.py`, `i18n_pl` of the catalog); the
+  new commands follow that and have Polish reason texts. Open: in Polish human output
+  the hint and the notices stay English (ECO-042 wants the hint in the language of the
+  message); a Polish table for hints and notice codes would close it.
+- `rainfall build` names its options after `hydrolog precip hietogram` (`hietogram_type`,
+  `total_mm`, `duration_min`, `timestep_min`, `alpha`, `beta`, `peak_position`) and
+  `imgw pmaxtp fetch` (`latitude`, `longitude`, `method`), by AGI-1.2.
 - Decided on 2026-10-24 by the coordinator, the author's delegate: the plan is approved
   (`Approved:` line, ADR-0001 to ADR-0004 accepted); the SWMM coupling stays an optional
   feature (`SCOPE.md` keeps the full 1D sewer coupling out of the MVP), so Q1 is closed.
