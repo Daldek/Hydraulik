@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-run-1.schema.json",
+  "title": "hydraulik-run/1",
+  "description": "One SFINCS run: the engine, the time it took, what it computed and the files written (`model run`).",
+  "type": "object",
+  "required": ["schema", "engine", "elapsed_s", "results", "files"],
+  "properties": {
+    "schema": {"const": "hydraulik-run/1"},
+    "engine": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["exe", "docker"]},
+        "location": {"type": ["string", "null"]},
+        "version": {"type": ["string", "null"]},
+        "build_revision": {"type": ["string", "null"]}
+      }
+    },
+    "elapsed_s": {"type": "number", "minimum": 0},
+    "results": {
+      "type": "object",
+      "required": ["schema"],
+      "properties": {"schema": {"const": "hydraulik-results/1"}}
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "size_bytes", "sha256", "status"],
+        "properties": {
+          "path": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "status": {"enum": ["written", "replaced"]}
+        }
+      }
+    }
+  }
+}

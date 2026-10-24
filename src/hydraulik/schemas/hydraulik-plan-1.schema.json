@@ -26,6 +26,19 @@
       "type": "array",
       "items": {"enum": ["output_in_store", "duplicate_output_name", "output_exists"]}
     },
-    "steps": {"type": "array", "items": {"type": "string"}}
+    "steps": {"type": "array", "items": {"type": "string"}},
+    "blockers": {
+      "type": "array",
+      "description": "Reasons other than the output that would make the real run fail.",
+      "items": {
+        "type": "object",
+        "required": ["reason", "message"],
+        "properties": {
+          "reason": {"enum": ["engine_missing", "extra_missing"]},
+          "message": {"type": "string"},
+          "hint": {"type": "string"}
+        }
+      }
+    }
   }
 }

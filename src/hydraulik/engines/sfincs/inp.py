@@ -19,6 +19,7 @@ __all__ = [
     "MAP_NAME",
     "STATIONS_NAME",
     "planned_outputs",
+    "precip_depth_mm",
     "read_inp",
     "tstop_s",
 ]
@@ -136,3 +137,62 @@ def planned_outputs(inp: dict[str, str]) -> tuple[str, ...]:
         names.append(STATIONS_NAME)
     names.append(LOG_NAME)
     return tuple(names)
+
+
+def precip_depth_mm(path: str | Path) -> float:
+    r"""Return the depth of rain [mm] that a ``sfincs.precip`` file gives.
+
+    SFINCS interpolates the records linearly, so the depth is the area of the
+    trapezoids; the writer ends every series flat, so nothing is extrapolated.
+
+    Parameters
+    ----------
+    path : str or Path
+        The file: ``time [s]`` and ``intensity [mm/h]`` per line.
+
+    Returns
+    -------
+    float
+        The depth [mm].
+
+    Raises
+    ------
+    NotFoundError
+        If the file does not exist.
+    InputDataError
+        If a line is not two numbers.
+
+    Examples
+    --------
+    >>> import tempfile, pathlib
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     p = pathlib.Path(tmp) / "sfincs.precip"
+    ...     _ = p.write_text("0 60\n3600 60\n")
+    ...     precip_depth_mm(p)
+    60.0
+    """
+    source = Path(path)
+    if not source.is_file():
+        raise NotFoundError(
+            f"precipitation file not found: {source}",
+            details={"path": str(source)},
+            reason="path_missing",
+        )
+    records: list[tuple[float, float]] = []
+    for line in source.read_text(encoding="utf-8", errors="replace").splitlines():
+        words = line.split()
+        if not words:
+            continue
+        try:
+            records.append((float(words[0]), float(words[1])))
+        except (IndexError, ValueError) as exc:
+            raise InputDataError(
+                f"{source.name}: cannot read the line {line!r}",
+                details={"path": str(source)},
+                hint="Each line is the time [s] and the intensity [mm/h].",
+                reason="invalid_precip",
+            ) from exc
+    return sum(
+        0.5 * (a[1] + b[1]) * (b[0] - a[0]) / 3600.0
+        for a, b in zip(records, records[1:], strict=False)
+    )
