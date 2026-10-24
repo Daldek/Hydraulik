@@ -45,7 +45,7 @@ scripts/gate.sh                    # before every commit (DEV-7.6)
 uv run pytest                      # tests without live (default)
 uv run pytest -m live              # tests that use the real engines
 uv run scripts/generate_errors.py  # regenerate src/hydraulik/_errors.py
-uv run hydraulik commands guide --format agents   # regenerate AGENTS.md
+uv run hydraulik commands guide --format agents > AGENTS.md   # and llms.txt
 ```
 
 Engines (settings in `nogat.toml` `[hydraulik]` or environment, see README):
@@ -59,7 +59,11 @@ src/hydraulik/
   __init__.py, exceptions.py, _errors.py   public API, errors (generated registry)
   settings.py                              nogat.toml, HYDRAULIK_*, config show
   output.py                                plain-mode writer (preflight, staging, files[])
-  catalog/, cli/, agent_guide.py           command catalog, envelope, CLI, AGENTS.md
+  documents.py                             typed result documents (to_dict, to_json)
+  catalog/{spec,commands,validate,envelope,dispatch}.py   the command catalog (AGI §2)
+  cli/{parser,render,messages}.py          argparse CLI generated from the catalog
+  agent_guide.py, _data/agents/            AGENTS.md, llms.txt, the block for consumers
+  operations/                              functions behind the commands
   engines/{detect,sfincs,swmm}             find, write, run and read the engines
   coupling/                                exchange laws, coupler, balance, diagnostics
   data/                                    Kartograf CLI, IMGWTools PMAXTP, Hydrolog rain
@@ -75,6 +79,7 @@ tests/{unit,integration,contract,fixtures}
 | Start a session | `docs/PROGRESS.md`, `docs/plans/` |
 | What earlier work found about SFINCS and SWMM | `docs/plans/2026-10-24-sfincs-swmm-extraction.md` |
 | Why a decision was taken | `docs/DECISIONS.md` and `docs/decisions/` |
+| Add or change a command | `src/hydraulik/catalog/commands.py` (declare it once), then the function in `operations/` and the tests of `tests/contract/` |
 | Change the agent interface | the Nogat standard, AGI §2 to §4 and §7 |
 
 ## Session workflow
@@ -102,3 +107,9 @@ libraries, all optional.
 - DEV-10.6: not applicable, Hydraulik provides no store or file format that
   another project reads.
 - AGI §5, §6: not applicable, the registry declares no MCP server and no REST API.
+- DOC-4.2: the command index of AGENTS.md points to `commands schema` for each
+  command, not to a page of a generated reference.
+- ERR-6, DEV-2.3: human-readable error text is Polish for the common reasons
+  (`cli/messages.py`); other messages stay English.
+- AGI-8.2: `commands guide --inject` rewrites the named file in place (temporary
+  file and `os.replace` in its directory); it is not a DEV §19 write.
