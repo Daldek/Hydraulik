@@ -1,0 +1,45 @@
+{
+ "schema": "hydrolog-result/1",
+ "tool": "hydrolog",
+ "version": "1.0.0.dev0",
+ "command": "precip hietogram",
+ "check": false,
+ "status": "ok",
+ "result": {
+  "schema": "hydrolog-precip-hietogram/1",
+  "hietogram_type": "euler_ii",
+  "total_mm": 40.0,
+  "duration_min": 60.0,
+  "timestep_min": 10.0,
+  "n_steps": 6,
+  "parameters": {
+   "peak_position": 0.33
+  },
+  "peak_intensity_mm_per_h": 78.24239668047872,
+  "times_min": [
+   10.0,
+   20.0,
+   30.0,
+   40.0,
+   50.0,
+   60.0
+  ],
+  "depths_mm": [
+   8.027307463324018,
+   13.040399446746454,
+   6.043743389116615,
+   4.941387368836658,
+   4.226801877375658,
+   3.7203604546005966
+  ],
+  "intensities_mm_per_h": [
+   48.16384477994411,
+   78.24239668047872,
+   36.26246033469969,
+   29.648324213019947,
+   25.36081126425395,
+   22.32216272760358
+  ]
+ },
+ "notices": []
+}

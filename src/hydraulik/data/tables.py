@@ -30,6 +30,7 @@ __all__ = [
     "RAIN_COLUMNS",
     "Hydrograph",
     "RainTable",
+    "rain_table_from_series",
     "read_hydrograph",
     "read_rain_table",
     "render_rain_table",
@@ -150,28 +151,76 @@ def read_rain_table(path: str | Path) -> RainTable:
     """
     source = Path(path)
     times, depths = _read_columns(source, RAIN_COLUMNS, "invalid_rain_table")
-    step = times[0]
+    return rain_table_from_series(
+        times, depths, name=source.name, details={"path": str(source)}
+    )
+
+
+def rain_table_from_series(
+    times_min: Sequence[float],
+    depth_mm: Sequence[float],
+    *,
+    name: str,
+    details: dict[str, object] | None = None,
+    reason: str = "invalid_rain_table",
+) -> RainTable:
+    """Check the end time and the depth of each step and return them as a table.
+
+    Parameters
+    ----------
+    times_min : sequence of float
+        The end of each step [min]: ``step, 2 * step, ...``.
+    depth_mm : sequence of float
+        Depth that fell in each step [mm].
+    name : str
+        Where the series came from, for the message (a file name).
+    details : dict or None, optional
+        ``details`` of the error that a malformed series raises.
+    reason : str, optional
+        ``details.reason`` of that error.
+
+    Returns
+    -------
+    RainTable
+        The regular series.
+
+    Raises
+    ------
+    InputDataError
+        If the series is empty, the first time is not positive, the times are not
+        regular, the lengths differ or a depth is negative or not finite.
+
+    Examples
+    --------
+    >>> rain_table_from_series([5, 10], [1.0, 3.0], name="x").total_mm
+    4.0
+    """
 
     def fail(why: str) -> InputDataError:
         return InputDataError(
-            f"{source.name}: {why}",
-            details={"path": str(source)},
+            f"{name}: {why}",
+            details=dict(details or {}),
             hint="time_min is the end of each step: 5, 10, 15, ... for a 5 min step.",
-            reason="invalid_rain_table",
+            reason=reason,
         )
 
-    if step <= 0:
+    if not times_min or len(times_min) != len(depth_mm):
+        raise fail("the times and the depths must be lists of the same length")
+    step = float(times_min[0])
+    if not math.isfinite(step) or step <= 0:
         raise fail(
             "the first time is the length of the first step and must be positive"
         )
-    for index, time_min in enumerate(times):
+    for index, time_min in enumerate(times_min):
         if not math.isclose(time_min, step * (index + 1), rel_tol=1e-9, abs_tol=1e-9):
             raise fail(
                 f"the times are not regular from the first step (row {index + 2})"
             )
-    if min(depths) < 0:
+    if not all(math.isfinite(depth) for depth in depth_mm):
+        raise fail("a depth is not a finite number")
+    if min(depth_mm) < 0:
         raise fail("a depth is negative")
-    return RainTable(step, tuple(depths))
+    return RainTable(step, tuple(float(depth) for depth in depth_mm))
 
 
 def render_rain_table(step_min: float, depth_mm: Sequence[float]) -> str:
@@ -192,11 +241,11 @@ def render_rain_table(step_min: float, depth_mm: Sequence[float]) -> str:
     Examples
     --------
     >>> render_rain_table(5.0, [1.0, 2.5]).splitlines()
-    ['time_min,depth_mm', '5,1.0000', '10,2.5000']
+    ['time_min,depth_mm', '5,1.000000', '10,2.500000']
     """
     lines = [",".join(RAIN_COLUMNS)]
     lines += [
-        f"{step_min * (index + 1):g},{depth:.4f}"
+        f"{step_min * (index + 1):g},{depth:.6f}"
         for index, depth in enumerate(depth_mm)
     ]
     return "\n".join(lines) + "\n"
