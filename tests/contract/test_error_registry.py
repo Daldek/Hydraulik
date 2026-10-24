@@ -11,6 +11,7 @@ from hydraulik import _errors
 from hydraulik.exceptions import (
     ERROR_CODES,
     CalculationError,
+    CancelledError,
     ConflictError,
     EngineError,
     ForbiddenPathError,
@@ -21,6 +22,7 @@ from hydraulik.exceptions import (
     NotFoundError,
     OutputError,
     SourceUnavailableError,
+    TerminatedError,
     UnsupportedError,
     error_document,
 )
@@ -83,6 +85,8 @@ def test_vendored_error_schema_lists_the_registry_codes() -> None:
         (ForbiddenPathError, "forbidden"),
         (CalculationError, "calculation_error"),
         (EngineError, "calculation_error"),
+        (CancelledError, "cancelled"),
+        (TerminatedError, "terminated"),
         (NoDataError, "no_data"),
         (UnsupportedError, "unsupported"),
     ],
@@ -111,6 +115,8 @@ def test_default_code_of_every_exception_class_is_a_registry_code(
         EngineError("sfincs exited with 1"),
         NoDataError("empty", reason="skipped_incomplete"),
         UnsupportedError("subgrid"),
+        CancelledError("declined"),
+        TerminatedError("SIGTERM"),
         InvalidInputError(),
         RuntimeError("bug"),
         FileNotFoundError(2, "No such file", "dem.tif"),

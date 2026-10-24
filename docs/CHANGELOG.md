@@ -16,3 +16,6 @@ follows [Semantic Versioning](https://semver.org/).
   `hydraulik-error/1` document (ERR-3, ERR-4, DEV-11.1).
 - Settings of the user environment: `nogat.toml`, `HYDRAULIK_*` variables, the
   precedence of DEV-18.1 and `.env.example` (DEV-18.1, DEV-18.3).
+- The plain-mode output writer: preflight with `--check` plan, conflicts for
+  duplicate names, existing files and directories inside a Nogat store, staging
+  and atomic replacement, `files[]` records (DEV §19, ADR-0001).
