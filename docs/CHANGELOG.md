@@ -46,7 +46,7 @@ follows [Semantic Versioning](https://semver.org/).
   totals in cubic metres, the statistics of every node and conduit and SWMM's own
   continuity error, which the totals reproduce to 0.01 percent. The rain table and the
   hydrograph table (`time_min`, `depth_mm` and `time_min`, `discharge_m3s`) are read
-  and written by `hydraulik.data.tables`. Library modules; `swmm run` follows.
+  and written by `hydraulik.data.tables`.
 - The commands `engines check` (the engines and Python packages found, what each
   command needs, `--require` for scripts), `model run` (SFINCS on a copy of the model
   directory in staging; the map, the station file and the log reach `--output-dir` only
@@ -56,6 +56,13 @@ follows [Semantic Versioning](https://semver.org/).
   `hydraulik-engines/1`, `-run/1`, `-results/1` and `-export/1`, and the optional
   `blockers` of `hydraulik-plan/1` (an engine or an extra that would stop the run). Live
   tests of the four commands pass on SFINCS v2.4.1 and on `main`.
+- The command `swmm run` (`hydraulik.run_network`): EPA SWMM through pyswmm on a network
+  table or on the user's own SWMM input (SI units), with an inflow hydrograph at one
+  node; `network.inp` and `network.rpt` reach `--output-dir` only after SWMM finished;
+  the result `hydraulik-swmm/1` has the water balance of SWMM and the peaks of every
+  node and conduit, and the notices flag a continuity error above 5 %, flooded nodes
+  and an inflow that outlasts the run. `--check` plans it. `engines check` no longer
+  lists numpy as a need of `swmm run`.
 
 ### Fixed
 

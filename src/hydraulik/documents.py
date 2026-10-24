@@ -27,6 +27,7 @@ __all__ = [
     "PlanDocument",
     "ResultsDocument",
     "RunDocument",
+    "SwmmDocument",
     "notice",
     "to_jsonable",
 ]
@@ -365,4 +366,40 @@ class ExportDocument(_Carrier, Document):
     variable: str
     format: str
     source: str
+    files: list[dict[str, Any]]
+
+
+@dataclass
+class SwmmDocument(_Carrier, Document):
+    """``hydraulik-swmm/1``: one SWMM run and what it computed.
+
+    Attributes
+    ----------
+    engine : dict
+        ``name`` (``pyswmm``), ``version`` and ``toolkit`` (the version of
+        ``swmm-toolkit``, which carries the SWMM engine).
+    source : dict
+        ``kind`` (``network`` for a network table, ``inp`` for the user's own SWMM
+        input), ``path`` and, when an inflow hydrograph was applied, ``inflow`` with
+        its ``path``, ``node``, ``volume_m3`` and ``duration_s``.
+    duration_s : float
+        Simulated time [s].
+    totals : dict
+        ``external_inflow_m3``, ``outflow_m3``, ``flooding_m3``, ``final_storage_m3``
+        and ``continuity_error_percent`` (SWMM's own flow-routing continuity error).
+    nodes : list of dict
+        ``name``, ``kind`` and the peaks of every node.
+    conduits : list of dict
+        ``name`` and the peaks of every conduit.
+    files : list of dict
+        The files written: ``path``, ``size_bytes``, ``sha256``, ``status``.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-swmm/1"
+    engine: dict[str, Any]
+    source: dict[str, Any]
+    duration_s: float
+    totals: dict[str, float]
+    nodes: list[dict[str, Any]]
+    conduits: list[dict[str, Any]]
     files: list[dict[str, Any]]

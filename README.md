@@ -105,6 +105,18 @@ finished and its map can be read. The water balance is `rain - infiltration - st
 residual`: in a closed model the residual is the error and above 1 % of the rain it is
 flagged; with outflow cells it is the water that left.
 
+A sewer network on its own, from a network table (one row per node) and the inflow
+hydrograph that Hydrolog gives (`time_min,discharge_m3s`):
+
+```sh
+hydraulik swmm run --network ./network.csv --inflow ./inflow.csv --inflow-node J1 \
+    --output-dir ./swmm
+```
+
+`swmm run` writes `network.inp` and `network.rpt` and reports the water balance of
+SWMM, the peaks of every node and conduit and, as a notice, a continuity error above
+5 %. `--inp` runs your own SWMM input (SI units) instead of a table.
+
 ## Capabilities
 
 | Task | CLI | Python function | Writes |
@@ -117,6 +129,7 @@ flagged; with outflow cells it is the water that left.
 | Run SFINCS on a model directory, read its maxima and water balance | `model run` | `hydraulik.run_model` | `--output-dir` |
 | Read the maxima, flooded areas and water balance of a run | `results read` | `hydraulik.read_results` | nothing |
 | Write a map as a GeoTIFF or the station series as a CSV table | `results export` | `hydraulik.export_results` | `--output` |
+| Run a SWMM sewer network with an inflow hydrograph, read its peaks | `swmm run` | `hydraulik.run_network` | `--output-dir` |
 
 Generic drivers for any command: `hydraulik.validate_command`,
 `hydraulik.check_command`, `hydraulik.run_command`.

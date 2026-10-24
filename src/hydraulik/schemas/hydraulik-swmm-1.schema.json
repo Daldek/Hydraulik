@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-swmm-1.schema.json",
+  "title": "hydraulik-swmm/1",
+  "description": "One SWMM run: the totals of its water balance, the peaks of every node and conduit and the files written (`swmm run`).",
+  "type": "object",
+  "required": ["schema", "engine", "source", "duration_s", "totals", "nodes", "conduits", "files"],
+  "properties": {
+    "schema": {"const": "hydraulik-swmm/1"},
+    "engine": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"const": "pyswmm"},
+        "version": {"type": ["string", "null"]},
+        "toolkit": {"type": ["string", "null"]}
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": {"enum": ["network", "inp"]},
+        "path": {"type": "string"},
+        "inflow": {
+          "type": "object",
+          "required": ["path", "node", "volume_m3", "duration_s"],
+          "properties": {
+            "path": {"type": "string"},
+            "node": {"type": "string"},
+            "volume_m3": {"type": "number", "minimum": 0},
+            "duration_s": {"type": "number", "minimum": 0}
+          }
+        }
+      }
+    },
+    "duration_s": {"type": "number", "minimum": 0},
+    "totals": {
+      "type": "object",
+      "required": [
+        "external_inflow_m3",
+        "outflow_m3",
+        "flooding_m3",
+        "final_storage_m3",
+        "continuity_error_percent"
+      ],
+      "properties": {
+        "external_inflow_m3": {"type": "number"},
+        "outflow_m3": {"type": "number"},
+        "flooding_m3": {"type": "number"},
+        "final_storage_m3": {"type": "number"},
+        "continuity_error_percent": {"type": "number"}
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "max_depth_m",
+          "max_head_m",
+          "peak_inflow_m3s",
+          "peak_flooding_m3s",
+          "flooding_volume_m3",
+          "flooding_hours"
+        ],
+        "properties": {
+          "name": {"type": "string"},
+          "kind": {"enum": ["junction", "outfall", "storage", "divider"]},
+          "max_depth_m": {"type": "number"},
+          "max_head_m": {"type": "number"},
+          "peak_inflow_m3s": {"type": "number"},
+          "peak_flooding_m3s": {"type": "number"},
+          "flooding_volume_m3": {"type": "number", "minimum": 0},
+          "flooding_hours": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "conduits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "peak_flow_m3s", "peak_velocity_ms", "peak_depth_m", "surcharged_hours"],
+        "properties": {
+          "name": {"type": "string"},
+          "peak_flow_m3s": {"type": "number"},
+          "peak_velocity_ms": {"type": "number"},
+          "peak_depth_m": {"type": "number"},
+          "surcharged_hours": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "size_bytes", "sha256", "status"],
+        "properties": {
+          "path": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "status": {"enum": ["written", "replaced"]}
+        }
+      }
+    }
+  }
+}

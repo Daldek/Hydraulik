@@ -10,12 +10,12 @@
 | Command catalog, envelope, CLI, AGENTS.md, llms.txt, schemas | done | `commands list\|schema\|guide`, `config show` |
 | Exchange law, diagnostics, balance (`coupling/`) | done | pure functions from the experiment |
 | SWMM network table, INP writer and reader, report parser | done | ADR-0002; runs on the real SWMM in `tests/integration` |
-| SWMM run and summary (`engines/swmm/run.py`), rain and hydrograph tables (`data/tables.py`) | done | integration tests on the real SWMM; library only, `swmm run` is not declared yet |
+| SWMM run and summary (`engines/swmm/run.py`), rain and hydrograph tables (`data/tables.py`) | done | integration tests on the real SWMM |
 | SFINCS regular-grid writer (`engines/sfincs/model.py`) | done | ADR-0004; station names are quoted (SFINCS calls unquoted ones `station_001`) |
 | Engine detection (`engines/detect.py`) | done | ADR-0003; used by `engines check` and `model run` |
 | SFINCS runner, results reader, water balance (`engines/sfincs/{run,inp,results}.py`) | done | exe or Docker (Docker only with a fake `docker`: no daemon here) |
 | Commands `engines check`, `model run`, `results read`, `results export` | done | live tests pass on SFINCS v2.4.1 and `main` (`-m live` with `HYDRAULIK_SFINCS_EXE`) |
-| Command `swmm run` | planned | Next 1 |
+| Command `swmm run` (`operations/swmm.py`) | done | network table or the user's INP, inflow hydrograph; tests on the real SWMM, run through the CLI |
 | Command `rainfall build` (Hydrolog, IMGWTools) | planned | Next 2 |
 | Command `terrain download` (Kartograf CLI adapter) | planned | Next 3; Kartograf has no plain mode yet |
 | Command `model build` (`terrain/`, land cover to Manning, HSG and land cover to SCS S) | planned | Next 4 |
@@ -36,14 +36,6 @@ involved, with a `live` test. Option names `path`, `root` and `store` are forbid
 contract test). Write source files with the `write` tool or a quoted heredoc, never with
 a Python string that holds backslashes.
 
-1. **`swmm run`** (`operations/swmm.py::run_network`, function `hydraulik.run_network`):
-   options `network` (CSV table) xor `inp` (the user's file, CMS), `inflow` (hydrograph
-   table, `data.tables.read_hydrograph`) with `inflow_node`, `duration_min`,
-   `routing_step_s` (0.5), `surcharge_method`, `output_dir`, `force`, `check`. Writes
-   `network.inp` and `network.rpt` (the `.out` stays in staging); result
-   `hydraulik-swmm/1` from `SwmmSummary` (totals, nodes, conduits, continuity error).
-   A network table has no inflow of its own, so `inflow` is required with it. pyswmm
-   allows one open simulation per process.
 2. **`rainfall build`** (`data/rainfall.py`): Hydrolog `EulerIIHietogram(peak_position)`,
    `BetaHietogram(alpha, beta)`, `BlockHietogram`, `TriangularHietogram` with
    `.generate(total_mm, duration_min, timestep_min)`; depth either given (`depth_mm`) or

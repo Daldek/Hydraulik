@@ -583,6 +583,175 @@ _RESULTS_EXPORT = CommandSpec(
     },
 )
 
+_SWMM_RUN = CommandSpec(
+    name="swmm run",
+    operation_id="hydraulik_swmm_run",
+    function="hydraulik.run_network",
+    summary="Run a SWMM sewer network with an inflow hydrograph and read its peaks.",
+    description=(
+        "Runs EPA SWMM through pyswmm on a network table (--network, one row per "
+        "node) or on your own SWMM input in SI units (--inp, FLOW_UNITS CMS), with "
+        "an optional inflow hydrograph at one node (--inflow, --inflow-node; the "
+        "table of `time_min,discharge_m3s` that Hydrolog gives). Only when SWMM "
+        "finished it writes network.inp and network.rpt into --output-dir. The "
+        "result has the water balance of SWMM (inflow, outflow, flooding, storage, "
+        "its own continuity error) and the peaks of every node and conduit. Use it "
+        "for a sewer network on its own; it does not couple the network with the "
+        "surface (`model couple`) and does not read GIS sewer layers. pyswmm runs "
+        "one simulation per process."
+    ),
+    options=(
+        OptionSpec(
+            name="network",
+            type="string",
+            path_role="input",
+            one_of="source",
+            examples=("./network.csv",),
+            description=(
+                "Network table (CSV): name, x_m, y_m, rim_m, depth_m, to, diameter_m "
+                "per node, upstream first, one row with an empty `to` for the "
+                "outfall. Exactly one of --network and --inp."
+            ),
+        ),
+        OptionSpec(
+            name="inp",
+            type="string",
+            path_role="input",
+            one_of="source",
+            examples=("./sewer.inp",),
+            description=(
+                "Your own SWMM input file with FLOW_UNITS CMS; it runs where it is "
+                "and is copied to network.inp. Exactly one of --network and --inp."
+            ),
+        ),
+        OptionSpec(
+            name="inflow",
+            type="string",
+            path_role="input",
+            examples=("./inflow.csv",),
+            description=(
+                "Hydrograph table (CSV: time_min, discharge_m3s) applied as the "
+                "lateral inflow of --inflow-node. Required with --network."
+            ),
+        ),
+        OptionSpec(
+            name="inflow_node",
+            type="string",
+            examples=("J1",),
+            description="Node that receives the inflow. Required with --inflow.",
+        ),
+        OptionSpec(
+            name="recession_min",
+            type="number",
+            unit="min",
+            min=0.0,
+            description=(
+                "Network table only: minutes the run lasts after the last time of "
+                "the hydrograph (default 10)."
+            ),
+        ),
+        OptionSpec(
+            name="routing_step_s",
+            type="number",
+            unit="s",
+            min=0.01,
+            description="Network table only: SWMM's fixed routing step (default 0.5).",
+        ),
+        OptionSpec(
+            name="surcharge_method",
+            type="string",
+            enum=(
+                ("EXTRAN", "exact in pressurised flow (default)"),
+                (
+                    "SLOT",
+                    "Preissmann slot; loses 2 to 17 % of the water when pressurised",
+                ),
+            ),
+            description="Network table only: how SWMM treats pressurised flow.",
+        ),
+        OptionSpec(
+            name="output_dir",
+            type="string",
+            required=True,
+            path_role="output",
+            short="-o",
+            examples=("./swmm",),
+            description=(
+                "Directory for network.inp and network.rpt (plain files, created "
+                "when missing)."
+            ),
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace files that already exist.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description="Plan without effects: the files, the steps, what is missing.",
+        ),
+    ),
+    result_schema="hydraulik-swmm/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True),
+    check="swmm run",
+    rules=(
+        "Give exactly one of --network and --inp.",
+        "A network table has no inflow of its own: give --inflow and --inflow-node.",
+        "Read the notices: a continuity error above 5 % means do not trust the result.",
+    ),
+    examples=(
+        Example(
+            call=(
+                "hydraulik swmm run --network ./network.csv --inflow ./inflow.csv "
+                "--inflow-node J1 --output-dir ./swmm --json"
+            ),
+            result={"schema": "hydraulik-swmm/1"},
+        ),
+        Example(
+            call=("hydraulik swmm run --inp ./sewer.inp -o ./swmm --check --json"),
+            result={"schema": "hydraulik-plan/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "data_error",
+        "unsupported",
+        "io_error",
+        "missing_dependency",
+        "terminated",
+        "cancelled",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Uruchamia sieć kanalizacyjną w SWMM z hydrogramem dopływu i czyta jej "
+            "szczyty."
+        ),
+        "description": (
+            "Uruchamia EPA SWMM przez pyswmm na tabeli sieci (--network, jeden "
+            "wiersz na węzeł) albo na własnym pliku SWMM w jednostkach SI (--inp, "
+            "FLOW_UNITS CMS), z opcjonalnym hydrogramem dopływu w jednym węźle "
+            "(--inflow, --inflow-node; tabela `time_min,discharge_m3s`, jaką daje "
+            "Hydrolog). Dopiero po zakończeniu SWMM zapisuje network.inp i "
+            "network.rpt w --output-dir. Wynik ma bilans wody SWMM (dopływ, odpływ, "
+            "wylewy, zmagazynowana woda, jego własny błąd ciągłości) oraz szczyty "
+            "każdego węzła i przewodu. Użyj dla samej sieci kanalizacyjnej; nie "
+            "sprzęga sieci z powierzchnią (`model couple`) i nie czyta warstw GIS "
+            "kanalizacji. pyswmm uruchamia jedną symulację na proces."
+        ),
+        "rules": [
+            "Podaj dokładnie jedno z --network i --inp.",
+            "Tabela sieci nie ma własnego dopływu: podaj --inflow i --inflow-node.",
+            "Przeczytaj uwagi: błąd ciągłości powyżej 5 % oznacza wynik niewiarygodny.",
+        ],
+    },
+)
+
 COMMANDS: tuple[CommandSpec, ...] = (
     _COMMANDS_LIST,
     _COMMANDS_SCHEMA,
@@ -592,5 +761,6 @@ COMMANDS: tuple[CommandSpec, ...] = (
     _MODEL_RUN,
     _RESULTS_READ,
     _RESULTS_EXPORT,
+    _SWMM_RUN,
 )
 """Every command of Hydraulik, in the order of ``commands list``."""
