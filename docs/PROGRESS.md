@@ -20,8 +20,8 @@
 | Command `terrain download` (Kartograf CLI adapter) | planned | Next 3; Kartograf has no plain mode yet |
 | Command `model build`, step one: your own rasters (`terrain/`, `model/`, `operations/build.py`) | done | elevation, Manning, curve number or retention, rain, outlet, stations; live test on SFINCS v2.4.1 and `main` |
 | `model build`, step two: land cover (BDOT10k) and soil (HSG) to the Manning and curve-number rasters | planned | Next 4; the class values need the author's review |
-| SFINCS BMI wrapper, coupler, command `model couple` | planned | Next 5; optional feature (needs a user-built libsfincs) |
-| Live tests of the rest, README and ADR-0005 | planned | Next 6 |
+| SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
+| Weekly live workflow for the library tests, README quick start of `terrain download` | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
 
 ## Next
@@ -61,7 +61,12 @@ a Python string that holds backslashes.
    sub-directory per product; result `hydraulik-terrain/1` with `files[]`. Tests: a fake
    `kartograf` program (like `fake_sfincs` in `tests/synthetic.py`) that serves the
    schema and writes files; the live test is marked `live` and skips itself while the
-   schema lacks plain mode.
+   schema lacks plain mode. Not started: the run that built `model build` and `model
+   couple` stopped at its budget before this item. Reusable: `operations/_support.py`
+   (`refuse_option`, `stage_model`, `blocker`), the readers of `data/tables.py`, the
+   fake-program pattern of `tests/synthetic.py` (`fake_sfincs`) and the worker
+   process tests of `tests/unit/test_coupling_worker.py` (a Python process started with
+   `sys.executable`), and `engines/detect.py::detect_kartograf` (setting `kartograf.exe`).
 4. **`model build`, step two** (step one, from the user's rasters, is done:
    `terrain/grid.py`, `model/{options,build}.py`, `operations/build.py`; the options are
    `dem`, `dx_m`, `bbox` + `crs` or `geometry` + `layer`, `manning` or `manning_raster`,
@@ -83,30 +88,19 @@ a Python string that holds backslashes.
    rain table to `precip_breakpoints`. Real inputs for a smoke run (read only, never
    write there): `~/hydraulik-work/poznan_rataje_poc/data` (`nmt_1m.tif`, EPSG:2180,
    `bdot10k/bdot10k_teryt_3064.gpkg`).
-5. **BMI wrapper, coupler, `model couple`**: `engines/sfincs/bmi.py` is the ctypes
-   wrapper of the old `coupler.py::SfincsBmi` (`initialize`, `update_until(t_abs)`,
-   `finalize`, `get_value_ptr` for `zs` (double), `zb` and `qext` (float),
-   `get_var_shape`, `set_logical("qext")`, `get_sfincs_cell_index(x, y)` 1-based,
-   `get_sfincs_cell_area`, `get_last_bmi_error` on `main` only); `qext` is m3/s per cell
-   on `main` and m/s on v2.4.1 (`sfincs.qext_unit`); the arrays hold the active cells
-   only; SFINCS reads `sfincs.inp` from the working directory, so change into the
-   staging directory for the whole run; one model per process (global Fortran state), so
-   a live test runs the CLI in a subprocess. The loop (extraction note 3) goes in
-   `coupling/coupler.py` over two protocols: the surface (cell of a point, level, bed,
-   area, `qext`, advance, stored volume) and the network, which `SwmmStepper` already is
-   (`head_m`, `rim_m`, `add_inflow`, `flooding_volume_m3`, `outfall_flow_m3s`,
-   `stored_volume_m3`, `advance`); fakes in `tests/`; modes `swmm_flooding` (default,
-   `SurDepth` 0) and `coordinator`; sum `qext` over nodes that share a cell and cap the
-   sum; refuse when the rim differs from the bed by more than `rim_tolerance_m`; book
-   rain and infiltration from the final map (`cumprcp`, `cuminf`), not from the BMI;
-   with outflow cells the residual is not an error. `model couple` refuses before any
-   work when `sfincs.library` or pyswmm is missing (`engines check --require 'model
-   couple'`). Local engines for the live tests: build SFINCS v2.4.1 and `main` with
-   gfortran and netCDF-Fortran (`./configure --enable-shared`, plain `make`, extraction
-   note 7) and set `HYDRAULIK_SFINCS_EXE` and `HYDRAULIK_SFINCS_LIBRARY`; the built
-   library finds `libnetcdff` through its run path, no `LD_LIBRARY_PATH` is needed.
-6. README Quick start for the new commands, ADR-0005 (the coupler), the weekly live
-   workflow for the new live tests, final PROGRESS.
+5. **BMI wrapper, coupler, `model couple`**: done, see ADR-0005. Live tests: build SFINCS
+   v2.4.1 and `main` with gfortran and netCDF-Fortran (`./configure --enable-shared`,
+   plain `make`, extraction note 7) and run `pytest -m live` with
+   `HYDRAULIK_SFINCS_LIBRARY` (the `libsfincs.so` it made; it finds `libnetcdff` through
+   its run path, no `LD_LIBRARY_PATH` is needed), `HYDRAULIK_SFINCS_QEXT_UNIT` (`ms` for
+   v2.4.1, `m3s` for `main`) and, for the model tests, `HYDRAULIK_SFINCS_EXE`. Open in
+   the coupling: the unit of `qext` is not probed, the balance flags a wrong one; your
+   own `--inp` is covered by tests with a fake worker but has had no live run (the live
+   runs use `--network`); the SWMM clock of your input is set to 2000-01-01, so inflow
+   series dated otherwise are lost; Windows and macOS are unchecked.
+6. The weekly live workflow for the library tests (it has to build `libsfincs` with
+   `--enable-shared`; the workflow pulls no engine today), the README quick start of
+   `terrain download`, the final PROGRESS.
 
 ## Open questions
 
@@ -115,6 +109,12 @@ a Python string that holds backslashes.
   new commands follow that and have Polish reason texts. Open: in Polish human output
   the hint and the notices stay English (ECO-042 wants the hint in the language of the
   message); a Polish table for hints and notice codes would close it.
+- Choices of mine that the author should review: `model build` takes `recession_min` 60
+  and Manning `n` 0.04 when not given; `model couple` takes `rim_tolerance_m` 0.1, an
+  exchange interval of 1 s, relaxation 1 (`swmm_flooding`) or 0.1 (`coordinator`) and
+  calls more than 20 sign changes of the exchange of a node an oscillation. The default
+  `huthresh` of the model writer, 0.05 m, keeps water under 5 cm where it fell: a light
+  rain does not run off (the live tests use 100 mm).
 - `rainfall build` names its options after `hydrolog precip hietogram` (`hietogram_type`,
   `total_mm`, `duration_min`, `timestep_min`, `alpha`, `beta`, `peak_position`) and
   `imgw pmaxtp fetch` (`latitude`, `longitude`, `method`), by AGI-1.2.

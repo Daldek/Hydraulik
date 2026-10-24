@@ -22,6 +22,7 @@ from hydraulik.catalog.dispatch import (
 from hydraulik.documents import (
     CommandsDocument,
     ConfigDocument,
+    CoupleDocument,
     Document,
     EnginesDocument,
     ExportDocument,
@@ -36,6 +37,7 @@ from hydraulik.documents import (
 from hydraulik.exceptions import HydraulikError
 from hydraulik.operations.build import build_model
 from hydraulik.operations.config import show_config
+from hydraulik.operations.couple import couple_model
 from hydraulik.operations.engines import check_engines
 from hydraulik.operations.meta import render_guide
 from hydraulik.operations.model import run_model
@@ -46,6 +48,7 @@ from hydraulik.operations.swmm import run_network
 __all__ = [
     "CommandsDocument",
     "ConfigDocument",
+    "CoupleDocument",
     "Document",
     "EnginesDocument",
     "ExportDocument",
@@ -63,6 +66,7 @@ __all__ = [
     "check_command",
     "check_engines",
     "command_schema",
+    "couple_model",
     "export_results",
     "list_commands",
     "read_results",

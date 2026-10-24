@@ -97,6 +97,16 @@ FLOWS: Final[tuple[Flow, ...]] = (
         ),
     ),
     Flow(
+        "Couple a model with a sewer network",
+        (
+            (
+                "model couple",
+                "Run SFINCS and the network together; first `engines check --require "
+                "'model couple'` (add --check to plan)",
+            ),
+        ),
+    ),
+    Flow(
         "Run a sewer network on its own",
         (
             (

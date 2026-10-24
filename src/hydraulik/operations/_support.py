@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.metadata
 import importlib.util
+import shutil
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Final
 
 from hydraulik.exceptions import InvalidInputError, MissingDependencyError
-from hydraulik.output import FileRecord
+from hydraulik.output import STAGING_DIR, FileRecord
 
 __all__ = [
     "EXTRAS",
@@ -20,6 +22,7 @@ __all__ = [
     "missing_extras",
     "refuse_option",
     "require_extras",
+    "stage_model",
 ]
 
 EXTRAS: Final[dict[str, tuple[str, str]]] = {
@@ -156,3 +159,34 @@ def refuse_option(
         hint=hint,
         reason=reason,
     )
+
+
+def stage_model(model: Path, staging: Path, outputs: Iterable[str]) -> None:
+    """Copy the files of a model directory into the directory an engine will run in.
+
+    The run happens in staging so that nothing reaches the output directory before it
+    has succeeded. Files of a previous run (``outputs``) and hidden entries, among them
+    the staging directory of the writer, are left out.
+
+    Parameters
+    ----------
+    model : Path
+        The model directory (it may be the output directory itself).
+    staging : Path
+        An existing directory.
+    outputs : iterable of str
+        Names of the files the run will write.
+    """
+    skip = set(outputs)
+    for entry in model.iterdir():
+        if (
+            entry.name.startswith(".")
+            or entry.name in skip
+            or entry.name == STAGING_DIR
+        ):
+            continue
+        target = staging / entry.name
+        if entry.is_dir():
+            shutil.copytree(entry, target)
+        else:
+            shutil.copy2(entry, target)

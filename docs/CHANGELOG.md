@@ -89,6 +89,25 @@ follows [Semantic Versioning](https://semver.org/).
   (water collects at the low edge, the balance closes). Land cover and soil to the
   Manning and curve-number rasters are not built yet. `hydraulik.data.tables` reads
   station tables; `FILES` moved from the model writer to `engines.sfincs.inp`.
+- The command `model couple` (`hydraulik.couple_model`) and the coupling of SFINCS with
+  a SWMM network (ADR-0005): the SFINCS BMI through `ctypes` (`engines.sfincs.bmi`, the
+  layout of the active cells from the index file in `engines.sfincs.layout`), the
+  exchange loop over two small protocols (`coupling.coupler`: volumes are exchanged,
+  the water taken from a cell is limited to what stands there, nodes that share a cell
+  share the limit, SWMM's flooding returns to the cell or, in the `coordinator` mode,
+  the exchange law spills the node with relaxation), and a worker process
+  (`coupling.worker`, `coupling.process`) because SFINCS keeps its state in global
+  variables and prints to its standard output. `--network` or your own `--inp`
+  (run with a fixed routing step, the clock of the model and the surcharge depth of the
+  mode; the copy is `network.inp`). The command refuses before any work when
+  `sfincs.library` or pyswmm is missing; `--check` plans it. The result
+  `hydraulik-couple/1` books the water (rain, infiltration, surface, network, outfall,
+  exchange, pending, lost) and flags a residual above 1 %; notices flag a wrong
+  `sfincs.qext_unit` (as a balance that does not close), a continuity error above 5 %,
+  an oscillation, a head spike and nodes off the domain. Live tests on the local builds
+  of SFINCS v2.4.1 (`ms`) and `main` (`m3s`) pass; a wrong unit is flagged on both.
+  `coupled_balance` books infiltration and flooding without a cell; `stage_model` is
+  shared with `model run`.
 
 ### Fixed
 

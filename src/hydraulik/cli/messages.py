@@ -121,6 +121,26 @@ REASONS_PL: Final[dict[str, str]] = {
     ),
     "station_outside_domain": "Stacja leży poza obszarem modelu.",
     "invalid_station_table": "Tabela stacji jest niepoprawna (kolumny name, x_m, y_m).",
+    "no_exchange_nodes": (
+        "Żaden węzeł sieci nie leży na aktywnej komórce modelu; sprawdź układ i obszar."
+    ),
+    "rim_mismatch": (
+        "Rzędna obrzeża węzła różni się od dna komórki o więcej niż --rim-tolerance-m."
+    ),
+    "swmm_time": (
+        "SWMM i SFINCS nie są w tej samej chwili; przebiegi muszą trwać tyle samo."
+    ),
+    "bmi_failed": (
+        "Wywołanie biblioteki SFINCS (BMI) zakończyło się błędem; zobacz sfincs.log."
+    ),
+    "cell_numbering": (
+        "Biblioteka SFINCS numeruje komórki inaczej niż plik indeksu; "
+        "obsługiwane są tylko siatki regularne."
+    ),
+    "one_model_per_process": "SFINCS uruchamia jeden model na proces.",
+    "model_layout": "Model nie jest regularną siatką w trybie wejścia binarnego.",
+    "invalid_index": "Plik indeksu modelu nie pasuje do siatki.",
+    "invalid_job": "Plik zadania sprzężenia jest niepoprawny.",
 }
 
 

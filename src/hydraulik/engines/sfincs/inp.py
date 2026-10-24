@@ -19,6 +19,7 @@ __all__ = [
     "LOG_NAME",
     "MAP_NAME",
     "STATIONS_NAME",
+    "patch_inp",
     "planned_outputs",
     "precip_depth_mm",
     "read_inp",
@@ -88,6 +89,48 @@ def read_inp(path: str | Path) -> dict[str, str]:
         if separator and key.strip():
             values[key.strip().lower()] = value.strip()
     return values
+
+
+def patch_inp(path: str | Path, updates: dict[str, str | float | int]) -> None:
+    r"""Set keys of a ``sfincs.inp`` in place; keys that are absent are added.
+
+    The coupler uses it on the copy of the model in staging, for example to keep
+    ``dtmax`` below the exchange interval; the model of the user is never touched.
+
+    Parameters
+    ----------
+    path : str or Path
+        The file, or the directory that holds ``sfincs.inp``.
+    updates : dict
+        Key to its new value; keys are compared in lower case.
+
+    Raises
+    ------
+    NotFoundError
+        If there is no ``sfincs.inp``.
+
+    Examples
+    --------
+    >>> import tempfile, pathlib
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     _ = (pathlib.Path(tmp) / "sfincs.inp").write_text("dtmax = 60\ndx = 5\n")
+    ...     patch_inp(tmp, {"DTMAX": 1, "huthresh": 0.05})
+    ...     read_inp(tmp)
+    {'dtmax': '1', 'dx': '5', 'huthresh': '0.05'}
+    """
+    read_inp(path)  # the same error for a missing file
+    source = Path(path)
+    if source.is_dir():
+        source = source / INP_NAME
+    remaining = {key.lower(): value for key, value in updates.items()}
+    lines = source.read_text(encoding="utf-8", errors="replace").splitlines()
+    for number, line in enumerate(lines):
+        key, separator, _ = line.partition("=")
+        if separator and key.strip().lower() in remaining:
+            name = key.strip().lower()
+            lines[number] = f"{key.strip():<16}= {remaining.pop(name)}"
+    lines += [f"{key:<16}= {value}" for key, value in remaining.items()]
+    source.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def tstop_s(inp: dict[str, str]) -> float:
