@@ -64,4 +64,10 @@ One commit per step, the gate green before each:
 
 ## Results
 
-Filled in at the end of the work.
+State on 2026-10-24, when the run stopped at its request budget. Steps 1 to 9
+are done, the writer, the engine detection and the live test of step 10 are done;
+the rest of step 10 (runner, results reader, BMI wrapper, the commands) and steps
+11 to 14 are open. `docs/PROGRESS.md` gives the starting point of each. Verified on
+real engines: the SWMM input runs on SWMM 5.2.4 (pyswmm 2.2.0); the SFINCS model
+runs on SFINCS v2.4.1 and on `main` and reproduces the SCS equation. Not verified:
+the coupling itself, the Kartograf, IMGWTools and Hydrolog adapters, Windows and macOS.
