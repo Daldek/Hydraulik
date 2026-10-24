@@ -6,17 +6,20 @@ bug reports, fixes, features, and documentation — are welcome.
 ## Getting started
 
 ```bash
-# Install the project with development dependencies
-pip install -e ".[dev]"
+# Install the project and its development tools from the lock file
+uv sync --locked --all-extras
 
-# Run the checks before opening a pull request
-pytest
-ruff check src/ tests/
-ruff format --check src/ tests/
+# Run the gate before opening a pull request; contributors keep their own git
+# identity, so the author check is switched off
+GATE_CHECK_AUTHOR=0 scripts/gate.sh
 ```
 
+The gate runs `ruff format --check`, `ruff check`, `mypy`, the offline tests
+with coverage and the commit-message check, in that order.
+
 Please keep pull requests focused, follow the existing code style, and use
-[Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
+[Conventional Commits](https://www.conventionalcommits.org/) for commit messages
+(no AI attribution trailers).
 
 ## Contributor License Agreement (CLA)
 
@@ -48,6 +51,10 @@ Before your first contribution can be merged, we ask you to sign our
   your future contributions.
 
 Please also tick the CLA box in the pull-request template.
+
+## Reporting security issues
+
+Do not file vulnerabilities as public issues; see [SECURITY.md](SECURITY.md).
 
 ## Reporting issues
 
