@@ -8,7 +8,7 @@
 | Extraction note and plan | done | `docs/plans/2026-10-24-sfincs-swmm-*.md`; the plan awaits `Approved:` |
 | Error registry (`schemas/nogat/`, `_errors.py`, `exceptions.py`) | done | copies from Nogat `cc656e7` |
 | Settings (`settings.py`, `.env.example`) | done | `config show` command comes with the catalog |
-| Output writer | planned | plan step 6 |
+| Output writer (`output.py`) | done | ADR-0001; used by the commands of steps 7 to 13 |
 | Command catalog, CLI, generated AGENTS.md and llms.txt | planned | plan step 7 |
 | SWMM, SFINCS, coupler, data adapters, model commands | planned | plan steps 8 to 13 |
 | Live tests | planned | plan step 14 |
@@ -16,8 +16,8 @@
 
 ## Next
 
-1. Plan step 6 (plain output writer), then steps 7 to 14 of
-   `docs/plans/2026-10-24-sfincs-swmm-integration.md`.
+1. Plan step 7 (command catalog, envelope, CLI, generated AGENTS.md and llms.txt),
+   then steps 8 to 14 of `docs/plans/2026-10-24-sfincs-swmm-integration.md`.
 
 ## Open questions
 

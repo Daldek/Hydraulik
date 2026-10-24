@@ -27,17 +27,17 @@ A `hydraulik` package and CLI that
 | Option | Verdict |
 |---|---|
 | A. Keep the experiment scripts under `experiments/` | Rejected: Polish, module globals, `chdir`, no tests, not importable |
-| B. Re-apply the experiment as a package, engines behind small protocols | Chosen (ADR-0002) |
-| C. Build the SFINCS model with `hydromt_sfincs` (the PoC way) | Rejected for the core: a GPL-3.0 dependency and about 90 more packages in every install; possible later as an extra for subgrid models (ADR-0003) |
-| D. Own writer for the regular-grid model, formats checked against the v2.4.1 source | Chosen (ADR-0003). No subgrid, no quadtree |
-| E. SWMM network from a user-supplied `.inp` plus a generated chain from a table | Chosen (ADR-0004). Importing GIS sewer layers is not offered |
+| B. Re-apply the experiment as a package, engines behind small protocols | Chosen |
+| C. Build the SFINCS model with `hydromt_sfincs` (the PoC way) | Rejected for the core: a GPL-3.0 dependency and about 90 more packages in every install; possible later as an extra for subgrid models (ADR-0004) |
+| D. Own writer for the regular-grid model, formats checked against the v2.4.1 source | Chosen (ADR-0004). No subgrid, no quadtree |
+| E. SWMM network from a user-supplied `.inp` plus a generated chain from a table | Chosen (ADR-0002). Importing GIS sewer layers is not offered |
 | F. Coupling: explicit volume exchange through BMI and pyswmm | Chosen (ADR-0005). An implicit scheme needs state rollback that neither interface offers; a file exchange has no mass guarantee; SFINCS's own `urban_drainage` module is a lumped sink, not a network |
-| G. Engines are found, never installed or bundled: setting, `PATH`, Docker | Chosen (ADR-0001) |
-| H. No store: every writing command takes `--output-dir` or `--output` | Chosen (ADR-0006) |
+| G. Engines are found, never installed or bundled: setting, `PATH`, Docker | Chosen (ADR-0003) |
+| H. No store: every writing command takes `--output-dir` or `--output` | Chosen (ADR-0001) |
 
 ## Decision
 
-B, D, E, F, G and H, recorded as ADR-0001 to ADR-0006 in `docs/DECISIONS.md`
+B, D, E, F, G and H, recorded as ADR-0001 to ADR-0005 in `docs/DECISIONS.md`
 (each ADR is added by the step that implements its decision). The SWMM coupling
 is an optional feature of the package, not a product decision (extraction note
 2, decision 9).

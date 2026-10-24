@@ -27,6 +27,7 @@ __all__ = [
     "ERROR_CODES",
     "ERROR_SCHEMA",
     "CalculationError",
+    "CancelledError",
     "ConflictError",
     "EngineError",
     "ErrorCode",
@@ -39,6 +40,7 @@ __all__ = [
     "NotFoundError",
     "OutputError",
     "SourceUnavailableError",
+    "TerminatedError",
     "UnsupportedError",
     "error_document",
 ]
@@ -234,6 +236,24 @@ class EngineError(CalculationError):
         reason: str | None = "engine_failed",
     ) -> None:
         super().__init__(message, code=code, details=details, hint=hint, reason=reason)
+
+
+class CancelledError(HydraulikError):
+    """The user cancelled the run (Ctrl+C, a declined plan).
+
+    Default code: ``cancelled``.
+    """
+
+    default_code: ClassVar[ErrorCode] = "cancelled"
+
+
+class TerminatedError(HydraulikError):
+    """The process was terminated by SIGTERM (a container stop, a timeout).
+
+    Default code: ``terminated``.
+    """
+
+    default_code: ClassVar[ErrorCode] = "terminated"
 
 
 class NoDataError(HydraulikError):
