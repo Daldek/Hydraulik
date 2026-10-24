@@ -14,3 +14,5 @@ follows [Semantic Versioning](https://semver.org/).
 - The shared Nogat error registry: vendored copies in `schemas/nogat/`, the
   generated `hydraulik._errors`, `HydraulikError` with its subclasses and the
   `hydraulik-error/1` document (ERR-3, ERR-4, DEV-11.1).
+- Settings of the user environment: `nogat.toml`, `HYDRAULIK_*` variables, the
+  precedence of DEV-18.1 and `.env.example` (DEV-18.1, DEV-18.3).

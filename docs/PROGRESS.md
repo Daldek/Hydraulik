@@ -7,7 +7,8 @@
 | Tooling: uv, gate, CI, Dependabot, repository files | done | `scripts/gate.sh`, `.github/` |
 | Extraction note and plan | done | `docs/plans/2026-10-24-sfincs-swmm-*.md`; the plan awaits `Approved:` |
 | Error registry (`schemas/nogat/`, `_errors.py`, `exceptions.py`) | done | copies from Nogat `cc656e7` |
-| Settings, output writer | planned | plan steps 5 and 6 |
+| Settings (`settings.py`, `.env.example`) | done | `config show` command comes with the catalog |
+| Output writer | planned | plan step 6 |
 | Command catalog, CLI, generated AGENTS.md and llms.txt | planned | plan step 7 |
 | SWMM, SFINCS, coupler, data adapters, model commands | planned | plan steps 8 to 13 |
 | Live tests | planned | plan step 14 |
@@ -15,8 +16,8 @@
 
 ## Next
 
-1. Plan step 5 (settings: `nogat.toml`, `HYDRAULIK_*`, `config show`), then steps
-   6 to 14 of `docs/plans/2026-10-24-sfincs-swmm-integration.md`.
+1. Plan step 6 (plain output writer), then steps 7 to 14 of
+   `docs/plans/2026-10-24-sfincs-swmm-integration.md`.
 
 ## Open questions
 
