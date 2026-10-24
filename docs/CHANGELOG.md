@@ -40,3 +40,10 @@ follows [Semantic Versioning](https://semver.org/).
   live tests pass on SFINCS v2.4.1 and on `main`; ADR-0004 has an erratum on the
   masking of the map (`h` is not masked). These are library modules; their commands
   follow.
+- Running a SWMM input through pyswmm in strides of whole seconds (`SwmmStepper`:
+  heads, rims, lateral inflows, flooded volumes, the flow through the outfalls, the
+  stored volume) and `run_swmm` with inflow hydrographs at nodes; the summary has the
+  totals in cubic metres, the statistics of every node and conduit and SWMM's own
+  continuity error, which the totals reproduce to 0.01 percent. The rain table and the
+  hydrograph table (`time_min`, `depth_mm` and `time_min`, `discharge_m3s`) are read
+  and written by `hydraulik.data.tables`. Library modules; `swmm run` follows.
