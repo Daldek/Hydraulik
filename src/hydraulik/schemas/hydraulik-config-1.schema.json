@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-config-1.schema.json",
+  "title": "hydraulik-config/1",
+  "description": "The settings of Hydraulik with the source of each value (`config show`, DEV-18.6).",
+  "type": "object",
+  "required": ["schema", "config_file", "settings", "credentials", "store"],
+  "properties": {
+    "schema": {"const": "hydraulik-config/1"},
+    "config_file": {
+      "type": "object",
+      "required": ["path", "source", "exists"],
+      "properties": {
+        "path": {"type": "string"},
+        "source": {"enum": ["NOGAT_CONFIG", "default", "argument"]},
+        "exists": {"type": "boolean"}
+      }
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "value", "source", "env", "description"],
+        "properties": {
+          "key": {"type": "string"},
+          "value": {"type": ["string", "number", "boolean", "null"]},
+          "source": {"type": "string", "pattern": "^(option|default|env:[A-Z0-9_]+|file:\\[(hydraulik|nogat)\\])$"},
+          "env": {"type": "array", "items": {"type": "string"}},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "credentials": {"type": "array", "maxItems": 0},
+    "store": {"type": "null"}
+  }
+}

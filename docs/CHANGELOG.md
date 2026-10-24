@@ -19,3 +19,10 @@ follows [Semantic Versioning](https://semver.org/).
 - The plain-mode output writer: preflight with `--check` plan, conflicts for
   duplicate names, existing files and directories inside a Nogat store, staging
   and atomic replacement, `files[]` records (DEV §19, ADR-0001).
+- The command catalog `hydraulik-commands/1` with validation, the five generic
+  functions `list_commands`, `command_schema`, `validate_command`,
+  `check_command` and `run_command`, the result envelope `hydraulik-result/1`,
+  the CLI generated from the catalog (`commands list|schema|guide`,
+  `config show`), generated `AGENTS.md` and `llms.txt`, and the schemas of the
+  documents (AGI-1.1, AGI-2.1 to AGI-2.4, AGI-3.1 to AGI-3.8, AGI-4.1 to
+  AGI-4.4, AGI-7.1, AGI-7.2, AGI-8.1, AGI-8.2).

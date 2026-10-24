@@ -1,0 +1,20 @@
+# Hydraulik
+
+> Builds SFINCS flood models from Kartograf terrain and Hydrolog or IMGWTools rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library.
+
+Hydraulik builds SFINCS flood models from terrain, land cover and design
+rainfall, runs the external SFINCS engine and reads its results, and can couple
+SFINCS with an EPA SWMM sewer network. It is a CLI and a Python library; the
+engines are external and never bundled.
+
+Every command is declared once in a catalog (`hydraulik commands list --json`);
+every command that writes has `--check`. Data is written only to `--output-dir`
+or `--output`.
+
+## Documentation
+
+- [README](https://raw.githubusercontent.com/Daldek/Hydraulik/main/README.md): what the tool is for, install, settings, licences
+- [AGENTS.md](https://raw.githubusercontent.com/Daldek/Hydraulik/main/AGENTS.md): how an agent calls the tool, result and error documents
+- [CHANGELOG](https://raw.githubusercontent.com/Daldek/Hydraulik/main/docs/CHANGELOG.md): what changed between versions
+- [Decisions](https://raw.githubusercontent.com/Daldek/Hydraulik/main/docs/DECISIONS.md): why the tool is built the way it is
+- [Extraction note](https://raw.githubusercontent.com/Daldek/Hydraulik/main/docs/plans/2026-10-24-sfincs-swmm-extraction.md): what earlier SFINCS and SWMM work found

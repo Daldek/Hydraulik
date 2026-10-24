@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-guide-1.schema.json",
+  "title": "hydraulik-guide/1",
+  "description": "A rendered agent guide (`commands guide`, AGI-8.2).",
+  "type": "object",
+  "required": ["schema", "format", "text", "injected_into", "changed"],
+  "properties": {
+    "schema": {"const": "hydraulik-guide/1"},
+    "format": {"enum": ["agents", "llms", "agents-md-block"]},
+    "text": {"type": "string", "minLength": 1},
+    "injected_into": {"type": ["string", "null"]},
+    "changed": {"type": "boolean"}
+  }
+}
