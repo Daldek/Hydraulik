@@ -306,6 +306,283 @@ _ENGINES_CHECK = CommandSpec(
     },
 )
 
+_MODEL_BUILD = CommandSpec(
+    name="model build",
+    operation_id="hydraulik_model_build",
+    function="hydraulik.build_model",
+    summary=(
+        "Write a SFINCS model directory from your terrain, rain and optional rasters."
+    ),
+    description=(
+        "Puts your elevation rasters (GeoTIFF, a metric CRS with an EPSG code) on a "
+        "regular grid of --dx-m cells aligned to --dx-m (the mean of the source "
+        "cells when they are finer than the grid, bilinear otherwise), and writes "
+        "the model files of SFINCS into --output-dir: sfincs.inp, the index, mask and "
+        "elevation files, the rain of --rain (the table of `rainfall build`), and "
+        "when given Manning n (--manning, or --manning-raster), the SCS curve "
+        "number (--curve-number-raster, or the retention S in mm with "
+        "--retention-mm-raster, CN = 25400 / (S + 254)), the outflow cells where the "
+        "water leaves (--outlet) and the stations (--observation-points). The domain "
+        "is --geometry (a polygon), --bbox with --crs, or every cell that has "
+        "elevation. The run lasts the rain plus --recession-min. Use it to make a "
+        "model for `model run` or `model couple`; it does not download data "
+        "(`terrain download`), turn land cover into Manning or curve-number rasters, "
+        "or write subgrid or quadtree models. Nothing is guessed: a domain cell "
+        "without elevation or Manning n is an error, a gap in the curve numbers is a "
+        "warning."
+    ),
+    options=(
+        OptionSpec(
+            name="dem",
+            type="array",
+            items="string",
+            required=True,
+            path_role="input",
+            examples=(["./nmt_1m.tif"],),
+            description=(
+                "Elevation rasters (GeoTIFF). The first sets the CRS of the model "
+                "(projected, metres, EPSG code, for Poland EPSG:2180) and wins where "
+                "they overlap; the next ones fill what it leaves without data."
+            ),
+        ),
+        OptionSpec(
+            name="dx_m",
+            type="number",
+            required=True,
+            unit="m",
+            min=0.1,
+            examples=(5.0,),
+            description=(
+                "Cell size of the grid. A finer terrain is averaged to it; the "
+                "grid has at most 25 million cells."
+            ),
+        ),
+        OptionSpec(
+            name="bbox",
+            type="array",
+            items="number",
+            one_of="domain",
+            examples=([361500.0, 504000.0, 363000.0, 505500.0],),
+            description=(
+                "Rectangle of the domain: min_x,min_y,max_x,max_y (x is east or "
+                "longitude) in --crs. Needs --crs. At most one of --bbox and "
+                "--geometry; with neither the domain is every cell with elevation."
+            ),
+        ),
+        OptionSpec(
+            name="crs",
+            type="string",
+            examples=("EPSG:2180",),
+            description="CRS of --bbox, for example EPSG:2180 or EPSG:4326.",
+        ),
+        OptionSpec(
+            name="geometry",
+            type="string",
+            path_role="input",
+            one_of="domain",
+            examples=("./catchment.gpkg",),
+            description=(
+                "Polygon file of the domain (GeoPackage, GeoJSON, Shapefile); the "
+                "cells whose centre lies inside it form the domain. It must lie "
+                "within the terrain."
+            ),
+        ),
+        OptionSpec(
+            name="layer",
+            type="string",
+            examples=("catchment",),
+            description="Layer of --geometry (the first layer when not given).",
+        ),
+        OptionSpec(
+            name="manning",
+            type="number",
+            unit="s/m^(1/3)",
+            min=0.001,
+            max=1.0,
+            one_of="roughness",
+            examples=(0.05,),
+            description=(
+                "Uniform Manning n. At most one of --manning and --manning-raster; "
+                "with neither n is 0.04."
+            ),
+        ),
+        OptionSpec(
+            name="manning_raster",
+            type="string",
+            path_role="input",
+            one_of="roughness",
+            examples=("./manning.tif",),
+            description="Manning n per cell (raster); it must cover the domain.",
+        ),
+        OptionSpec(
+            name="curve_number_raster",
+            type="string",
+            path_role="input",
+            one_of="infiltration",
+            examples=("./cn.tif",),
+            description=(
+                "SCS curve number (30 to 100) per cell. At most one of this and "
+                "--retention-mm-raster; with neither infiltration is off."
+            ),
+        ),
+        OptionSpec(
+            name="retention_mm_raster",
+            type="string",
+            path_role="input",
+            one_of="infiltration",
+            examples=("./retention.tif",),
+            description=(
+                "SCS retention S [mm] per cell, not negative; the curve number is "
+                "25400 / (S + 254)."
+            ),
+        ),
+        OptionSpec(
+            name="rain",
+            type="string",
+            required=True,
+            path_role="input",
+            examples=("./rain.csv",),
+            description="Rain table (time_min, depth_mm), written by `rainfall build`.",
+        ),
+        OptionSpec(
+            name="recession_min",
+            type="number",
+            unit="min",
+            min=0.0,
+            description=(
+                "Minutes the simulation lasts after the rain, so the water can move "
+                "(default 60)."
+            ),
+        ),
+        OptionSpec(
+            name="outlet",
+            type="string",
+            path_role="input",
+            examples=("./outlet.gpkg",),
+            description=(
+                "Lines, points or polygons where the water leaves the domain; the "
+                "cells they touch on the edge of the domain become outflow cells. "
+                "Without it the boundary is closed."
+            ),
+        ),
+        OptionSpec(
+            name="outlet_layer",
+            type="string",
+            description="Layer of --outlet (the first layer when not given).",
+        ),
+        OptionSpec(
+            name="observation_points",
+            type="string",
+            path_role="input",
+            examples=("./stations.csv",),
+            description=(
+                "Stations (CSV: name, x_m, y_m in the CRS of the model) where SFINCS "
+                "writes the water level."
+            ),
+        ),
+        OptionSpec(
+            name="output_dir",
+            type="string",
+            required=True,
+            path_role="output",
+            short="-o",
+            examples=("./model",),
+            description=(
+                "Directory for the model files (plain files, created if missing)."
+            ),
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace files that already exist.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description=(
+                "Plan without effects: the files, the grid and what is missing."
+            ),
+        ),
+    ),
+    result_schema="hydraulik-model/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True),
+    check="model build",
+    rules=(
+        "Give the terrain in a metric CRS with an EPSG code; the first raster sets "
+        "the CRS of the model.",
+        "A polygon or a rectangle must lie within the terrain: a cell without "
+        "elevation is an error.",
+        "Mark where the water leaves with --outlet; without it the boundary is closed "
+        "and all the rain stays in the model.",
+        "Read the notices: the defaults that were applied and the gaps of the curve "
+        "numbers.",
+    ),
+    examples=(
+        Example(
+            call=(
+                "hydraulik model build --dem ./nmt_1m.tif --dx-m 5 --rain ./rain.csv "
+                "--output-dir ./model --json"
+            ),
+            result={"schema": "hydraulik-model/1"},
+        ),
+        Example(
+            call=(
+                "hydraulik model build --dem ./nmt_1m.tif --dx-m 5 --bbox "
+                "361500,504000,363000,505500 --crs EPSG:2180 --rain ./rain.csv "
+                "--output-dir ./model --check --json"
+            ),
+            result={"schema": "hydraulik-plan/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "data_error",
+        "unsupported",
+        "io_error",
+        "missing_dependency",
+        "terminated",
+        "cancelled",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Zapisuje katalog modelu SFINCS z własnego terenu, opadu i opcjonalnych "
+            "rastrów."
+        ),
+        "description": (
+            "Układa Twoje rastry wysokości (GeoTIFF, układ metryczny z kodem EPSG) na "
+            "regularnej siatce komórek --dx-m wyrównanej do --dx-m (średnia komórek "
+            "źródłowych, gdy są drobniejsze niż siatka, w przeciwnym razie "
+            "interpolacja dwuliniowa) i zapisuje pliki modelu SFINCS w --output-dir: "
+            "sfincs.inp, pliki indeksu, maski i wysokości, opad z --rain (tabela "
+            "`rainfall build`) oraz, gdy podane, współczynnik Manninga n (--manning "
+            "albo --manning-raster), liczbę krzywej CN SCS (--curve-number-raster "
+            "albo retencję S w mm z --retention-mm-raster, CN = 25400 / (S + 254)), "
+            "komórki odpływu, którędy woda opuszcza obszar (--outlet) i stacje "
+            "(--observation-points). Obszarem jest --geometry (wielokąt), --bbox z "
+            "--crs albo każda komórka z wysokością. Przebieg trwa tyle co opad plus "
+            "--recession-min. Użyj, aby przygotować model dla `model run` lub `model "
+            "couple`; nie pobiera danych (`terrain download`), nie zamienia pokrycia "
+            "terenu w rastry Manninga ani CN i nie zapisuje modeli subgrid ani "
+            "quadtree. Niczego się nie zgaduje: komórka obszaru bez wysokości lub bez "
+            "n Manninga to błąd, luka w liczbach CN to ostrzeżenie."
+        ),
+        "rules": [
+            "Podaj teren w układzie metrycznym z kodem EPSG; pierwszy raster ustala "
+            "układ modelu.",
+            "Wielokąt lub prostokąt musi leżeć w obrębie terenu: komórka bez wysokości "
+            "to błąd.",
+            "Miejsce odpływu wskaż przez --outlet; bez niego brzeg jest zamknięty, a "
+            "cały opad zostaje w modelu.",
+            "Przeczytaj uwagi: zastosowane wartości domyślne i luki w liczbach CN.",
+        ],
+    },
+)
+
 _MODEL_RUN = CommandSpec(
     name="model run",
     operation_id="hydraulik_model_run",
@@ -998,6 +1275,7 @@ COMMANDS: tuple[CommandSpec, ...] = (
     _CONFIG_SHOW,
     _ENGINES_CHECK,
     _RAINFALL_BUILD,
+    _MODEL_BUILD,
     _MODEL_RUN,
     _RESULTS_READ,
     _RESULTS_EXPORT,

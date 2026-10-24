@@ -73,6 +73,22 @@ follows [Semantic Versioning](https://semver.org/).
   documents only. The result `hydraulik-rain/1` says how the depth was found; a PMAXTP
   depth comes with a notice to name IMGW-PIB; `--check` fetches nothing. The rain table
   now has six decimals per step.
+- The command `model build` (`hydraulik.build_model`), the first step from your own
+  rasters: elevation GeoTIFFs (several, the first sets the CRS and wins) are averaged
+  (finer than the grid) or interpolated (coarser) onto a grid of `--dx-m` cells aligned
+  to `--dx-m`; the domain is a polygon (`--geometry`, `--layer`), a rectangle (`--bbox`
+  with `--crs`, any CRS) or every cell with elevation; Manning `n` is a number, a
+  raster or 0.04; the SCS curve number is a raster or comes from the retention `S` in
+  mm (`CN = 25400 / (S + 254)`); the rain is the table of `rainfall build`; `--outlet`
+  geometries become outflow cells on the edge of the domain; `--observation-points`
+  are stations. A cell of the domain without elevation or Manning `n` is an error, a
+  gap in the curve numbers a warning, and the notices name the defaults that were
+  applied and the closed boundary. The result `hydraulik-model/1` describes the grid
+  and every input; `--check` plans the grid and the files. The model ran on SFINCS
+  v2.4.1 and on `main` in a live test that checks the orientation of the whole chain
+  (water collects at the low edge, the balance closes). Land cover and soil to the
+  Manning and curve-number rasters are not built yet. `hydraulik.data.tables` reads
+  station tables; `FILES` moved from the model writer to `engines.sfincs.inp`.
 
 ### Fixed
 

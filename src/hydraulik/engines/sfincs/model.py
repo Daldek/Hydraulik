@@ -33,6 +33,7 @@ from typing import Final
 import numpy as np
 from numpy.typing import NDArray
 
+from hydraulik.engines.sfincs.inp import FILES
 from hydraulik.exceptions import InvalidInputError
 
 __all__ = [
@@ -50,17 +51,6 @@ __all__ = [
 TREF: Final = datetime(2000, 1, 1)
 """Reference time of every model; all times in the files are seconds from here."""
 
-FILES: Final = {
-    "inp": "sfincs.inp",
-    "index": "sfincs.ind",
-    "mask": "sfincs.msk",
-    "elevation": "sfincs.dep",
-    "manning": "sfincs.man",
-    "curve_number": "sfincs.scs",
-    "precip": "sfincs.precip",
-    "observations": "sfincs.obs",
-}
-"""File names of a model directory by role."""
 
 STEP_HOLD_S: Final = 1.0
 """A block of rain is written from its start to ``STEP_HOLD_S`` before its end, so the

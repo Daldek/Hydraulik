@@ -24,6 +24,7 @@ __all__ = [
     "EnginesDocument",
     "ExportDocument",
     "GuideDocument",
+    "ModelDocument",
     "PlanDocument",
     "RainDocument",
     "ResultsDocument",
@@ -446,4 +447,51 @@ class RainDocument(_Carrier, Document):
     n_steps: int
     peak_intensity_mm_h: float
     depth: dict[str, Any] | None
+    files: list[dict[str, Any]]
+
+
+@dataclass
+class ModelDocument(_Carrier, Document):
+    """``hydraulik-model/1``: a SFINCS model written from rasters (`model build`).
+
+    Attributes
+    ----------
+    grid : dict
+        ``epsg``, ``dx_m``, ``x0_m``, ``y0_m``, ``rows``, ``columns``, ``cells``,
+        ``active_cells``, ``area_m2`` and ``outflow_cells``.
+    domain : dict
+        ``source`` (``dem``, ``bbox`` or ``geometry``) and what describes it.
+    elevation : dict
+        ``min_m``, ``mean_m`` and ``max_m`` over the active cells, and ``sources``:
+        for each raster its ``path``, ``cell_size_m``, ``resampling`` (``average`` or
+        ``bilinear``) and the number of ``cells`` it supplied.
+    roughness : dict
+        ``source`` (``uniform`` or ``raster``) and the Manning ``n`` (``value_s_m13``,
+        or ``min_s_m13``, ``mean_s_m13`` and ``max_s_m13`` with ``path`` and
+        ``resampling``).
+    infiltration : dict or None
+        ``None`` when infiltration is off; otherwise ``source``, ``path``,
+        ``resampling``, ``gap_cells`` (active cells without a curve number), the
+        ``curve_number`` statistics and ``initial_abstraction``.
+    rain : dict
+        ``path``, ``total_mm``, ``duration_min``, ``timestep_min``,
+        ``peak_intensity_mm_h``, ``recession_min`` and ``tstop_s``.
+    outlet : dict or None
+        ``path``, ``layer`` and the number of outflow ``cells``; ``None`` for a closed
+        boundary.
+    observation_points : list of dict
+        ``name``, ``x_m`` and ``y_m`` of each station.
+    files : list of dict
+        The files written: ``path``, ``size_bytes``, ``sha256``, ``status``.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-model/1"
+    grid: dict[str, Any]
+    domain: dict[str, Any]
+    elevation: dict[str, Any]
+    roughness: dict[str, Any]
+    infiltration: dict[str, Any] | None
+    rain: dict[str, Any]
+    outlet: dict[str, Any] | None
+    observation_points: list[dict[str, Any]]
     files: list[dict[str, Any]]

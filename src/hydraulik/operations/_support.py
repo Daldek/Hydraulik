@@ -7,7 +7,7 @@ import importlib.util
 from collections.abc import Iterable
 from typing import Final
 
-from hydraulik.exceptions import MissingDependencyError
+from hydraulik.exceptions import InvalidInputError, MissingDependencyError
 from hydraulik.output import FileRecord
 
 __all__ = [
@@ -18,6 +18,7 @@ __all__ = [
     "extra_version",
     "file_dicts",
     "missing_extras",
+    "refuse_option",
     "require_extras",
 ]
 
@@ -120,3 +121,38 @@ def require_extras(*modules: str) -> None:
 def file_dicts(records: Iterable[FileRecord]) -> list[dict[str, object]]:
     """Return the ``files[]`` entries of the written files (DEV-19.19)."""
     return [record.to_dict() for record in records]
+
+
+def refuse_option(
+    option: str, why: str, reason: str, hint: str | None = None
+) -> InvalidInputError:
+    """Return the ``validation_error`` of a combination of options that cannot work.
+
+    Parameters
+    ----------
+    option : str
+        Name of the option the error is about, in snake_case.
+    why : str
+        One English clause after the flag.
+    reason : str
+        ``details.reason``: ``missing_option``, ``exclusive_options``,
+        ``option_not_applicable`` or a finer one.
+    hint : str or None, optional
+        What to do about it.
+
+    Returns
+    -------
+    InvalidInputError
+        To be raised by the caller.
+
+    Examples
+    --------
+    >>> str(refuse_option("crs", "goes with --bbox", "option_not_applicable"))
+    '--crs: goes with --bbox'
+    """
+    return InvalidInputError(
+        f"--{option.replace('_', '-')}: {why}",
+        details={"option": option},
+        hint=hint,
+        reason=reason,
+    )

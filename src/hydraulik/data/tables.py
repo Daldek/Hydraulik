@@ -1,6 +1,6 @@
-"""The two small tables that Hydraulik reads and writes: rain and hydrograph.
+"""The small tables that Hydraulik reads and writes: rain, hydrograph, stations.
 
-Both are CSV with a header and the units in the column names (DEV-8.2):
+All are CSV with a header and the units in the column names (DEV-8.2):
 
 * a **rain table** has ``time_min`` (the end of each step, strictly regular, the first
   step starts at 0) and ``depth_mm`` (the depth that fell in the step). It is what
@@ -8,7 +8,9 @@ Both are CSV with a header and the units in the column names (DEV-8.2):
   the shape of a Hydrolog hyetograph (``HietogramResult``);
 * a **hydrograph table** has ``time_min`` (elapsed) and ``discharge_m3s``, the form in
   which Hydrolog hands a hydrograph to Hydraulik. ``hydraulik swmm run`` reads it as the
-  inflow of a node.
+  inflow of a node;
+* a **station table** has ``name``, ``x_m`` and ``y_m``: the points where
+  ``hydraulik model build`` asks SFINCS for the water level.
 
 Only the standard library is needed to read them; a rain table gives the arrays that
 the SFINCS writer takes.
@@ -28,16 +30,19 @@ from hydraulik.exceptions import InputDataError, NotFoundError
 __all__ = [
     "HYDROGRAPH_COLUMNS",
     "RAIN_COLUMNS",
+    "STATION_COLUMNS",
     "Hydrograph",
     "RainTable",
     "rain_table_from_series",
     "read_hydrograph",
     "read_rain_table",
+    "read_station_table",
     "render_rain_table",
 ]
 
 RAIN_COLUMNS: Final = ("time_min", "depth_mm")
 HYDROGRAPH_COLUMNS: Final = ("time_min", "discharge_m3s")
+STATION_COLUMNS: Final = ("name", "x_m", "y_m")
 
 
 def _read_columns(
@@ -343,3 +348,85 @@ def read_hydrograph(path: str | Path) -> Hydrograph:
             reason="invalid_hydrograph",
         )
     return Hydrograph(tuple(t * 60.0 for t in times), tuple(flows))
+
+
+def read_station_table(path: str | Path) -> tuple[tuple[float, float, str], ...]:
+    r"""Read a station table (``name``, ``x_m``, ``y_m``).
+
+    Parameters
+    ----------
+    path : str or Path
+        The CSV file; the coordinates are in the CRS of the model [m].
+
+    Returns
+    -------
+    tuple of (float, float, str)
+        ``(x_m, y_m, name)`` of each station, in file order: the form of
+        ``ModelInputs.observation_points``.
+
+    Raises
+    ------
+    NotFoundError
+        If the file does not exist.
+    InputDataError
+        If a column is missing, a coordinate is not a finite number, a name is empty or
+        has a quote, or a name occurs twice (reason ``invalid_station_table``).
+
+    Examples
+    --------
+    >>> import tempfile, pathlib
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     p = pathlib.Path(tmp) / "stations.csv"
+    ...     _ = p.write_text("name,x_m,y_m\nlow,10.5,20\n")
+    ...     read_station_table(p)
+    ((10.5, 20.0, 'low'),)
+    """
+    source = Path(path)
+    if not source.is_file():
+        raise NotFoundError(
+            f"table not found: {source}",
+            details={"path": str(source)},
+            reason="path_missing",
+        )
+
+    def fail(why: str, row: int | None = None) -> InputDataError:
+        return InputDataError(
+            f"{source.name}: {why}",
+            details={"path": str(source), **({} if row is None else {"row": row})},
+            hint=f"Columns: {', '.join(STATION_COLUMNS)}; the coordinates are metres "
+            "in the CRS of the model.",
+            reason="invalid_station_table",
+        )
+
+    try:
+        text = source.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise fail("not UTF-8 text") from exc
+    reader = csv.reader(text.splitlines())
+    header = [cell.strip() for cell in next(reader, [])]
+    missing = [name for name in STATION_COLUMNS if name not in header]
+    if missing:
+        raise fail(f"lacks the columns {', '.join(missing)}")
+    position = {name: header.index(name) for name in STATION_COLUMNS}
+    stations: list[tuple[float, float, str]] = []
+    seen: set[str] = set()
+    for number, row in enumerate(reader, start=2):
+        if not any(cell.strip() for cell in row):
+            continue
+        try:
+            name = row[position["name"]].strip()
+            x_m = float(row[position["x_m"]])
+            y_m = float(row[position["y_m"]])
+        except (IndexError, ValueError):
+            raise fail("a value is missing or not a number", number) from None
+        if not (math.isfinite(x_m) and math.isfinite(y_m)):
+            raise fail("a coordinate is not finite", number)
+        if not name or '"' in name:
+            raise fail("a name is empty or has a quote", number)
+        if name in seen:
+            raise fail(f"the name {name!r} occurs twice", number)
+        seen.add(name)
+        stations.append((x_m, y_m, name))
+    if not stations:
+        raise fail("has no rows")
+    return tuple(stations)

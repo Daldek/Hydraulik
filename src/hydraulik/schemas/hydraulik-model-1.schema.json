@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-model-1.schema.json",
+  "title": "hydraulik-model/1",
+  "description": "A SFINCS regular-grid model written from rasters: the grid, the inputs that were used and the files written (`model build`).",
+  "type": "object",
+  "required": [
+    "schema",
+    "grid",
+    "domain",
+    "elevation",
+    "roughness",
+    "infiltration",
+    "rain",
+    "outlet",
+    "observation_points",
+    "files"
+  ],
+  "properties": {
+    "schema": {"const": "hydraulik-model/1"},
+    "grid": {
+      "type": "object",
+      "required": [
+        "epsg",
+        "dx_m",
+        "x0_m",
+        "y0_m",
+        "rows",
+        "columns",
+        "cells",
+        "active_cells",
+        "area_m2",
+        "outflow_cells"
+      ],
+      "properties": {
+        "epsg": {"type": "integer"},
+        "dx_m": {"type": "number", "exclusiveMinimum": 0},
+        "x0_m": {"type": "number"},
+        "y0_m": {"type": "number"},
+        "rows": {"type": "integer", "minimum": 1},
+        "columns": {"type": "integer", "minimum": 1},
+        "cells": {"type": "integer", "minimum": 1},
+        "active_cells": {"type": "integer", "minimum": 1},
+        "area_m2": {"type": "number", "exclusiveMinimum": 0},
+        "outflow_cells": {"type": "integer", "minimum": 0}
+      }
+    },
+    "domain": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": {"enum": ["dem", "bbox", "geometry"]},
+        "bbox": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
+        "crs": {"type": "string"},
+        "path": {"type": "string"},
+        "layer": {"type": ["string", "null"]}
+      }
+    },
+    "elevation": {
+      "type": "object",
+      "required": ["min_m", "mean_m", "max_m", "sources"],
+      "properties": {
+        "min_m": {"type": "number"},
+        "mean_m": {"type": "number"},
+        "max_m": {"type": "number"},
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "cell_size_m", "resampling", "cells"],
+            "properties": {
+              "path": {"type": "string"},
+              "cell_size_m": {"type": "number", "exclusiveMinimum": 0},
+              "resampling": {"enum": ["average", "bilinear"]},
+              "cells": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "roughness": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": {"enum": ["uniform", "raster"]},
+        "value_s_m13": {"type": "number", "exclusiveMinimum": 0},
+        "path": {"type": "string"},
+        "resampling": {"enum": ["average", "bilinear"]},
+        "min_s_m13": {"type": "number"},
+        "mean_s_m13": {"type": "number"},
+        "max_s_m13": {"type": "number"}
+      }
+    },
+    "infiltration": {
+      "type": ["object", "null"],
+      "required": ["source", "path", "resampling", "gap_cells", "initial_abstraction", "curve_number"],
+      "properties": {
+        "source": {"enum": ["curve_number_raster", "retention_mm_raster"]},
+        "path": {"type": "string"},
+        "resampling": {"enum": ["average", "bilinear"]},
+        "gap_cells": {"type": "integer", "minimum": 0},
+        "initial_abstraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "curve_number": {
+          "type": "object",
+          "required": ["min", "mean", "max"],
+          "properties": {
+            "min": {"type": "number"},
+            "mean": {"type": "number"},
+            "max": {"type": "number"}
+          }
+        }
+      }
+    },
+    "rain": {
+      "type": "object",
+      "required": [
+        "path",
+        "total_mm",
+        "duration_min",
+        "timestep_min",
+        "peak_intensity_mm_h",
+        "recession_min",
+        "tstop_s"
+      ],
+      "properties": {
+        "path": {"type": "string"},
+        "total_mm": {"type": "number", "minimum": 0},
+        "duration_min": {"type": "number", "exclusiveMinimum": 0},
+        "timestep_min": {"type": "number", "exclusiveMinimum": 0},
+        "peak_intensity_mm_h": {"type": "number", "minimum": 0},
+        "recession_min": {"type": "number", "minimum": 0},
+        "tstop_s": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "outlet": {
+      "type": ["object", "null"],
+      "required": ["path", "cells"],
+      "properties": {
+        "path": {"type": "string"},
+        "layer": {"type": ["string", "null"]},
+        "cells": {"type": "integer", "minimum": 1}
+      }
+    },
+    "observation_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "x_m", "y_m"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "x_m": {"type": "number"},
+          "y_m": {"type": "number"}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["path", "size_bytes", "sha256", "status"],
+        "properties": {
+          "path": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "status": {"enum": ["written", "replaced"]}
+        }
+      }
+    }
+  }
+}

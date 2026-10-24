@@ -18,7 +18,8 @@
 | Command `swmm run` (`operations/swmm.py`) | done | network table or the user's INP, inflow hydrograph; tests on the real SWMM, run through the CLI |
 | Command `rainfall build` (`operations/rainfall.py`, `data/rainfall.py`) | done | Hydrolog shapes, PMAXTP from a document or IMGWTools, Hydrolog document; only the network call is faked in tests |
 | Command `terrain download` (Kartograf CLI adapter) | planned | Next 3; Kartograf has no plain mode yet |
-| Command `model build` (`terrain/`, land cover to Manning, HSG and land cover to SCS S) | planned | Next 4 |
+| Command `model build`, step one: your own rasters (`terrain/`, `model/`, `operations/build.py`) | done | elevation, Manning, curve number or retention, rain, outlet, stations; live test on SFINCS v2.4.1 and `main` |
+| `model build`, step two: land cover (BDOT10k) and soil (HSG) to the Manning and curve-number rasters | planned | Next 4; the class values need the author's review |
 | SFINCS BMI wrapper, coupler, command `model couple` | planned | Next 5; optional feature (needs a user-built libsfincs) |
 | Live tests of the rest, README and ADR-0005 | planned | Next 6 |
 | Phase 2 items that need the author | blocked | see Open questions |
@@ -61,15 +62,12 @@ a Python string that holds backslashes.
    `kartograf` program (like `fake_sfincs` in `tests/synthetic.py`) that serves the
    schema and writes files; the live test is marked `live` and skips itself while the
    schema lacks plain mode.
-4. **`model build`** (`terrain/`, `model/`; the design is settled, nothing is written).
-   Step one, from rasters the user supplies, so that the Kartograf adapter plugs in
-   later: options `dem` (GeoTIFFs), `dx_m`, the domain as `bbox` + `crs` or `geometry` +
-   `layer` (default the valid cells of the DEM), `manning` (a number) xor
-   `manning_raster`, `curve_number_raster` xor `retention_mm_raster` (SCS S in mm,
-   CN = 25400 / (S + 254)), `rain` (the table of `rainfall build`), `recession_min`,
-   `outlet`, observation points, `output_dir`, `force`, `check`; result
-   `hydraulik-model/1`; it fills `ModelInputs` and calls `write_model`. Step two, land
-   cover and soil to the two rasters:
+4. **`model build`, step two** (step one, from the user's rasters, is done:
+   `terrain/grid.py`, `model/{options,build}.py`, `operations/build.py`; the options are
+   `dem`, `dx_m`, `bbox` + `crs` or `geometry` + `layer`, `manning` or `manning_raster`,
+   `curve_number_raster` or `retention_mm_raster`, `rain`, `recession_min` (default 60),
+   `outlet` + `outlet_layer`, `observation_points`). What is still to build, land cover
+   and soil to the two rasters, so that a model needs no raster of the user's own:
    grid aligned to `dx_m` from the domain polygon or the DEM extent; DEM reprojected
    with `rasterio.warp.reproject` (average when finer than the grid, bilinear
    otherwise), several files one after the other; BDOT10k classes painted on a finer

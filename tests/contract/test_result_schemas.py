@@ -8,7 +8,13 @@ from typing import Any
 import pytest
 from jsonschema import Draft202012Validator
 
-from hydraulik import build_rainfall, render_guide, run_network, show_config
+from hydraulik import (
+    build_model,
+    build_rainfall,
+    render_guide,
+    run_network,
+    show_config,
+)
 from hydraulik.catalog.commands import COMMANDS
 from hydraulik.documents import PlanDocument
 from hydraulik.output import plan_directory
@@ -107,3 +113,46 @@ def test_swmm_document_validates(tmp_path: Any) -> None:
     )
 
     Draft202012Validator(_schema("hydraulik-swmm-1")).validate(document.to_dict())
+
+
+def test_model_document_validates_with_every_optional_input(tmp_path: Any) -> None:
+    pytest.importorskip("rasterio")
+    pytest.importorskip("geopandas")
+    import numpy as np
+    from shapely.geometry import LineString
+
+    from ..synthetic import write_raster, write_vector
+
+    ground = write_raster(
+        tmp_path / "dem.tif", np.full((20, 40), 5.0), west=362000.0, north=504020.0
+    )
+    cn = write_raster(
+        tmp_path / "cn.tif", np.full((20, 20), 80.0), west=362000.0, north=504020.0
+    )
+    outlet = write_vector(
+        tmp_path / "outlet.gpkg",
+        LineString([(362000.0, 504000.5), (362040.0, 504000.5)]),
+    )
+    stations = tmp_path / "stations.csv"
+    stations.write_text("name,x_m,y_m\nlow,362002.5,504002.5\n", encoding="utf-8")
+    rain = tmp_path / "rain.csv"
+    rain.write_text("time_min,depth_mm\n5,1.0\n10,2.0\n", encoding="utf-8")
+    validator = Draft202012Validator(_schema("hydraulik-model-1"))
+
+    minimal = build_model(
+        dem=[ground], dx_m=5.0, rain=rain, output_dir=tmp_path / "minimal"
+    )
+    full = build_model(
+        dem=[ground],
+        dx_m=5.0,
+        rain=rain,
+        curve_number_raster=cn,
+        outlet=outlet,
+        observation_points=stations,
+        bbox=[362000.0, 504000.0, 362040.0, 504020.0],
+        crs="EPSG:2180",
+        output_dir=tmp_path / "full",
+    )
+
+    for document in (minimal, full):
+        validator.validate(document.to_dict())

@@ -246,3 +246,68 @@ def slope_with_outflow() -> ModelInputs:
         dtout_s=7200.0,
         observation_points=((55.0, 5.0, "low"),),
     )
+
+
+def write_raster(
+    path: Path,
+    values: Float,
+    *,
+    west: float = 362000.0,
+    north: float = 504020.0,
+    cell: float = 1.0,
+    epsg: int | None = 2180,
+    nodata: float | None = -9999.0,
+) -> Path:
+    """Write a single-band float32 GeoTIFF; ``values`` is north-up, row 0 at ``north``.
+
+    NaN in ``values`` becomes ``nodata``; ``epsg=None`` writes a raster without a CRS.
+    """
+    import rasterio
+    from rasterio.transform import from_origin
+
+    data = np.where(np.isfinite(values), values, nodata if nodata is not None else 0.0)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        height=data.shape[0],
+        width=data.shape[1],
+        count=1,
+        dtype="float32",
+        crs=None if epsg is None else f"EPSG:{epsg}",
+        transform=from_origin(west, north, cell, cell),
+        nodata=nodata,
+    ) as target:
+        target.write(data.astype("float32"), 1)
+    return path
+
+
+def write_vector(
+    path: Path, shape: object, *, epsg: int | None = 2180, layer: str = "shapes"
+) -> Path:
+    """Write one geometry (a shapely object) to a GeoPackage layer."""
+    import geopandas
+
+    frame = geopandas.GeoDataFrame(
+        {"id": [1]},
+        geometry=[shape],
+        crs=None if epsg is None else f"EPSG:{epsg}",
+    )
+    frame.to_file(path, layer=layer, driver="GPKG")
+    return path
+
+
+def read_model_array(directory: Path, name: str, dtype: str) -> Float:
+    """Read a per-cell file of a model into ``(rows, columns)``, row 0 south, NaN where
+    the cell is not active (the layout that ``write_model`` documents)."""
+    from hydraulik.engines.sfincs.inp import read_inp
+
+    inp = read_inp(directory)
+    rows, columns = int(inp["nmax"]), int(inp["mmax"])
+    raw = (directory / inp["indexfile"]).read_bytes()
+    index = np.frombuffer(raw[4:], dtype=np.int32)
+    values = np.frombuffer((directory / name).read_bytes(), dtype=dtype)
+    flat = np.full(rows * columns, np.nan)
+    flat[index - 1] = values
+    result: Float = flat.reshape((columns, rows)).T
+    return result
