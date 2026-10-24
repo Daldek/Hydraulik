@@ -12,7 +12,8 @@
 | SWMM network table, INP writer and reader, report parser | done | ADR-0002; runs on the real SWMM in `tests/integration` |
 | SFINCS regular-grid writer (`engines/sfincs/model.py`) | done | ADR-0004; the live test passes on SFINCS v2.4.1 and main |
 | Engine detection (`engines/detect.py`) | done | ADR-0003; no command uses it yet |
-| SFINCS runner, results reader, BMI wrapper | planned | rest of plan step 10 |
+| SFINCS runner (`engines/sfincs/run.py`), results reader and balance (`results.py`) | done | exe or Docker, log streaming, timeout; `h`, `hmax`, `cumprcp`, `cuminf`, stations, GeoTIFF; live tests pass on v2.4.1 and main; the Docker path is tested with a fake `docker` only (no daemon here); no command uses them yet |
+| SFINCS BMI wrapper | planned | rest of plan step 10 |
 | Coupler (BMI plus pyswmm, volume exchange) | planned | plan step 11 |
 | Data adapters: Kartograf CLI, IMGWTools PMAXTP, Hydrolog hyetograph | planned | plan step 12 |
 | Commands `engines check`, `rainfall build`, `terrain download`, `model build`, `model run`, `results read`, `results export` | planned | plan step 13 |
@@ -21,30 +22,21 @@
 
 ## Next
 
-1. `src/hydraulik/engines/sfincs/run.py`: run a model directory with the install of
-   `detect_sfincs` (executable, or `docker run --rm -v <dir>:/data --user <uid>:<gid>
-   <image>`); stream the log, parse `NN% complete`, set `OMP_NUM_THREADS`, enforce
-   `sfincs.timeout_s`; a non-zero exit is `EngineError` (reason `engine_failed`)
-   carrying the log tail. Run inside the staging directory of `output.Writer`.
-2. `engines/sfincs/results.py` (netCDF4): `hmax`, `zsmax`, `vmax`, `cumprcp`, `cuminf`
-   from `sfincs_map.nc` (row 0 is the south row, masked below `huthresh`, fill value
-   -99999), `point_zs` from `sfincs_his.nc`; the balance with the masking caveat of
-   ADR-0004; GeoTIFF export of the maximum depth (rasterio).
-3. `engines/sfincs/bmi.py`: the ctypes wrapper of the old `coupler.py::SfincsBmi`
+1. `engines/sfincs/bmi.py`: the ctypes wrapper of the old `coupler.py::SfincsBmi`
    (`initialize`, `update_until`, `get_value_ptr`, `get_sfincs_cell_index`,
    `get_sfincs_cell_area`, `set_logical("qext")`) with `sfincs.qext_unit` (v2.4.1:
    `zs += qext * dt`, so divide the flow by the cell area).
-4. Plan step 11, the coupler: one loop of the extraction note 3 over protocols for the
+2. Plan step 11, the coupler: one loop of the extraction note 3 over protocols for the
    surface and the network, with fakes in `tests/` and a live test on both SFINCS builds
    plus pyswmm (the three-node case of `tests/fixtures/swmm/network_chain.csv`);
    modes `swmm_flooding` (EXTRAN, `SurDepth` 0, default) and `coordinator` (SLOT,
    relaxation 0.1); automatic oscillation guard, off by default (README 3.9);
    `rim_tolerance_m` for user networks; per-cell cap when several nodes share a cell.
-5. Plan steps 12 to 14. Every new command: declare it in `catalog/commands.py` with
+3. Plan steps 12 to 14. Every new command: declare it in `catalog/commands.py` with
    its Polish texts, add the function to `operations/` and `__all__`, regenerate
    `AGENTS.md` and `llms.txt`, add the flow to `agent_guide.FLOWS`, extend the README
    Capabilities table. Domain schemas go to `src/hydraulik/schemas/`.
-6. Local engines for the live tests: build SFINCS with gfortran and netCDF-Fortran
+4. Local engines for the live tests: build SFINCS with gfortran and netCDF-Fortran
    (`./configure --enable-shared`, plain `make`, extraction note 7) and set
    `HYDRAULIK_SFINCS_EXE` and `HYDRAULIK_SFINCS_LIBRARY`.
 
