@@ -1,6 +1,6 @@
 # ADR-0004: Write the regular-grid SFINCS model ourselves, without hydromt_sfincs
 
-- Status: proposed (accepted when the author approves the plan of 2026-10-24)
+- Status: accepted (the plan of 2026-10-24 was approved by delegation on that day)
 - Date: 2026-10-24
 - Requirements: ECO-041, DEV-13.5, DEV-6.4, DEV-6.5; extraction note 2, 4 and 5
 
