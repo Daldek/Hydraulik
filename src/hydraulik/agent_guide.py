@@ -58,6 +58,23 @@ FLOWS: Final[tuple[Flow, ...]] = (
         "See how the settings were resolved",
         (("config show", "List each setting with its value and source"),),
     ),
+    Flow(
+        "Find out what this machine can run",
+        (
+            (
+                "engines check",
+                "List the engines and packages and what each command needs",
+            ),
+        ),
+    ),
+    Flow(
+        "Run a model and read the result",
+        (
+            ("model run", "Run SFINCS on a model directory (add --check to plan)"),
+            ("results read", "Read the maxima, flooded areas and water balance"),
+            ("results export", "Write a flood map as a GeoTIFF"),
+        ),
+    ),
 )
 """Typical flows; every step names a command of the catalog (checked by a test)."""
 

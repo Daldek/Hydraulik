@@ -63,6 +63,10 @@ Codes come from the shared registry
 - `commands schema` (`hydraulik.command_schema`): Describe one command of Hydraulik: options, result, effects and errors. Details: `hydraulik commands schema --command 'commands schema'`.
 - `commands guide` (`hydraulik.render_guide`): Render AGENTS.md, llms.txt or the block for another repository's AGENTS.md. Details: `hydraulik commands schema --command 'commands guide'`.
 - `config show` (`hydraulik.show_config`): Show every setting of Hydraulik with its value and where the value came from. Details: `hydraulik commands schema --command 'config show'`.
+- `engines check` (`hydraulik.check_engines`): Report the engines and packages Hydraulik can use on this machine. Details: `hydraulik commands schema --command 'engines check'`.
+- `model run` (`hydraulik.run_model`): Run SFINCS on a model directory and read its maxima and water balance. Details: `hydraulik commands schema --command 'model run'`.
+- `results read` (`hydraulik.read_results`): Read the maxima, flooded areas and water balance of a SFINCS run. Details: `hydraulik commands schema --command 'results read'`.
+- `results export` (`hydraulik.export_results`): Write a map of a run as a GeoTIFF, or the station series as a CSV table. Details: `hydraulik commands schema --command 'results export'`.
 
 ## Typical flows
 
@@ -74,6 +78,16 @@ Codes come from the shared registry
 **See how the settings were resolved**
 
 1. List each setting with its value and source: `hydraulik config show --json`
+
+**Find out what this machine can run**
+
+1. List the engines and packages and what each command needs: `hydraulik engines check --json`
+
+**Run a model and read the result**
+
+1. Run SFINCS on a model directory (add --check to plan): `hydraulik model run --model ./model --output-dir ./run --json`
+2. Read the maxima, flooded areas and water balance: `hydraulik results read --run ./run --json`
+3. Write a flood map as a GeoTIFF: `hydraulik results export --run ./run --variable max_depth --output ./hmax.tif --json`
 
 ## Things not to do
 

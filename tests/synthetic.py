@@ -18,6 +18,11 @@ import numpy as np
 from numpy.typing import NDArray
 
 from hydraulik.engines.detect import SfincsInstall
+from hydraulik.engines.sfincs.model import (
+    ModelInputs,
+    RegularGrid,
+    precip_breakpoints,
+)
 
 Float = NDArray[np.float64]
 
@@ -202,4 +207,42 @@ def fake_docker(folder: Path) -> SfincsInstall:
     script.write_text(FAKE_DOCKER, encoding="utf-8")
     return SfincsInstall(
         "docker", (sys.executable, str(script)), "deltares/sfincs-cpu:sfincs-v2.4.1"
+    )
+
+
+def closed_basin() -> ModelInputs:
+    """A flat 10 x 10 basin of 10 m cells, 30 mm of rain, CN 80, no outflow."""
+    grid = RegularGrid(0.0, 0.0, 10.0, 10, 10)
+    return ModelInputs(
+        grid=grid,
+        elevation_m=np.zeros(grid.shape),
+        active=np.ones(grid.shape, dtype=bool),
+        precip=precip_breakpoints([5.0] * 6, 600.0, 7200.0),
+        tstop_s=7200.0,
+        manning=np.full(grid.shape, 0.03),
+        curve_number=np.full(grid.shape, 80.0),
+        observation_points=((55.0, 55.0, "centre"),),
+        dtmax_s=10.0,
+        dtout_s=7200.0,
+        dthisout_s=600.0,
+    )
+
+
+def slope_with_outflow() -> ModelInputs:
+    """A 10 x 10 slope (0.4 %) towards two outflow cells at the south edge, 60 mm."""
+    grid = RegularGrid(0.0, 0.0, 10.0, 10, 10)
+    rows = np.arange(10)[:, None] * np.ones((1, 10))
+    outflow = np.zeros(grid.shape, dtype=bool)
+    outflow[0, 4:6] = True
+    return ModelInputs(
+        grid=grid,
+        elevation_m=0.5 + 0.04 * rows,
+        active=np.ones(grid.shape, dtype=bool),
+        precip=precip_breakpoints([30.0, 30.0], 900.0, 7200.0),
+        tstop_s=7200.0,
+        outflow=outflow,
+        manning=0.04,
+        dtmax_s=10.0,
+        dtout_s=7200.0,
+        observation_points=((55.0, 5.0, "low"),),
     )

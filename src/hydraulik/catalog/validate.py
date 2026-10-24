@@ -68,7 +68,18 @@ def _check_value(option: OptionSpec, value: Any) -> Any:
         if isinstance(value, str) or not isinstance(value, list | tuple):
             raise _fail(option, value, "expected a list", "wrong_type")
         kind = option.items or "string"
-        return [_check_scalar(option, kind, item) for item in value]
+        items = [_check_scalar(option, kind, item) for item in value]
+        allowed = [entry[0] for entry in option.enum]
+        for item in items:
+            if allowed and item not in allowed:
+                raise _fail(
+                    option,
+                    item,
+                    f"must be one of {', '.join(str(a) for a in allowed)}",
+                    "not_allowed",
+                    allowed=allowed,
+                )
+        return items
     if option.type == "object":
         if not isinstance(value, Mapping):
             raise _fail(option, value, "expected an object", "wrong_type")

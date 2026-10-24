@@ -14,7 +14,8 @@ The writer produces the files of SFINCS v2.4.1 in binary input mode, the default
   the last segment linearly, so a series that ends falling goes negative and removes
   water without a warning (extraction note 4): every series ends with a flat segment
   that reaches ``tstop``;
-* ``sfincs.obs``: ``x y name`` of the observation points;
+* ``sfincs.obs``: ``x y "name"`` of the observation points (SFINCS keeps a name only
+  when it is quoted and calls the others ``station_001``, ``station_002``, ...);
 * ``sfincs.inp``: the ``key = value`` file.
 
 Arrays are shaped ``(rows, columns)`` with row 0 at the **south** edge, as SFINCS
@@ -353,6 +354,13 @@ class ModelInputs:
                     details={"option": "curve_number"},
                     reason="out_of_range",
                 )
+        for _, _, name in self.observation_points:
+            if not name or '"' in name or "\n" in name:
+                raise InvalidInputError(
+                    f"observation point name {name!r} is empty or has a quote",
+                    details={"option": "observation_points", "value": name},
+                    reason="invalid_station_name",
+                )
         for x, y, name in self.observation_points:
             if self.grid.cell_of(x, y) is None:
                 raise InvalidInputError(
@@ -532,7 +540,8 @@ def write_model(directory: Path, inputs: ModelInputs) -> dict[str, str]:
     if "observations" in files:
         (directory / files["observations"]).write_text(
             "".join(
-                f"{x:.3f} {y:.3f} {name}\n" for x, y, name in inputs.observation_points
+                f'{x:.3f} {y:.3f} "{name}"\n'
+                for x, y, name in inputs.observation_points
             ),
             encoding="utf-8",
         )

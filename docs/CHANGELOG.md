@@ -47,3 +47,18 @@ follows [Semantic Versioning](https://semver.org/).
   continuity error, which the totals reproduce to 0.01 percent. The rain table and the
   hydrograph table (`time_min`, `depth_mm` and `time_min`, `discharge_m3s`) are read
   and written by `hydraulik.data.tables`. Library modules; `swmm run` follows.
+- The commands `engines check` (the engines and Python packages found, what each
+  command needs, `--require` for scripts), `model run` (SFINCS on a copy of the model
+  directory in staging; the map, the station file and the log reach `--output-dir` only
+  after a successful run; maxima, flooded areas and the water balance in the result),
+  `results read` and `results export` (a map as a GeoTIFF in the CRS of the model, or the
+  station series as CSV), each with `--check` where it writes, the domain schemas
+  `hydraulik-engines/1`, `-run/1`, `-results/1` and `-export/1`, and the optional
+  `blockers` of `hydraulik-plan/1` (an engine or an extra that would stop the run). Live
+  tests of the four commands pass on SFINCS v2.4.1 and on `main`.
+
+### Fixed
+
+- SFINCS keeps the name of an observation point only when the name is quoted in
+  `sfincs.obs`; the writer quotes it (an unquoted name became `station_001`) and refuses
+  a name that is empty or holds a quote.

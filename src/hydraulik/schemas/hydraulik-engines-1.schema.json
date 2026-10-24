@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-engines-1.schema.json",
+  "title": "hydraulik-engines/1",
+  "description": "The engines and packages Hydraulik found, and what each command needs (`engines check`).",
+  "type": "object",
+  "required": ["schema", "engines", "extras", "features"],
+  "properties": {
+    "schema": {"const": "hydraulik-engines/1"},
+    "engines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "found", "detail"],
+        "properties": {
+          "name": {"enum": ["sfincs", "sfincs-library", "swmm", "kartograf"]},
+          "found": {"type": "boolean"},
+          "via": {"type": ["string", "null"]},
+          "location": {"type": ["string", "null"]},
+          "version": {"type": ["string", "null"]},
+          "detail": {"type": "string"},
+          "hint": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "extras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "extra", "found"],
+        "properties": {
+          "name": {"type": "string"},
+          "extra": {"enum": ["model", "sfincs", "swmm", "rainfall"]},
+          "found": {"type": "boolean"},
+          "version": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command", "available", "needs", "missing"],
+        "properties": {
+          "command": {"type": "string", "pattern": "^[a-z][a-z0-9-]* [a-z][a-z0-9-]*$"},
+          "available": {"type": "boolean"},
+          "needs": {"type": "array", "items": {"type": "string"}},
+          "missing": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

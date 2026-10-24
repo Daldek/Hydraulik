@@ -221,10 +221,376 @@ _CONFIG_SHOW = CommandSpec(
     },
 )
 
+_FEATURE_COMMANDS = (
+    ("terrain download", "Kartograf is found"),
+    ("rainfall build", "Hydrolog is installed"),
+    ("model build", "the rasters and vectors stack is installed"),
+    ("model run", "SFINCS and NetCDF reading are available"),
+    ("results read", "NetCDF reading is available"),
+    ("results export", "NetCDF and raster writing are available"),
+    ("swmm run", "SWMM (pyswmm) is installed"),
+    ("model couple", "the SFINCS library, pyswmm and NetCDF reading are available"),
+)
+
+_ENGINES_CHECK = CommandSpec(
+    name="engines check",
+    operation_id="hydraulik_engines_check",
+    function="hydraulik.check_engines",
+    summary="Report the engines and packages Hydraulik can use on this machine.",
+    description=(
+        "Looks for SFINCS (the setting, then `sfincs` on PATH, then a Docker image "
+        "that is already present), the SFINCS library of the coupling, SWMM "
+        "(pyswmm) and Kartograf, and lists the Python packages of the extras. For "
+        "each command that needs more than the core package it says whether it can "
+        "run here and what is missing. Nothing is installed, pulled or written; "
+        "SFINCS is started only in an empty directory to read its banner. With "
+        "--require the call fails with missing_dependency (6) when a command cannot "
+        "run, which suits a script. Use `config show` to see why an engine is not "
+        "found."
+    ),
+    options=(
+        OptionSpec(
+            name="require",
+            type="array",
+            items="string",
+            enum=_FEATURE_COMMANDS,
+            examples=(["model run"],),
+            description=(
+                "Commands that must be able to run here; the call fails with "
+                "missing_dependency when one cannot."
+            ),
+        ),
+    ),
+    result_schema="hydraulik-engines/1",
+    effects=Effects(),
+    check=None,
+    rules=(
+        "Run it on a new machine before a long command; do not install an engine "
+        "from a script, install it and set its location in the settings.",
+    ),
+    examples=(
+        Example(
+            call="hydraulik engines check --json",
+            result={"schema": "hydraulik-engines/1"},
+        ),
+        Example(
+            call="hydraulik engines check --require 'model run' --json",
+            result={"schema": "hydraulik-engines/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "data_error",
+        "missing_dependency",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": "Podaje silniki i pakiety, z których Hydraulik może tu korzystać.",
+        "description": (
+            "Szuka SFINCS (ustawienie, potem `sfincs` w PATH, potem obraz Dockera, "
+            "który już jest), biblioteki SFINCS do sprzężenia, SWMM (pyswmm) i "
+            "Kartografa oraz wypisuje pakiety Pythona z dodatków. Dla każdego "
+            "polecenia, które wymaga czegoś więcej niż pakietu podstawowego, mówi, czy "
+            "można je tu uruchomić i czego brakuje. Niczego nie instaluje, nie pobiera "
+            "ani nie zapisuje; SFINCS jest uruchamiany tylko w pustym katalogu, aby "
+            "odczytać jego nagłówek. Z --require wywołanie kończy się błędem "
+            "missing_dependency (6), gdy polecenie nie może działać, co ułatwia "
+            "skrypty. Aby zobaczyć, czemu silnik nie jest znaleziony, użyj `config "
+            "show`."
+        ),
+        "rules": [
+            "Uruchom na nowym komputerze przed długim poleceniem; nie instaluj "
+            "silnika ze skryptu, zainstaluj go i wskaż jego położenie w ustawieniach."
+        ],
+    },
+)
+
+_MODEL_RUN = CommandSpec(
+    name="model run",
+    operation_id="hydraulik_model_run",
+    function="hydraulik.run_model",
+    summary="Run SFINCS on a model directory and read its maxima and water balance.",
+    description=(
+        "Copies the model directory (`model build`) to a staging directory, runs "
+        "the external SFINCS there (the executable of the settings, `sfincs` on "
+        "PATH, or a Docker image that is already present), reads the map, and only "
+        "when the run succeeded writes sfincs_map.nc, sfincs_his.nc (when the "
+        "model has observation points) and sfincs.log into --output-dir. The "
+        "result has the maxima, the flooded areas and the water balance (rain - "
+        "infiltration - stored = residual): a closed model must close it, with "
+        "outflow cells the residual is the water that left. Use it for one model; "
+        "it does not build a model (`model build`) and does not couple a sewer "
+        "network (`model couple`). The run is stopped after sfincs.timeout_s."
+    ),
+    options=(
+        OptionSpec(
+            name="model",
+            type="string",
+            required=True,
+            path_role="input",
+            examples=("./model",),
+            description="Model directory with sfincs.inp, written by `model build`.",
+        ),
+        OptionSpec(
+            name="output_dir",
+            type="string",
+            required=True,
+            path_role="output",
+            short="-o",
+            examples=("./run",),
+            description=(
+                "Directory for the results (plain files, created when missing); it "
+                "may be the model directory."
+            ),
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace result files that already exist.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description=(
+                "Plan without effects: the files, the engine that would run and "
+                "whatever would stop the run."
+            ),
+        ),
+    ),
+    result_schema="hydraulik-run/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True),
+    check="model run",
+    rules=(
+        "Read the notices: a flagged balance means the result is not to be trusted.",
+        "The output may be the model directory itself; the inputs are copied.",
+    ),
+    examples=(
+        Example(
+            call="hydraulik model run --model ./model --output-dir ./run --json",
+            result={"schema": "hydraulik-run/1"},
+        ),
+        Example(
+            call=(
+                "hydraulik model run --model ./model --output-dir ./run --check --json"
+            ),
+            result={"schema": "hydraulik-plan/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "unsupported",
+        "data_error",
+        "io_error",
+        "missing_dependency",
+        "calculation_error",
+        "terminated",
+        "cancelled",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Uruchamia SFINCS na katalogu modelu i odczytuje maksima oraz bilans wody."
+        ),
+        "description": (
+            "Kopiuje katalog modelu (`model build`) do katalogu tymczasowego, "
+            "uruchamia w nim zewnętrzny SFINCS (plik wykonywalny z ustawień, "
+            "`sfincs` w PATH albo obraz Dockera, który już jest), odczytuje mapę i "
+            "dopiero po udanym przebiegu zapisuje sfincs_map.nc, sfincs_his.nc (gdy "
+            "model ma punkty obserwacyjne) i sfincs.log w --output-dir. Wynik ma "
+            "maksima, powierzchnie zalane i bilans wody (opad - infiltracja - "
+            "zmagazynowana = reszta): model zamknięty musi go zamykać, przy "
+            "komórkach odpływu reszta to woda, która odpłynęła. Użyj dla jednego "
+            "modelu; nie buduje modelu (`model build`) i nie sprzęga sieci "
+            "kanalizacyjnej (`model couple`). Przebieg jest zatrzymywany po "
+            "sfincs.timeout_s."
+        ),
+        "rules": [
+            "Przeczytaj uwagi: oflagowany bilans to wynik, któremu nie wolno ufać.",
+            "Wyjściem może być sam katalog modelu; wejścia są kopiowane.",
+        ],
+    },
+)
+
+_RESULTS_READ = CommandSpec(
+    name="results read",
+    operation_id="hydraulik_results_read",
+    function="hydraulik.read_results",
+    summary="Read the maxima, flooded areas and water balance of a SFINCS run.",
+    description=(
+        "Reads sfincs_map.nc (and sfincs_his.nc) of a run: the grid, the largest "
+        "depth and velocity, the area flooded deeper than each threshold, the "
+        "maximum at each station and the water balance with its flags. Use it on "
+        "a run that `model run` wrote, or on any regular-grid SFINCS output. It "
+        "changes nothing. Depths under the wet/dry threshold (huthresh) are not in "
+        "the map, so a threshold below it is refused."
+    ),
+    options=(
+        OptionSpec(
+            name="run",
+            type="string",
+            required=True,
+            path_role="input",
+            examples=("./run",),
+            description="Directory of a run, or its sfincs_map.nc.",
+        ),
+        OptionSpec(
+            name="thresholds_m",
+            type="array",
+            items="number",
+            unit="m",
+            examples=([0.1, 0.3],),
+            description=(
+                "Depths for which the flooded area is reported (default 0.1 and 0.3)."
+            ),
+        ),
+        OptionSpec(
+            name="expected_rain_mm",
+            type="number",
+            unit="mm",
+            min=0.0,
+            description=(
+                "Depth of the precipitation file, to check the rain SFINCS applied."
+            ),
+        ),
+    ),
+    result_schema="hydraulik-results/1",
+    effects=Effects(),
+    check=None,
+    rules=("A flag of the balance is a warning, not an error: read the notices.",),
+    examples=(
+        Example(
+            call="hydraulik results read --run ./run --json",
+            result={"schema": "hydraulik-results/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "data_error",
+        "unsupported",
+        "missing_dependency",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": "Czyta maksima, powierzchnie zalane i bilans wody przebiegu SFINCS.",
+        "description": (
+            "Czyta sfincs_map.nc (i sfincs_his.nc) przebiegu: siatkę, największą "
+            "głębokość i prędkość, powierzchnię zalaną głębiej niż każdy próg, "
+            "maksimum na każdej stacji i bilans wody z jego flagami. Użyj dla "
+            "przebiegu zapisanego przez `model run` albo dowolnego wyniku SFINCS na "
+            "siatce regularnej. Niczego nie zmienia. Głębokości poniżej progu "
+            "suchy/mokry (huthresh) nie ma w mapie, więc niższy próg jest odrzucany."
+        ),
+        "rules": ["Flaga bilansu to ostrzeżenie, nie błąd: przeczytaj uwagi."],
+    },
+)
+
+_RESULTS_EXPORT = CommandSpec(
+    name="results export",
+    operation_id="hydraulik_results_export",
+    function="hydraulik.export_results",
+    summary="Write a map of a run as a GeoTIFF, or the station series as a CSV table.",
+    description=(
+        "Writes to --output one map of a run as a GeoTIFF in the CRS of the model "
+        "(max_depth, max_velocity, final_depth, infiltration) or the series of the "
+        "stations as a CSV table (stations). Use it to open the result in QGIS or "
+        "to hand a flood map on. It computes nothing new; for the numbers use "
+        "`results read`. With --check it plans and writes nothing."
+    ),
+    options=(
+        OptionSpec(
+            name="run",
+            type="string",
+            required=True,
+            path_role="input",
+            examples=("./run",),
+            description="Directory of a run, or its sfincs_map.nc.",
+        ),
+        OptionSpec(
+            name="variable",
+            type="string",
+            required=True,
+            enum=(
+                ("max_depth", "maximum water depth [m] (GeoTIFF)"),
+                ("max_velocity", "maximum flow velocity [m/s] (GeoTIFF)"),
+                ("final_depth", "water depth at the last output time [m] (GeoTIFF)"),
+                ("infiltration", "infiltration accumulated to the end [m] (GeoTIFF)"),
+                ("stations", "level and depth at the stations in time (CSV)"),
+            ),
+            description="What to export.",
+        ),
+        OptionSpec(
+            name="output",
+            type="string",
+            required=True,
+            path_role="output",
+            examples=("./hmax.tif",),
+            description="The file to write (exactly one file).",
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace the file when it exists.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description="Plan without effects.",
+        ),
+    ),
+    result_schema="hydraulik-export/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True),
+    check="results export",
+    rules=("max_depth has no data where the water stayed under huthresh.",),
+    examples=(
+        Example(
+            call=(
+                "hydraulik results export --run ./run --variable max_depth "
+                "--output ./hmax.tif --json"
+            ),
+            result={"schema": "hydraulik-export/1", "format": "geotiff"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "data_error",
+        "unsupported",
+        "io_error",
+        "missing_dependency",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Zapisuje mapę przebiegu jako GeoTIFF albo przebiegi na stacjach jako CSV."
+        ),
+        "description": (
+            "Zapisuje do --output jedną mapę przebiegu jako GeoTIFF w układzie "
+            "modelu (max_depth, max_velocity, final_depth, infiltration) albo "
+            "przebiegi na stacjach jako tabelę CSV (stations). Użyj, aby otworzyć "
+            "wynik w QGIS lub przekazać mapę zalewu dalej. Niczego nie przelicza; "
+            "liczby daje `results read`. Z --check tylko planuje i nic nie zapisuje."
+        ),
+        "rules": ["max_depth nie ma danych tam, gdzie woda nie przekroczyła huthresh."],
+    },
+)
+
 COMMANDS: tuple[CommandSpec, ...] = (
     _COMMANDS_LIST,
     _COMMANDS_SCHEMA,
     _COMMANDS_GUIDE,
     _CONFIG_SHOW,
+    _ENGINES_CHECK,
+    _MODEL_RUN,
+    _RESULTS_READ,
+    _RESULTS_EXPORT,
 )
 """Every command of Hydraulik, in the order of ``commands list``."""

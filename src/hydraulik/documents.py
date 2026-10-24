@@ -21,8 +21,13 @@ __all__ = [
     "CommandsDocument",
     "ConfigDocument",
     "Document",
+    "EnginesDocument",
+    "ExportDocument",
     "GuideDocument",
     "PlanDocument",
+    "ResultsDocument",
+    "RunDocument",
+    "notice",
     "to_jsonable",
 ]
 
@@ -68,6 +73,31 @@ def to_jsonable(value: object) -> Any:
     if isinstance(value, set | frozenset):
         return sorted((to_jsonable(item) for item in value), key=str)
     return str(value)
+
+
+def notice(level: str, code: str, message: str) -> dict[str, str]:
+    """Return a notice of the result envelope (AGI-4.2).
+
+    Parameters
+    ----------
+    level : {"info", "warning"}
+        How much attention it needs.
+    code : str
+        Short identifier in snake_case, for example ``balance_residual``.
+    message : str
+        One English sentence.
+
+    Returns
+    -------
+    dict
+        ``{"level", "code", "message"}``.
+
+    Examples
+    --------
+    >>> notice("warning", "dem_gaps", "12 cells have no elevation")["level"]
+    'warning'
+    """
+    return {"level": level, "code": code, "message": message}
 
 
 class Document:
@@ -202,6 +232,10 @@ class PlanDocument(_Carrier, Document):
         Reasons that would make the real run fail; empty when it would succeed.
     steps : list of str
         What else the real run would do (for example the engine run).
+    blockers : list of dict
+        Reasons other than the output that would make the real run fail, each
+        ``{"reason", "message"}`` and, when there is one, ``"hint"`` (an engine or an
+        extra that is missing). Empty when the run would go ahead.
     """
 
     SCHEMA: ClassVar[str] = "hydraulik-plan/1"
@@ -210,9 +244,15 @@ class PlanDocument(_Carrier, Document):
     targets: list[dict[str, Any]]
     conflicts: list[str]
     steps: list[str] = field(default_factory=list)
+    blockers: list[dict[str, str]] = field(default_factory=list)
 
     @classmethod
-    def from_write_plan(cls, plan: Any, steps: list[str] | None = None) -> PlanDocument:
+    def from_write_plan(
+        cls,
+        plan: Any,
+        steps: list[str] | None = None,
+        blockers: list[dict[str, str]] | None = None,
+    ) -> PlanDocument:
         """Build the document from a :class:`hydraulik.output.WritePlan`."""
         body = plan.to_dict()
         return cls(
@@ -221,4 +261,108 @@ class PlanDocument(_Carrier, Document):
             targets=body["targets"],
             conflicts=body["conflicts"],
             steps=list(steps or []),
+            blockers=list(blockers or []),
         )
+
+
+@dataclass
+class EnginesDocument(_Carrier, Document):
+    """``hydraulik-engines/1``: what Hydraulik found on this machine.
+
+    Attributes
+    ----------
+    engines : list of dict
+        ``name`` (``sfincs``, ``sfincs-library``, ``swmm``, ``kartograf``), ``found``,
+        ``via``, ``location``, ``version``, ``detail`` and ``hint`` of each program.
+    extras : list of dict
+        ``name`` (the Python package), ``extra`` (the extra of Hydraulik that installs
+        it), ``found`` and ``version``.
+    features : list of dict
+        For each command that needs an engine or an extra: ``command``,
+        ``available``, ``needs`` and ``missing``.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-engines/1"
+    engines: list[dict[str, Any]]
+    extras: list[dict[str, Any]]
+    features: list[dict[str, Any]]
+
+
+@dataclass
+class ResultsDocument(_Carrier, Document):
+    """``hydraulik-results/1``: what a SFINCS run computed.
+
+    Attributes
+    ----------
+    source : str
+        The ``sfincs_map.nc`` that was read.
+    engine : dict
+        ``build_revision``, ``status``, ``runtime_s`` and ``average_dt_s`` of the run.
+    grid : dict
+        ``epsg``, ``dx_m``, ``x0_m``, ``y0_m``, ``rows``, ``columns``,
+        ``active_cells``, ``area_m2`` and ``huthresh_m``.
+    depth : dict
+        ``max_depth_m`` and its position, ``max_velocity_ms`` and the flooded area by
+        depth threshold.
+    balance : dict
+        ``rain_m3``, ``infiltration_m3``, ``stored_m3``, ``residual_m3``,
+        ``residual_percent``, ``open_boundary``, ``expected_rain_m3``, ``flags``.
+    stations : list of dict
+        ``name``, position, ``max_depth_m`` and ``time_of_max_s`` of each station.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-results/1"
+    source: str
+    engine: dict[str, Any]
+    grid: dict[str, Any]
+    depth: dict[str, Any]
+    balance: dict[str, Any]
+    stations: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
+class RunDocument(_Carrier, Document):
+    """``hydraulik-run/1``: one SFINCS run and what it computed.
+
+    Attributes
+    ----------
+    engine : dict
+        ``kind`` (``exe`` or ``docker``), ``location`` and ``version`` of the SFINCS
+        that ran.
+    elapsed_s : float
+        Wall time of the run [s].
+    results : dict
+        The ``hydraulik-results/1`` document of the run.
+    files : list of dict
+        The files written: ``path``, ``size_bytes``, ``sha256``, ``status``.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-run/1"
+    engine: dict[str, Any]
+    elapsed_s: float
+    results: dict[str, Any]
+    files: list[dict[str, Any]]
+
+
+@dataclass
+class ExportDocument(_Carrier, Document):
+    """``hydraulik-export/1``: a map or a table written from the results of a run.
+
+    Attributes
+    ----------
+    variable : str
+        What was exported (``max_depth``, ``max_velocity``, ``final_depth``,
+        ``infiltration`` or ``stations``).
+    format : str
+        ``geotiff`` or ``csv``.
+    source : str
+        The result file it was made from.
+    files : list of dict
+        The file written: ``path``, ``size_bytes``, ``sha256``, ``status``.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-export/1"
+    variable: str
+    format: str
+    source: str
+    files: list[dict[str, Any]]

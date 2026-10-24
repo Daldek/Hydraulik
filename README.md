@@ -90,6 +90,21 @@ print([command["name"] for command in catalog["commands"]])
 Every command prints one JSON document with `--json`; logs go to stderr. On an
 error stdout is empty and the last line of stderr is the error document.
 
+With a SFINCS model directory (one you wrote; `model build` is planned), a run and its
+results:
+
+```sh
+hydraulik engines check --require 'model run'
+hydraulik model run --model ./model --output-dir ./run
+hydraulik results read --run ./run
+hydraulik results export --run ./run --variable max_depth --output ./hmax.tif
+```
+
+`model run` writes `sfincs_map.nc`, `sfincs_his.nc` and `sfincs.log` only when SFINCS
+finished and its map can be read. The water balance is `rain - infiltration - stored =
+residual`: in a closed model the residual is the error and above 1 % of the rain it is
+flagged; with outflow cells it is the water that left.
+
 ## Capabilities
 
 | Task | CLI | Python function | Writes |
@@ -98,6 +113,10 @@ error stdout is empty and the last line of stderr is the error document.
 | Describe one command | `commands schema` | `hydraulik.command_schema` | nothing |
 | Render AGENTS.md, llms.txt or the block for another repository | `commands guide` | `hydraulik.render_guide` | `--inject` only |
 | Show the settings and their sources | `config show` | `hydraulik.show_config` | nothing |
+| Report the engines and packages found, and what each command needs | `engines check` | `hydraulik.check_engines` | nothing |
+| Run SFINCS on a model directory, read its maxima and water balance | `model run` | `hydraulik.run_model` | `--output-dir` |
+| Read the maxima, flooded areas and water balance of a run | `results read` | `hydraulik.read_results` | nothing |
+| Write a map as a GeoTIFF or the station series as a CSV table | `results export` | `hydraulik.export_results` | `--output` |
 
 Generic drivers for any command: `hydraulik.validate_command`,
 `hydraulik.check_command`, `hydraulik.run_command`.

@@ -58,6 +58,15 @@ REASONS_PL: Final[dict[str, str]] = {
     "unknown_setting": "Nieznane ustawienie.",
     "invalid_setting": "Nieprawidłowa wartość ustawienia.",
     "path_missing": "Plik lub katalog nie istnieje.",
+    "engine_timeout": "SFINCS przekroczył limit czasu i został zatrzymany.",
+    "engine_unavailable": "Nie udało się uruchomić silnika.",
+    "extra_missing": "Brakuje pakietu Pythona z dodatku Hydraulika.",
+    "model_missing": "W katalogu nie ma modelu SFINCS (sfincs.inp).",
+    "results_missing": "Nie ma wyników przebiegu SFINCS (sfincs_map.nc).",
+    "map_layout": "Mapa nie jest siatką regularną SFINCS.",
+    "below_huthresh": "Próg głębokości jest niższy niż próg suchy/mokry modelu.",
+    "invalid_inp": "Plik wejściowy jest niepoprawny.",
+    "output_format": "Model nie zapisuje wyników w formacie NetCDF.",
 }
 
 

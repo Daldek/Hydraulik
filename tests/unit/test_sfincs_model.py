@@ -121,7 +121,7 @@ def test_inp_carries_the_grid_the_times_and_the_overrides() -> None:
 def test_observation_points_are_written_with_their_names(tmp_path: Path) -> None:
     write_model(tmp_path, _inputs(observation_points=((115.0, 205.0, "outlet"),)))
 
-    assert (tmp_path / "sfincs.obs").read_text() == "115.000 205.000 outlet\n"
+    assert (tmp_path / "sfincs.obs").read_text() == '115.000 205.000 "outlet"\n'
     assert "obsfile         = sfincs.obs" in (tmp_path / "sfincs.inp").read_text()
 
 
@@ -165,6 +165,8 @@ def test_invalid_rain_is_refused(
         ({"manning": np.full((2, 3), np.nan)}, "out_of_range"),
         ({"curve_number": np.full((2, 3), 20.0)}, "out_of_range"),
         ({"observation_points": ((0.0, 0.0, "x"),)}, "outside_grid"),
+        ({"observation_points": ((115.0, 205.0, 'a"b'),)}, "invalid_station_name"),
+        ({"observation_points": ((115.0, 205.0, ""),)}, "invalid_station_name"),
     ],
 )
 def test_invalid_inputs_are_refused_before_anything_is_written(

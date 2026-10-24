@@ -23,26 +23,41 @@ from hydraulik.documents import (
     CommandsDocument,
     ConfigDocument,
     Document,
+    EnginesDocument,
+    ExportDocument,
     GuideDocument,
     PlanDocument,
+    ResultsDocument,
+    RunDocument,
 )
 from hydraulik.exceptions import HydraulikError
 from hydraulik.operations.config import show_config
+from hydraulik.operations.engines import check_engines
 from hydraulik.operations.meta import render_guide
+from hydraulik.operations.model import run_model
+from hydraulik.operations.results import export_results, read_results
 
 __all__ = [
     "CommandsDocument",
     "ConfigDocument",
     "Document",
+    "EnginesDocument",
+    "ExportDocument",
     "GuideDocument",
     "HydraulikError",
     "PlanDocument",
+    "ResultsDocument",
+    "RunDocument",
     "__version__",
     "check_command",
+    "check_engines",
     "command_schema",
+    "export_results",
     "list_commands",
+    "read_results",
     "render_guide",
     "run_command",
+    "run_model",
     "show_config",
     "validate_command",
 ]
