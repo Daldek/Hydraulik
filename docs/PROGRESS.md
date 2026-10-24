@@ -14,6 +14,7 @@
 | Engine detection (`engines/detect.py`) | done | ADR-0003; no command uses it yet |
 | SFINCS runner (`engines/sfincs/run.py`), results reader and balance (`results.py`) | done | exe or Docker, log streaming, timeout; `h`, `hmax`, `cumprcp`, `cuminf`, stations, GeoTIFF; live tests pass on v2.4.1 and main; the Docker path is tested with a fake `docker` only (no daemon here); no command uses them yet |
 | SFINCS BMI wrapper | planned | rest of plan step 10 |
+| SWMM run and results (`engines/swmm/run.py`), rain and hydrograph tables (`data/tables.py`) | done | integration tests on the real SWMM; pyswmm allows one open simulation per process; no command uses them yet |
 | Coupler (BMI plus pyswmm, volume exchange) | planned | plan step 11 |
 | Data adapters: Kartograf CLI, IMGWTools PMAXTP, Hydrolog hyetograph | planned | plan step 12 |
 | Commands `engines check`, `rainfall build`, `terrain download`, `model build`, `model run`, `results read`, `results export` | planned | plan step 13 |
