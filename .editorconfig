@@ -1,0 +1,28 @@
+# EditorConfig (DEV-14.1, DEV-14.2): https://editorconfig.org
+# Supported natively by most editors (VS Code needs the extension).
+
+root = true
+
+# Every file: UTF-8, LF, final newline, no trailing whitespace
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Python: 4 spaces (PEP 8)
+[*.py]
+indent_size = 4
+
+# Configuration and documentation: 2 spaces
+[*.{md,yaml,yml,json,toml}]
+indent_size = 2
+
+# Byte-exact fixtures are kept as written (see .gitattributes)
+[tests/fixtures/**]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset

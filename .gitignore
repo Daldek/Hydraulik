@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy / ruff
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+
+# Secrets (DEV-13.1)
+.env
+.env.local
+*.pem
+*.key
+
+# Model and run directories written by accident inside the repository
+hydraulik-output/
+runs/
+
+# Python version
+.python-version
+
+# Local Claude Code settings and temporary agent worktrees
+.claude/

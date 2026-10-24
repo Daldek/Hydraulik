@@ -1,0 +1,5 @@
+# Line endings (DEV-14.1): LF in the repository and in every working copy, on Windows too.
+* text=auto eol=lf
+
+# Byte-exact fixtures (DEV-14.1): engine inputs and outputs are compared as written.
+tests/fixtures/** -text
