@@ -29,6 +29,7 @@ from hydraulik.documents import (
     PlanDocument,
     ResultsDocument,
     RunDocument,
+    SwmmDocument,
 )
 from hydraulik.exceptions import HydraulikError
 from hydraulik.operations.config import show_config
@@ -36,6 +37,7 @@ from hydraulik.operations.engines import check_engines
 from hydraulik.operations.meta import render_guide
 from hydraulik.operations.model import run_model
 from hydraulik.operations.results import export_results, read_results
+from hydraulik.operations.swmm import run_network
 
 __all__ = [
     "CommandsDocument",
@@ -48,6 +50,7 @@ __all__ = [
     "PlanDocument",
     "ResultsDocument",
     "RunDocument",
+    "SwmmDocument",
     "__version__",
     "check_command",
     "check_engines",
@@ -58,6 +61,7 @@ __all__ = [
     "render_guide",
     "run_command",
     "run_model",
+    "run_network",
     "show_config",
     "validate_command",
 ]

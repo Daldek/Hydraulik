@@ -26,7 +26,7 @@ FEATURES: Final[dict[str, tuple[tuple[str, ...], tuple[str, ...]]]] = {
     "model run": (("sfincs",), ("numpy", "netCDF4")),
     "results read": ((), ("numpy", "netCDF4")),
     "results export": ((), ("numpy", "netCDF4", "rasterio")),
-    "swmm run": (("swmm",), ("numpy", "pyswmm")),
+    "swmm run": (("swmm",), ("pyswmm",)),
     "model couple": (
         ("sfincs-library", "swmm"),
         ("numpy", "netCDF4", "pyswmm"),

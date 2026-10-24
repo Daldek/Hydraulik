@@ -67,6 +67,7 @@ Codes come from the shared registry
 - `model run` (`hydraulik.run_model`): Run SFINCS on a model directory and read its maxima and water balance. Details: `hydraulik commands schema --command 'model run'`.
 - `results read` (`hydraulik.read_results`): Read the maxima, flooded areas and water balance of a SFINCS run. Details: `hydraulik commands schema --command 'results read'`.
 - `results export` (`hydraulik.export_results`): Write a map of a run as a GeoTIFF, or the station series as a CSV table. Details: `hydraulik commands schema --command 'results export'`.
+- `swmm run` (`hydraulik.run_network`): Run a SWMM sewer network with an inflow hydrograph and read its peaks. Details: `hydraulik commands schema --command 'swmm run'`.
 
 ## Typical flows
 
@@ -88,6 +89,10 @@ Codes come from the shared registry
 1. Run SFINCS on a model directory (add --check to plan): `hydraulik model run --model ./model --output-dir ./run --json`
 2. Read the maxima, flooded areas and water balance: `hydraulik results read --run ./run --json`
 3. Write a flood map as a GeoTIFF: `hydraulik results export --run ./run --variable max_depth --output ./hmax.tif --json`
+
+**Run a sewer network on its own**
+
+1. Run a network table or a SWMM input with an inflow hydrograph (add --check to plan): `hydraulik swmm run --network ./network.csv --inflow ./inflow.csv --inflow-node J1 --output-dir ./swmm --json`
 
 ## Things not to do
 

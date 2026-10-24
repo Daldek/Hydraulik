@@ -67,6 +67,12 @@ REASONS_PL: Final[dict[str, str]] = {
     "below_huthresh": "Próg głębokości jest niższy niż próg suchy/mokry modelu.",
     "invalid_inp": "Plik wejściowy jest niepoprawny.",
     "output_format": "Model nie zapisuje wyników w formacie NetCDF.",
+    "unknown_node": "Sieć nie ma takiego węzła.",
+    "inflow_required": "Tabela sieci nie ma własnego dopływu; podaj --inflow.",
+    "option_not_applicable": "Opcja dotyczy tylko tabeli sieci, nie pliku SWMM.",
+    "invalid_network_table": "Tabela sieci jest niepoprawna.",
+    "invalid_hydrograph": "Tabela hydrogramu jest niepoprawna.",
+    "flow_units": "Plik SWMM musi używać jednostek SI (FLOW_UNITS CMS).",
 }
 
 

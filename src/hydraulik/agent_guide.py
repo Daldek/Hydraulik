@@ -75,6 +75,16 @@ FLOWS: Final[tuple[Flow, ...]] = (
             ("results export", "Write a flood map as a GeoTIFF"),
         ),
     ),
+    Flow(
+        "Run a sewer network on its own",
+        (
+            (
+                "swmm run",
+                "Run a network table or a SWMM input with an inflow hydrograph "
+                "(add --check to plan)",
+            ),
+        ),
+    ),
 )
 """Typical flows; every step names a command of the catalog (checked by a test)."""
 
