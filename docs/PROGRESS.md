@@ -5,7 +5,7 @@
 | Component | State | Note |
 |---|---|---|
 | Tooling: uv, gate, CI, live workflow, Dependabot | done | `scripts/gate.sh`, `.github/` |
-| Extraction note and plan | done | `docs/plans/2026-10-24-sfincs-swmm-*.md`; the plan awaits `Approved:` |
+| Extraction note and plan | done | `docs/plans/2026-10-24-sfincs-swmm-*.md`; the plan is approved (delegated, 2026-10-24) |
 | Error registry, settings, plain output writer | done | `_errors.py`, `settings.py`, `output.py`; ADR-0001 |
 | Command catalog, envelope, CLI, AGENTS.md, llms.txt, schemas | done | commands `commands list\|schema\|guide`, `config show` |
 | Exchange law, diagnostics, balance (`coupling/`) | done | pure functions from the experiment |
@@ -50,10 +50,9 @@
 
 ## Open questions
 
-- Approve `docs/plans/2026-10-24-sfincs-swmm-integration.md` (adds the `Approved:`
-  line, DEV-17.4); the ADRs are `proposed` until then.
-- Q1: is the SWMM coupling part of the product? SCOPE.md (the author's, uncommitted)
-  keeps full 1D sewer coupling out of the MVP.
+- Decided on 2026-10-24 by the coordinator, the author's delegate: the plan is approved
+  (`Approved:` line, ADR-0001 to ADR-0004 accepted); the SWMM coupling stays an optional
+  feature (`SCOPE.md` keeps the full 1D sewer coupling out of the MVP), so Q1 is closed.
 - `hydromt_sfincs` and subgrid: the writer here is regular-grid only (ADR-0004);
   decide whether an optional adapter extra follows.
 - Which SFINCS build does the coupling target? The release v2.4.1 and the pinned

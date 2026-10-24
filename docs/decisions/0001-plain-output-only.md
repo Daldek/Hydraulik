@@ -1,6 +1,6 @@
 # ADR-0001: Plain output only, Hydraulik has no store
 
-- Status: proposed (accepted when the author approves the plan of 2026-10-24)
+- Status: accepted (the plan of 2026-10-24 was approved by delegation on that day)
 - Date: 2026-10-24
 - Requirements: DEV §19, DEV-18.2, AGI-3.4, ECO-051
 

@@ -1,6 +1,6 @@
 # ADR-0002: SWMM network from a table or from the user's own input file
 
-- Status: proposed (accepted when the author approves the plan of 2026-10-24)
+- Status: accepted (the plan of 2026-10-24 was approved by delegation on that day)
 - Date: 2026-10-24
 - Requirements: DEV-11.3, DEV-13.3; extraction note 3, 4 and 7
 

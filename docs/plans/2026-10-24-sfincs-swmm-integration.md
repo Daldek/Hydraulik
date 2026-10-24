@@ -1,9 +1,17 @@
 # Plan: SFINCS and SWMM integration
 
-Status: proposed, awaiting the author's `Approved:` line (DEV-17.4). The work
-on `feature/sfincs-swmm` started on the coordinator's assignment of 2026-10-24
-relayed from the author, before that line exists; CLAUDE.md lists the
-deviation.
+Approved: 2026-10-24
+
+The approval is the author's delegation of the approval of this plan to the
+coordinating session on 2026-10-24 (DEV-17.4). It covers the plan and
+[ADR-0001](../decisions/0001-plain-output-only.md) to
+[ADR-0004](../decisions/0004-own-regular-grid-writer.md), and it fixes the status
+of the SWMM coupling: an optional feature of the package, available with the `swmm`
+extra and a `libsfincs` that the user built, never a requirement of the model build
+and the SFINCS run. `SCOPE.md` of the author keeps the full 1D sewer coupling out of
+the MVP of the urban screening; the coupling here does not change that scope. The
+author reviews the branch before anything is merged, tagged or pushed. The work on
+`feature/sfincs-swmm` started on the coordinator's assignment of 2026-10-24.
 
 Requirements: DEV §5, §10, §11, §18, §19, AGI §2 to §4, §7, ERR §3, ECO-041,
 ECO-051. Input: the [extraction note](2026-10-24-sfincs-swmm-extraction.md).

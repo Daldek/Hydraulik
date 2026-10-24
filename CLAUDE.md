@@ -97,8 +97,6 @@ libraries, all optional.
 
 ## Deviations
 
-- DEV-17.4: the plan `docs/plans/2026-10-24-sfincs-swmm-integration.md` has no
-  `Approved:` line; the work started on the coordinator's assignment.
 - DEV-3.1: `main` is not yet the default branch on GitHub (author's setting).
 - DEV-13.7: `SECURITY.md` exists; private vulnerability reporting is a GitHub
   setting for the author.

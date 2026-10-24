@@ -1,6 +1,6 @@
 # ADR-0003: Engines are found on the user's machine, never bundled, installed or pulled
 
-- Status: proposed (accepted when the author approves the plan of 2026-10-24)
+- Status: accepted (the plan of 2026-10-24 was approved by delegation on that day)
 - Date: 2026-10-24
 - Requirements: ECO-041, DEV-13.5, DEV-6.5, ERR-5; extraction note 5
 
