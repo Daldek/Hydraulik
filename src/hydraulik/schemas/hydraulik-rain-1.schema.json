@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-rain-1.schema.json",
+  "title": "hydraulik-rain/1",
+  "description": "A design rain written as a rain table: its shape, depth, duration and how the depth was found (`rainfall build`).",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "hietogram_type",
+    "parameters",
+    "total_mm",
+    "duration_min",
+    "timestep_min",
+    "n_steps",
+    "peak_intensity_mm_h",
+    "depth",
+    "files"
+  ],
+  "properties": {
+    "schema": {"const": "hydraulik-rain/1"},
+    "source": {"enum": ["design", "hietogram"]},
+    "hietogram_type": {"type": ["string", "null"]},
+    "parameters": {"type": "object"},
+    "total_mm": {"type": "number", "minimum": 0},
+    "duration_min": {"type": "number", "exclusiveMinimum": 0},
+    "timestep_min": {"type": "number", "exclusiveMinimum": 0},
+    "n_steps": {"type": "integer", "minimum": 1},
+    "peak_intensity_mm_h": {"type": "number", "minimum": 0},
+    "depth": {
+      "type": ["object", "null"],
+      "required": ["source", "value_mm"],
+      "properties": {
+        "source": {"enum": ["given", "pmaxtp"]},
+        "value_mm": {"type": "number", "exclusiveMinimum": 0},
+        "via": {"enum": ["library", "document"]},
+        "path": {"type": "string"},
+        "duration_min": {"type": "integer"},
+        "probability_percent": {"type": "integer"},
+        "method": {"type": ["string", "null"]},
+        "latitude": {"type": ["number", "null"]},
+        "longitude": {"type": ["number", "null"]},
+        "upper_bound_mm": {"type": ["number", "null"]},
+        "error_mm": {"type": ["number", "null"]}
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "size_bytes", "sha256", "status"],
+        "properties": {
+          "path": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "status": {"enum": ["written", "replaced"]}
+        }
+      }
+    }
+  }
+}

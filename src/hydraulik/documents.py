@@ -25,6 +25,7 @@ __all__ = [
     "ExportDocument",
     "GuideDocument",
     "PlanDocument",
+    "RainDocument",
     "ResultsDocument",
     "RunDocument",
     "SwmmDocument",
@@ -402,4 +403,47 @@ class SwmmDocument(_Carrier, Document):
     totals: dict[str, float]
     nodes: list[dict[str, Any]]
     conduits: list[dict[str, Any]]
+    files: list[dict[str, Any]]
+
+
+@dataclass
+class RainDocument(_Carrier, Document):
+    """``hydraulik-rain/1``: a design rain written as a rain table.
+
+    Attributes
+    ----------
+    source : str
+        ``design`` for a hyetograph that Hydrolog generated, ``hietogram`` for one
+        read from the document of ``hydrolog precip hietogram``.
+    hietogram_type : str or None
+        ``block``, ``triangular``, ``beta`` or ``euler_ii``; ``None`` when a document
+        does not say.
+    parameters : dict
+        The shape parameters (``alpha`` and ``beta``, or ``peak_position``) that were
+        given or that the document lists.
+    total_mm, duration_min, timestep_min : float
+        Depth of the rain [mm], its length and the length of a step [min], as written.
+    n_steps : int
+        Number of steps.
+    peak_intensity_mm_h : float
+        Intensity of the heaviest step [mm/h].
+    depth : dict or None
+        How the depth was found: ``source`` (``given`` or ``pmaxtp``), ``value_mm``
+        and, for PMAXTP, ``via`` (``library`` or ``document``), ``duration_min``,
+        ``probability_percent``, ``method``, the point and the confidence bound
+        and error of the quantile. ``None`` for a document, which carries its depth.
+    files : list of dict
+        The file written: ``path``, ``size_bytes``, ``sha256``, ``status``.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-rain/1"
+    source: str
+    hietogram_type: str | None
+    parameters: dict[str, Any]
+    total_mm: float
+    duration_min: float
+    timestep_min: float
+    n_steps: int
+    peak_intensity_mm_h: float
+    depth: dict[str, Any] | None
     files: list[dict[str, Any]]

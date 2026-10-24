@@ -63,6 +63,16 @@ follows [Semantic Versioning](https://semver.org/).
   node and conduit, and the notices flag a continuity error above 5 %, flooded nodes
   and an inflow that outlasts the run. `--check` plans it. `engines check` no longer
   lists numpy as a need of `swmm run`.
+- The command `rainfall build` (`hydraulik.build_rainfall`): the rain table
+  (`time_min,depth_mm`) of a model from a Hydrolog hyetograph shape (`block`,
+  `triangular`, `beta`, `euler_ii`, the options of `hydrolog precip hietogram`) with a
+  given depth or the PMAXTP depth of IMGW-PIB for a duration and a probability, taken
+  from the document of `imgw pmaxtp fetch --json` or fetched for a point through
+  IMGWTools; or the result of `hydrolog precip hietogram --json` converted as it is.
+  Hydrolog and IMGWTools are used through their public classes, functions and
+  documents only. The result `hydraulik-rain/1` says how the depth was found; a PMAXTP
+  depth comes with a notice to name IMGW-PIB; `--check` fetches nothing. The rain table
+  now has six decimals per step.
 
 ### Fixed
 

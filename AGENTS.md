@@ -64,6 +64,7 @@ Codes come from the shared registry
 - `commands guide` (`hydraulik.render_guide`): Render AGENTS.md, llms.txt or the block for another repository's AGENTS.md. Details: `hydraulik commands schema --command 'commands guide'`.
 - `config show` (`hydraulik.show_config`): Show every setting of Hydraulik with its value and where the value came from. Details: `hydraulik commands schema --command 'config show'`.
 - `engines check` (`hydraulik.check_engines`): Report the engines and packages Hydraulik can use on this machine. Details: `hydraulik commands schema --command 'engines check'`.
+- `rainfall build` (`hydraulik.build_rainfall`): Write a design rain as a rain table from a Hydrolog shape and a PMAXTP depth. Details: `hydraulik commands schema --command 'rainfall build'`.
 - `model run` (`hydraulik.run_model`): Run SFINCS on a model directory and read its maxima and water balance. Details: `hydraulik commands schema --command 'model run'`.
 - `results read` (`hydraulik.read_results`): Read the maxima, flooded areas and water balance of a SFINCS run. Details: `hydraulik commands schema --command 'results read'`.
 - `results export` (`hydraulik.export_results`): Write a map of a run as a GeoTIFF, or the station series as a CSV table. Details: `hydraulik commands schema --command 'results export'`.
@@ -83,6 +84,10 @@ Codes come from the shared registry
 **Find out what this machine can run**
 
 1. List the engines and packages and what each command needs: `hydraulik engines check --json`
+
+**Make the design rain of a model**
+
+1. Write a rain table from a Hydrolog shape and a depth, or from a Hydrolog or IMGWTools document (add --check to plan, it fetches nothing): `hydraulik rainfall build --hietogram-type euler_ii --total-mm 40 --duration-min 120 --output ./rain.csv --json`
 
 **Run a model and read the result**
 

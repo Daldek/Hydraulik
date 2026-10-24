@@ -69,10 +69,25 @@ REASONS_PL: Final[dict[str, str]] = {
     "output_format": "Model nie zapisuje wyników w formacie NetCDF.",
     "unknown_node": "Sieć nie ma takiego węzła.",
     "inflow_required": "Tabela sieci nie ma własnego dopływu; podaj --inflow.",
-    "option_not_applicable": "Opcja dotyczy tylko tabeli sieci, nie pliku SWMM.",
+    "option_not_applicable": "Opcja nie dotyczy wybranego źródła lub kształtu.",
     "invalid_network_table": "Tabela sieci jest niepoprawna.",
     "invalid_hydrograph": "Tabela hydrogramu jest niepoprawna.",
     "flow_units": "Plik SWMM musi używać jednostek SI (FLOW_UNITS CMS).",
+    "invalid_rain_table": "Tabela opadu jest niepoprawna.",
+    "invalid_hietogram": (
+        "Hietogram jest niepoprawny; podaj wynik `hydrolog precip hietogram`."
+    ),
+    "invalid_pmaxtp": (
+        "Dokument PMAXTP jest niepoprawny; podaj wynik `imgw pmaxtp fetch`."
+    ),
+    "pmaxtp_no_data": (
+        "PMAXTP nie ma wysokości dla tego czasu trwania i prawdopodobieństwa."
+    ),
+    "source_unreachable": (
+        "IMGW-PIB nie odpowiada; podaj wysokość opadu ręcznie (--total-mm)."
+    ),
+    "source_data": "Nie udało się odczytać odpowiedzi źródła danych.",
+    "hydrolog_failed": "Hydrolog nie policzył hietogramu.",
 }
 
 

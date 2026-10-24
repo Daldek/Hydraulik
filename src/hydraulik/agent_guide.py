@@ -68,6 +68,17 @@ FLOWS: Final[tuple[Flow, ...]] = (
         ),
     ),
     Flow(
+        "Make the design rain of a model",
+        (
+            (
+                "rainfall build",
+                "Write a rain table from a Hydrolog shape and a depth, or from a "
+                "Hydrolog or IMGWTools document (add --check to plan, it fetches "
+                "nothing)",
+            ),
+        ),
+    ),
+    Flow(
         "Run a model and read the result",
         (
             ("model run", "Run SFINCS on a model directory (add --check to plan)"),

@@ -752,12 +752,252 @@ _SWMM_RUN = CommandSpec(
     },
 )
 
+_RAINFALL_BUILD = CommandSpec(
+    name="rainfall build",
+    operation_id="hydraulik_rainfall_build",
+    function="hydraulik.build_rainfall",
+    summary=(
+        "Write a design rain as a rain table from a Hydrolog shape and a PMAXTP depth."
+    ),
+    description=(
+        "Writes the rain table (`time_min,depth_mm`) that `model build` reads. "
+        "Design: a Hydrolog hyetograph shape (--hietogram-type, the options of "
+        "`hydrolog precip hietogram`) with a depth that you give (--total-mm) or "
+        "the PMAXTP depth of IMGW-PIB for --duration-min and --probability-percent, "
+        "taken from the document of `imgw pmaxtp fetch --json` (--pmaxtp, offline) "
+        "or fetched for a point through IMGWTools (--latitude and --longitude, "
+        "needs the network). Document: --hietogram converts the result of "
+        "`hydrolog precip hietogram --json` as it is. With --check nothing is "
+        "fetched. Use it for the design storm of one model; it computes no runoff "
+        "(that is Hydrolog) and has no depth for durations that PMAXTP lacks."
+    ),
+    options=(
+        OptionSpec(
+            name="hietogram_type",
+            type="string",
+            one_of="shape",
+            enum=(
+                ("block", "uniform intensity over the whole duration"),
+                ("triangular", "linear rise to the peak at peak_position, then fall"),
+                ("beta", "shape of a Beta density with alpha and beta"),
+                ("euler_ii", "DVWK Euler type II, the peak at about a third"),
+            ),
+            description=(
+                "Temporal distribution of the rain, as in `hydrolog precip "
+                "hietogram`. Exactly one of --hietogram-type and --hietogram."
+            ),
+        ),
+        OptionSpec(
+            name="hietogram",
+            type="string",
+            path_role="input",
+            one_of="shape",
+            examples=("./hietogram.json",),
+            description=(
+                "Document of `hydrolog precip hietogram --json` (the envelope or its "
+                "result); it carries its depth, duration and step, so no design "
+                "option may be given with it."
+            ),
+        ),
+        OptionSpec(
+            name="total_mm",
+            type="number",
+            unit="mm",
+            min=0.0,
+            one_of="depth",
+            examples=(40.0,),
+            description="Depth of the rain. One source of the depth only.",
+        ),
+        OptionSpec(
+            name="pmaxtp",
+            type="string",
+            path_role="input",
+            one_of="depth",
+            examples=("./pmaxtp.json",),
+            description=(
+                "Document of `imgw pmaxtp fetch --json`: the depth is its quantile "
+                "for --duration-min and --probability-percent. One source of the "
+                "depth only."
+            ),
+        ),
+        OptionSpec(
+            name="latitude",
+            type="number",
+            unit="deg",
+            min=-90.0,
+            max=90.0,
+            one_of="depth",
+            examples=(52.23,),
+            description=(
+                "Latitude of a point in Poland; the PMAXTP depth is fetched from "
+                "IMGW-PIB (network). Needs --longitude. One source of the depth only."
+            ),
+        ),
+        OptionSpec(
+            name="longitude",
+            type="number",
+            unit="deg",
+            min=-180.0,
+            max=180.0,
+            examples=(21.01,),
+            description="Longitude of the point of --latitude.",
+        ),
+        OptionSpec(
+            name="method",
+            type="string",
+            enum=(
+                ("POT", "peak over threshold (default, recommended)"),
+                ("AMP", "annual maximum precipitation"),
+            ),
+            description="PMAXTP method for a point (--latitude); POT when not given.",
+        ),
+        OptionSpec(
+            name="probability_percent",
+            type="integer",
+            unit="percent",
+            min=1,
+            max=99,
+            examples=(10,),
+            description=(
+                "Probability of exceedance of the PMAXTP depth: 1, 2, 5, 10, 20 or "
+                "50. Required with --pmaxtp and --latitude."
+            ),
+        ),
+        OptionSpec(
+            name="duration_min",
+            type="number",
+            unit="min",
+            min=0.0,
+            examples=(60.0,),
+            description=(
+                "Length of the rain. Required for a design; for PMAXTP one of 15, "
+                "30, 45, 60, 90, 120 or 180."
+            ),
+        ),
+        OptionSpec(
+            name="timestep_min",
+            type="number",
+            unit="min",
+            min=0.0,
+            description="Length of a step of the table (default 5).",
+        ),
+        OptionSpec(
+            name="alpha",
+            type="number",
+            min=0.0,
+            description="Beta only: shape of the rising limb (Hydrolog default 2).",
+        ),
+        OptionSpec(
+            name="beta",
+            type="number",
+            min=0.0,
+            description="Beta only: shape of the falling limb (Hydrolog default 5).",
+        ),
+        OptionSpec(
+            name="peak_position",
+            type="number",
+            min=0.0,
+            max=1.0,
+            description=(
+                "Triangular and euler_ii only: position of the peak in the duration, "
+                "between 0 and 1 (defaults 0.5 and 0.33)."
+            ),
+        ),
+        OptionSpec(
+            name="output",
+            type="string",
+            required=True,
+            path_role="output",
+            examples=("./rain.csv",),
+            description="The rain table to write (exactly one file).",
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace the file when it exists.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description="Plan without effects and without fetching anything.",
+        ),
+    ),
+    result_schema="hydraulik-rain/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True, network=True),
+    check="rainfall build",
+    rules=(
+        "Take the depth from one source: --total-mm, --pmaxtp or --latitude with "
+        "--longitude.",
+        "PMAXTP gives 15, 30, 45, 60, 90, 120 and 180 min at 1, 2, 5, 10, 20 and 50 %.",
+        "Name IMGW-PIB as the source of a PMAXTP depth (a notice says so).",
+    ),
+    examples=(
+        Example(
+            call=(
+                "hydraulik rainfall build --hietogram-type euler_ii --total-mm 40 "
+                "--duration-min 120 --output ./rain.csv --json"
+            ),
+            result={"schema": "hydraulik-rain/1", "source": "design"},
+        ),
+        Example(
+            call=(
+                "hydraulik rainfall build --hietogram-type beta --latitude 52.23 "
+                "--longitude 21.01 --probability-percent 10 --duration-min 60 "
+                "--output ./rain.csv --check --json"
+            ),
+            result={"schema": "hydraulik-plan/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "source_unavailable",
+        "missing_dependency",
+        "data_error",
+        "io_error",
+        "calculation_error",
+        "no_data",
+        "terminated",
+        "cancelled",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Zapisuje opad projektowy jako tabelę opadu z kształtu Hydrologa i "
+            "wysokości PMAXTP."
+        ),
+        "description": (
+            "Zapisuje tabelę opadu (`time_min,depth_mm`), którą czyta `model build`. "
+            "Projekt: kształt hietogramu Hydrologa (--hietogram-type, opcje `hydrolog "
+            "precip hietogram`) z wysokością podaną (--total-mm) albo wysokością "
+            "PMAXTP z IMGW-PIB dla --duration-min i --probability-percent, z "
+            "dokumentu `imgw pmaxtp fetch --json` (--pmaxtp, bez sieci) albo "
+            "pobraną dla punktu przez IMGWTools (--latitude i --longitude, wymaga "
+            "sieci). Dokument: --hietogram przelicza wynik `hydrolog precip "
+            "hietogram --json` bez zmian. Z --check niczego nie pobiera. Użyj dla "
+            "deszczu projektowego jednego modelu; nie liczy odpływu (to robi "
+            "Hydrolog) i nie ma wysokości dla czasów trwania, których PMAXTP nie ma."
+        ),
+        "rules": [
+            "Wysokość weź z jednego źródła: --total-mm, --pmaxtp albo --latitude z "
+            "--longitude.",
+            "PMAXTP daje 15, 30, 45, 60, 90, 120 i 180 min przy 1, 2, 5, 10, 20 i "
+            "50 %.",
+            "Podaj IMGW-PIB jako źródło wysokości PMAXTP (mówi o tym uwaga).",
+        ],
+    },
+)
+
 COMMANDS: tuple[CommandSpec, ...] = (
     _COMMANDS_LIST,
     _COMMANDS_SCHEMA,
     _COMMANDS_GUIDE,
     _CONFIG_SHOW,
     _ENGINES_CHECK,
+    _RAINFALL_BUILD,
     _MODEL_RUN,
     _RESULTS_READ,
     _RESULTS_EXPORT,

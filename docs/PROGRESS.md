@@ -16,7 +16,7 @@
 | SFINCS runner, results reader, water balance (`engines/sfincs/{run,inp,results}.py`) | done | exe or Docker (Docker only with a fake `docker`: no daemon here) |
 | Commands `engines check`, `model run`, `results read`, `results export` | done | live tests pass on SFINCS v2.4.1 and `main` (`-m live` with `HYDRAULIK_SFINCS_EXE`) |
 | Command `swmm run` (`operations/swmm.py`) | done | network table or the user's INP, inflow hydrograph; tests on the real SWMM, run through the CLI |
-| Command `rainfall build` (Hydrolog, IMGWTools) | planned | Next 2 |
+| Command `rainfall build` (`operations/rainfall.py`, `data/rainfall.py`) | done | Hydrolog shapes, PMAXTP from a document or IMGWTools, Hydrolog document; only the network call is faked in tests |
 | Command `terrain download` (Kartograf CLI adapter) | planned | Next 3; Kartograf has no plain mode yet |
 | Command `model build` (`terrain/`, land cover to Manning, HSG and land cover to SCS S) | planned | Next 4 |
 | SFINCS BMI wrapper, coupler, command `model couple` | planned | Next 5; optional feature (needs a user-built libsfincs) |
@@ -36,14 +36,6 @@ involved, with a `live` test. Option names `path`, `root` and `store` are forbid
 contract test). Write source files with the `write` tool or a quoted heredoc, never with
 a Python string that holds backslashes.
 
-2. **`rainfall build`** (`data/rainfall.py`): Hydrolog `EulerIIHietogram(peak_position)`,
-   `BetaHietogram(alpha, beta)`, `BlockHietogram`, `TriangularHietogram` with
-   `.generate(total_mm, duration_min, timestep_min)`; depth either given (`depth_mm`) or
-   from IMGWTools `fetch_pmaxtp(lat, lon, method).data.get_precipitation(duration_min,
-   probability_percent)` (durations 15, 30, 45, 60, 90, 120, 180 min; probabilities 1,
-   2, 5, 10, 20, 50 %; `None` is `no_data`); output `--output` a rain table
-   (`data.tables.render_rain_table`); `--check` plans without the network call; the
-   result carries the IMGW-PIB attribution.
 3. **`terrain download`**: Kartograf is called as a subprocess, never imported. Facts
    from KartografAdopt7 on 2026-10-25: plain mode (`--output-dir`) does not exist yet,
    `-o/--output` is still the store root and `--check-updates` the plan. So read
