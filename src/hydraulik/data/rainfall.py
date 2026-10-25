@@ -297,13 +297,14 @@ def read_hietogram_document(path: str | os.PathLike[str]) -> HyetographDocument:
     )
 
 
-def _quantiles(table: object) -> dict[int, dict[int, float]]:
+def _quantiles(table: object) -> dict[int, dict[float, float]]:
     """Return ``{duration: {probability: mm}}`` from the nested dicts of PMAXTP.
 
     The keys are text (``"15"`` and ``"50"``); a prefix such as ``t15`` or ``p50`` is
-    tolerated.
+    tolerated. A probability keeps its fraction (``"0.5"`` is 0.5, not 5); a whole one
+    is an ``int`` (``"50"`` is 50), so ``row.get(50)`` finds it.
     """
-    found: dict[int, dict[int, float]] = {}
+    found: dict[int, dict[float, float]] = {}
     if not isinstance(table, Mapping):
         return found
     for duration, row in table.items():
@@ -312,11 +313,16 @@ def _quantiles(table: object) -> dict[int, dict[int, float]]:
         digits = re.sub(r"\D", "", str(duration))
         if not digits:
             continue
-        values: dict[int, float] = {}
+        values: dict[float, float] = {}
         for probability, value in row.items():
-            tail = re.sub(r"\D", "", str(probability))
-            if tail and isinstance(value, int | float) and not isinstance(value, bool):
-                values[int(tail)] = float(value)
+            found_number = re.search(r"\d+(?:\.\d+)?", str(probability))
+            if (
+                found_number
+                and isinstance(value, int | float)
+                and not isinstance(value, bool)
+            ):
+                number = float(found_number.group())
+                values[int(number) if number.is_integer() else number] = float(value)
         found[int(digits)] = values
     return found
 
@@ -341,9 +347,9 @@ class Pmaxtp:
     method: str | None
     latitude: float | None
     longitude: float | None
-    quantiles_mm: dict[int, dict[int, float]]
-    upper_bound_mm: dict[int, dict[int, float]] = field(default_factory=dict)
-    error_mm: dict[int, dict[int, float]] = field(default_factory=dict)
+    quantiles_mm: dict[int, dict[float, float]]
+    upper_bound_mm: dict[int, dict[float, float]] = field(default_factory=dict)
+    error_mm: dict[int, dict[float, float]] = field(default_factory=dict)
 
 
 def _pmaxtp_from(body: Mapping[str, Any], name: str, details: dict[str, Any]) -> Pmaxtp:

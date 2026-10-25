@@ -1,4 +1,4 @@
-# ADR-0011: The `rainfall` extra pins the producers' unpushed heads by commit and declares their development range
+# ADR-0011: The `rainfall` extra pins the producers' development heads by commit and declares their development range
 
 - Status: accepted (delegated approval of the plan, 2026-10-24)
 - Date: 2026-10-25
@@ -39,3 +39,16 @@ commits are not pushed.
   holds them (PROGRESS, "Resolving the pins"); CI and the Docker build fail until the producers
   push the commits.
 - The gate shows no skipped contract module.
+
+## Errata
+
+**Erratum 1 (2026-10-25):** both producers pushed their heads, so GitHub has the commits and `uv
+lock`, `uv sync --locked`, CI and the Docker build resolve them without a local git cache. The
+pins are Hydrolog `5fa22b35e5e1ec9076c41d0be04d2a99458f5049` (branch `feature/routing-schematic`, 1.0.0.dev0; it holds
+`feature/routing-network` and the schematic) and IMGWTools `3f7de36f98f1ba40d72ab5556942567cfbc55b92` (branch
+`feature/data-output`, 3.0.0). The `Consequences` item about unpushed commits no longer applies.
+IMGWTools accepts a fractional PMAXTP probability in `get_precipitation` since `9291eb3`;
+Hydraulik does not call it and reads the tables itself, which had read a key as its digits only
+(`"0.5"` became 5 and met `"5"` of the same table). `_quantiles` now keeps the fraction (a whole
+percentage stays an `int`, so `row.get(50)` finds `"50"`); the options of `rainfall build` still
+take the six whole probabilities of the catalog.
