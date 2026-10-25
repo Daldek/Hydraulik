@@ -24,7 +24,7 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, Literal
+from typing import Any, Final
 
 import numpy as np
 from numpy.typing import NDArray
@@ -60,7 +60,6 @@ BALANCE_WARNING_PERCENT: Final = 1.0
 Float = NDArray[np.float64]
 Bool = NDArray[np.bool_]
 
-ExportVariable = Literal["max_depth", "max_velocity", "final_depth", "infiltration"]
 EXPORT_VARIABLES: Final[dict[str, str]] = {
     "max_depth": "Maximum water depth [m]; cells under huthresh are no data",
     "max_velocity": "Maximum flow velocity [m/s]",

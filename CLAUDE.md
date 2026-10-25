@@ -78,6 +78,7 @@ tests/{unit,integration,contract,fixtures}
 |---|---|
 | Start a session | `docs/PROGRESS.md`, `docs/plans/` |
 | What earlier work found about SFINCS and SWMM | `docs/plans/2026-10-24-sfincs-swmm-extraction.md` |
+| How the commands are used, task by task | `docs/USAGE.md` (its `bash` blocks are run by `tests/contract/test_docs_examples.py`; keep reference tables out, they come from the catalog) |
 | Why a decision was taken | `docs/DECISIONS.md` and `docs/decisions/` |
 | Add or change a command | `src/hydraulik/catalog/commands.py` (declare it once), then the function in `operations/` and the tests of `tests/contract/` |
 | Change the agent interface | the Nogat standard, AGI §2 to §4 and §7 |
