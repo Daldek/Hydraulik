@@ -175,7 +175,7 @@ follows [Semantic Versioning](https://semver.org/).
 - The `rainfall` extra declares the supported ranges `hydrolog>=1.0.0.dev0,<2` and
   `imgwtools>=3.0.0.dev0,<4` (REL-5.6) and pins the producers' development heads by commit in
   `[tool.uv.sources]`: Hydrolog `5fa22b35` (`feature/routing-schematic`, 1.0.0.dev0) and
-  IMGWTools `3f7de36` (`feature/data-output`, 3.0.0), both on GitHub, instead of the tags
+  IMGWTools `6bd35a49` (`feature/data-output`, 3.0.0), both on GitHub, instead of the tags
   v0.7.0 and v2.1.1 (REL-5.3, ADR-0011). `tests/fixtures/rain/hietogram_euler_ii.json` is recorded
   again from the real command.
 
