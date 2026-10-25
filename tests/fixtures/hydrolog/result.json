@@ -1,0 +1,99 @@
+{
+  "command": "hydrolog route network --network-file network.json --inflows-file inflows.csv --output-dir out --json",
+  "tool": "hydrolog",
+  "version": "1.0.0.dev0",
+  "source": "Hydrolog branch feature/routing-network, commit 081fda2, run on 2026-10-25",
+  "schema": "hydrolog-route-network/1",
+  "timestep_min": 5.0,
+  "outlet": "OUT",
+  "order": [
+    "A",
+    "B",
+    "R1",
+    "J1",
+    "OUT"
+  ],
+  "nodes": [
+    {
+      "id": "A",
+      "type": "subcatchment",
+      "from": [],
+      "peak_m3s": 0.2,
+      "time_to_peak_min": 15.0,
+      "volume_m3": 207.0
+    },
+    {
+      "id": "B",
+      "type": "subcatchment",
+      "from": [],
+      "peak_m3s": 0.08,
+      "time_to_peak_min": 15.0,
+      "volume_m3": 72.00000000000001
+    },
+    {
+      "id": "R1",
+      "type": "reach",
+      "from": [
+        "A"
+      ],
+      "peak_m3s": 0.1551602518351151,
+      "time_to_peak_min": 25.0,
+      "volume_m3": 206.98382953705877
+    },
+    {
+      "id": "J1",
+      "type": "junction",
+      "from": [
+        "R1",
+        "B"
+      ],
+      "peak_m3s": 0.17516025183511508,
+      "time_to_peak_min": 25.0,
+      "volume_m3": 278.98382953705874
+    },
+    {
+      "id": "OUT",
+      "type": "outlet",
+      "from": [
+        "J1"
+      ],
+      "peak_m3s": 0.17516025183511508,
+      "time_to_peak_min": 25.0,
+      "volume_m3": 278.98382953705874
+    }
+  ],
+  "files": [
+    {
+      "name": "A.csv",
+      "size_bytes": 107,
+      "sha256": "adb6b85b7ce0cc8a8f6e31b4da96e3d9e7b5809c54b28d1a0b053508f2b20387"
+    },
+    {
+      "name": "B.csv",
+      "size_bytes": 108,
+      "sha256": "16edab2bde508ac280c79def889b22c71ddb9e0aa08ddc11599ec9edc5520fe4"
+    },
+    {
+      "name": "R1.csv",
+      "size_bytes": 391,
+      "sha256": "9dff2ae4139c4b8c7887c46403490110d77781f532690095727f7921260854a1"
+    },
+    {
+      "name": "J1.csv",
+      "size_bytes": 387,
+      "sha256": "4c74d29ebc644ba34ea7a56c3d6c0fde55c209769a1c4b70f4583337d487ea2b"
+    },
+    {
+      "name": "OUT.csv",
+      "size_bytes": 387,
+      "sha256": "4c74d29ebc644ba34ea7a56c3d6c0fde55c209769a1c4b70f4583337d487ea2b"
+    }
+  ],
+  "notices": [
+    {
+      "level": "info",
+      "code": "tail_extended",
+      "message": "R1: The time axis was extended by 30 min after the last inflow ordinate, which is held, for the outflow to settle."
+    }
+  ]
+}

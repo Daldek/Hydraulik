@@ -1,0 +1,11 @@
+{
+  "schema": "hydrolog-network/1",
+  "name": "Culvert inflow",
+  "nodes": [
+    {"id": "A", "type": "subcatchment"},
+    {"id": "B", "type": "subcatchment", "value_column": "tributary_B"},
+    {"id": "R1", "type": "reach", "from": ["A"], "method": "muskingum", "k_min": 10, "x": 0.2},
+    {"id": "J1", "type": "junction", "from": ["R1", "B"]},
+    {"id": "OUT", "type": "outlet", "from": ["J1"]}
+  ]
+}

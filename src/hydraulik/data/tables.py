@@ -7,8 +7,9 @@ All are CSV with a header and the units in the column names (DEV-8.2):
   ``hydraulik rainfall build`` writes and ``hydraulik model build`` reads, and it has
   the shape of a Hydrolog hyetograph (``HietogramResult``);
 * a **hydrograph table** has ``time_min`` (elapsed) and ``discharge_m3s``, the form in
-  which Hydrolog hands a hydrograph to Hydraulik. ``hydraulik swmm run`` reads it as the
-  inflow of a node;
+  which Hydrolog hands a hydrograph to Hydraulik (``hydrolog route network
+  --output-dir`` writes one ``<id>.csv`` for each node of a river network). ``hydraulik
+  swmm run`` reads it as the inflow of a node;
 * a **station table** has ``name``, ``x_m`` and ``y_m``: the points where
   ``hydraulik model build`` asks SFINCS for the water level.
 
