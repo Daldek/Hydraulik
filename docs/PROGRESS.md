@@ -22,7 +22,7 @@
 | `model build`, step two: land cover (BDOT10k) and soil (HSG) to Manning `n` and the curve number | done | `--landcover`, `--hsg`, `--default-hsg`, `--classes`, `--building-raise-m` (`model/{options,build,classes,landcover}.py`, `operations/build.py`, `_data/landcover/`, `docs/LAND_COVER.md`, ADR-0007, ADR-0008); tested on synthetic GeoPackages with hand-computed values; by hand on the real BDOT10k and NMT of Poznan, a square kilometre at 10 m, on SFINCS v2.4.1; the class values need the author's review |
 | End-to-end chain test (`tests/integration/test_terrain_to_model.py`) | done | a fake Kartograf delivers a real GeoTIFF, GeoPackage and soil raster; then the real commands `terrain download`, `rainfall build`, `model build` (land cover, soil groups, stations), `model run`, `results export`; the build is in the gate, the run is `live`; on SFINCS v2.4.1 and `main` the infiltration of each half of the catchment is the SCS equation of its curve number (51.4 and 6.0 mm of 100 mm; 286.9 m3 in all, 286.9 expected) and the balance closes (0.002 %) |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
-| Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %) |
+| Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %); contract tests against `hydrolog.testing` (ADR-0010) skip until the `rainfall` pin has it |
 | `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
@@ -168,6 +168,9 @@ a Python string that holds backslashes.
      Hydrolog tags the routing release, bump the pin and let the weekly live workflow
      (still to be written; it needs `libsfincs` built with `--enable-shared`) run
      `test_hydrolog_live.py`.
+     The same bump makes `tests/contract/test_hydrolog_testing.py` run in the gate: it
+     skips today because v0.7.0 has no `hydrolog.testing` (ADR-0010; it passed against a
+     checkout of `feature/routing-network` on `PYTHONPATH`).
 - `flooded_m3` of a node in the coupled result is a GROSS volume when a manhole floods
   (2258 m3 for 279 m3 of hydrograph at 5 s: the street returns water whenever the pipe
   has room); the net volume is `exchanged_m3`. ADR-0009, the `CoupleDocument` docstring
