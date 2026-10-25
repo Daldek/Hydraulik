@@ -52,3 +52,8 @@ Hydraulik does not call it and reads the tables itself, which had read a key as 
 (`"0.5"` became 5 and met `"5"` of the same table). `_quantiles` now keeps the fraction (a whole
 percentage stays an `int`, so `row.get(50)` finds `"50"`); the options of `rainfall build` still
 take the six whole probabilities of the catalog.
+
+**Erratum 2 (2026-10-25):** the IMGWTools pin is now `6bd35a49b329f99b591ffdee39367daec0e75af7`,
+the head of the same branch, which is on GitHub. The head only flushes stray stdout to stderr
+before its MCP server leaves stdio; Hydraulik calls `imgwtools.fetch_pmaxtp` of the library, so
+nothing in Hydraulik changes.

@@ -404,8 +404,8 @@ requires-dist = [
     { name = "geopandas", marker = "extra == 'model'", specifier = ">=1.0" },
     { name = "hydrolog", marker = "extra == 'all'", git = "https://github.com/Daldek/Hydrolog?rev=5fa22b35e5e1ec9076c41d0be04d2a99458f5049" },
     { name = "hydrolog", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/Hydrolog?rev=5fa22b35e5e1ec9076c41d0be04d2a99458f5049" },
-    { name = "imgwtools", marker = "extra == 'all'", git = "https://github.com/Daldek/IMGWTools?rev=3f7de36f98f1ba40d72ab5556942567cfbc55b92" },
-    { name = "imgwtools", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/IMGWTools?rev=3f7de36f98f1ba40d72ab5556942567cfbc55b92" },
+    { name = "imgwtools", marker = "extra == 'all'", git = "https://github.com/Daldek/IMGWTools?rev=6bd35a49b329f99b591ffdee39367daec0e75af7" },
+    { name = "imgwtools", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/IMGWTools?rev=6bd35a49b329f99b591ffdee39367daec0e75af7" },
     { name = "netcdf4", marker = "extra == 'all'", specifier = ">=1.7" },
     { name = "netcdf4", marker = "extra == 'sfincs'", specifier = ">=1.7" },
     { name = "numpy", marker = "extra == 'all'", specifier = ">=1.26" },
@@ -455,7 +455,7 @@ wheels = [
 [[package]]
 name = "imgwtools"
 version = "3.0.0"
-source = { git = "https://github.com/Daldek/IMGWTools?rev=3f7de36f98f1ba40d72ab5556942567cfbc55b92#3f7de36f98f1ba40d72ab5556942567cfbc55b92" }
+source = { git = "https://github.com/Daldek/IMGWTools?rev=6bd35a49b329f99b591ffdee39367daec0e75af7#6bd35a49b329f99b591ffdee39367daec0e75af7" }
 dependencies = [
     { name = "httpx" },
     { name = "platformdirs" },
