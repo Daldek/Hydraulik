@@ -9,7 +9,6 @@ the CLI and the library report the same errors (AGI-1.2).
 from __future__ import annotations
 
 import argparse
-from collections.abc import Sequence
 from typing import Any, NoReturn
 
 from hydraulik import __version__
@@ -201,8 +200,3 @@ def options_from(namespace: argparse.Namespace, spec: CommandSpec) -> dict[str, 
         if value is not None:
             given[option.name] = value
     return given
-
-
-def known_groups() -> Sequence[str]:
-    """Return the command groups in catalog order."""
-    return list(dict.fromkeys(spec.group for spec in COMMANDS))

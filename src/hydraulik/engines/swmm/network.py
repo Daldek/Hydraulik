@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import csv
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -480,8 +480,3 @@ def write_inp(
     lines.append(f"{out.name:<8} {out.x_m:.3f} {out.y_m:.3f}")
     lines += ["", "[REPORT]", "INPUT NO", "CONTROLS NO", "NODES NONE", "LINKS NONE", ""]
     return "\n".join(lines)
-
-
-def chain_names(network: Network) -> Sequence[str]:
-    """Return the names of the junctions in table order."""
-    return [j.name for j in network.junctions]

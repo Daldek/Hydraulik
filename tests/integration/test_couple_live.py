@@ -27,6 +27,7 @@ from hydraulik.engines.sfincs.model import (
     write_model,
 )
 from hydraulik.engines.sfincs.results import read_map
+from hydraulik.engines.swmm.network import SwmmSettings, read_network_table, write_inp
 
 LIBRARY = os.environ.get("HYDRAULIK_SFINCS_LIBRARY")
 UNIT = os.environ.get("HYDRAULIK_SFINCS_QEXT_UNIT", "m3s")
@@ -288,3 +289,34 @@ def test_the_coordinator_mode_takes_the_hydrograph_too(
     assert node["flooded_m3"] == 0.0 and node["peak_return_m3s"] > 0.1  # the law spills
     assert balance["exchanged_m3"] < -100.0
     assert result["surface"]["depth"]["max_depth_m"] > 0.1
+
+
+def test_your_own_swmm_input_is_coupled_like_the_table_it_came_from(
+    tmp_path: Path, bowl: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    model, network = bowl
+    own = tmp_path / "sewer.inp"
+    own.write_text(
+        write_inp(read_network_table(network), SwmmSettings(duration_s=1800.0)),
+        encoding="utf-8",
+    )
+    code_table, from_table = couple(
+        capsys, model, network, tmp_path / "table", "--exchange-interval-s", "5"
+    )
+
+    code = main(
+        ["model", "couple", "--model", str(model), "--inp", str(own),
+         "--output-dir", str(tmp_path / "own"), "--exchange-interval-s", "5", "--json"]
+    )  # fmt: skip
+    envelope = json.loads(capsys.readouterr().out)
+
+    assert code_table == 0 and code == 0, envelope
+    result = envelope["result"]
+    balance, node = result["balance"], result["nodes"][0]
+    table = from_table["result"]["balance"]
+    assert balance["flags"] == [] and abs(balance["total_error_percent"]) < 0.5
+    assert node["name"] == "J1" and node["flooded_m3"] > 100.0
+    assert balance["exchanged_m3"] == pytest.approx(table["exchanged_m3"], rel=0.01)
+    assert balance["surface_m3"] == pytest.approx(table["surface_m3"], rel=0.01)
+    assert (tmp_path / "own" / "network.inp").is_file()
+    assert "inp_patched" in {n["code"] for n in envelope["notices"]}
