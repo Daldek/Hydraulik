@@ -23,7 +23,7 @@
 | End-to-end chain test (`tests/integration/test_terrain_to_model.py`) | done | a fake Kartograf delivers a real GeoTIFF, GeoPackage and soil raster; then the real commands `terrain download`, `rainfall build`, `model build` (land cover, soil groups, stations), `model run`, `results export`; the build is in the gate, the run is `live`; on SFINCS v2.4.1 and `main` the infiltration of each half of the catchment is the SCS equation of its curve number (51.4 and 6.0 mm of 100 mm; 286.9 m3 in all, 286.9 expected) and the balance closes (0.002 %) |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
 | Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %); contract tests against `hydrolog.testing` (ADR-0010) run in the gate |
-| Producer pins of the `rainfall` extra | done, unpushed | ADR-0011: Hydrolog `0719c41` (`feature/routing-network`, 1.0.0.dev0) and IMGWTools `7b11755` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); neither commit is pushed, see Next 8. Gate on the pins (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passes against `0719c41` (tables equal the fixture of 081fda2), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
+| Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `5fa22b35` (`feature/routing-schematic`, 1.0.0.dev0) and IMGWTools `3f7de36` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the pins (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `0719c41` (tables equal the fixture of 081fda2), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
 | `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
@@ -100,20 +100,10 @@ a Python string that holds backslashes.
       no `HYDRAULIK_LANG` (Polish only in `i18n.pl` of the catalog and in human output,
       which defaults to `pl`); the gate passes on a clean clone.
 8. **Resolving the pins** (ADR-0011). The `rainfall` extra pins Hydrolog
-   `0719c41825416c208f0980f6a76b14dc4e1663b7` and IMGWTools
-   `7b117550103a3d8d46afc97043b90f0e93314c8b` in `[tool.uv.sources]`; **neither commit is
-   pushed**, so GitHub has no such commit and `uv lock`, `uv sync --locked`, the CI jobs and
-   a Docker build resolve the pins only on a machine whose uv git cache holds them. `uv`
-   keeps one git database per repository URL below `~/.cache/uv/git-v1/db/`, named like the
-   folder of `~/.cache/uv/git-v1/checkouts/` that holds the checkout of the old pin (here
-   `3d78e457cbd77cac` for Hydrolog and `a7524ceee79a212b` for IMGWTools). Fetch the commits
-   from the local checkouts and the git part needs no network: `git -C <hydrolog db> fetch
-   ~/workspace/Hydrolog-routing +feature/routing-network:refs/heads/local-feature-routing-network`
-   and `git -C <imgwtools db> fetch ~/workspace/IMGWTools
-   +feature/data-output:refs/heads/local-feature-data-output` (the refs keep the objects from
-   `git gc`), then `uv lock --offline` and `uv sync --locked --all-extras --offline`. The
-   author pushes Hydrolog `feature/routing-network` and IMGWTools `feature/data-output`
-   first (DEV-3.3); until then a pushed Hydraulik has no green CI. When the tags exist, the
+   `5fa22b35e5e1ec9076c41d0be04d2a99458f5049` (`feature/routing-schematic`) and IMGWTools
+   `3f7de36f98f1ba40d72ab5556942567cfbc55b92` (`feature/data-output`) in
+   `[tool.uv.sources]`; both commits are on GitHub, so `uv lock`, `uv sync --locked`, the CI
+   jobs and a Docker build resolve them without a local git cache. When the tags exist, the
    release pull request narrows the ranges to `>=1.0.0,<2` and `>=3.0.0,<4`, replaces the two
    source entries with the tags (or removes them), runs `uv lock` and the gate, and records
    the fixtures again if the producers changed them.
@@ -182,8 +172,8 @@ a Python string that holds backslashes.
      `exchange_oscillation` notice (31 sign flips) and the street volume is 1.3 % off
      the 1 s run, but 75 min take 16 s instead of 81 s. Is 5 s acceptable as a
      documented speed option?
-  5. Closed by ADR-0011: the `rainfall` extra pins Hydrolog `0719c41` (`feature/routing-network`)
-     and IMGWTools `7b11755` (`feature/data-output`) by commit, so `route network` and
+  5. Closed by ADR-0011: the `rainfall` extra pins Hydrolog `5fa22b35` (`feature/routing-schematic`)
+     and IMGWTools `3f7de36` (`feature/data-output`) by commit, so `route network` and
      `hydrolog.testing` are there and `tests/contract/test_hydrolog_testing.py` runs in the
      gate. Still open: the weekly live workflow (it needs `libsfincs` built with
      `--enable-shared`) that runs `test_hydrolog_live.py`, and the tags that replace the

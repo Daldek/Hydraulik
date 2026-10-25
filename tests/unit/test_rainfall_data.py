@@ -242,6 +242,23 @@ def test_the_point_is_fetched_through_the_public_function_of_imgwtools(
     assert (depth.depth_mm, depth.upper_bound_mm, depth.error_mm) == (31.5, 35.0, None)
 
 
+def test_a_fractional_probability_of_the_full_pmaxtp_table_stays_apart_from_a_whole_one(
+    tmp_path: Path,
+) -> None:
+    # The tables of IMGW-PIB have 27 probabilities, 0.5 and 5 among them
+    path = tmp_path / "p.json"
+    path.write_text(
+        '{"method": "POT", "data": {"ks": {"60": '
+        '{"0.5": 70.0, "5": 45.0, "50": 25.0}}}}',
+        encoding="utf-8",
+    )
+
+    pmaxtp = read_pmaxtp_document(path)
+
+    assert pmaxtp.quantiles_mm == {60: {0.5: 70.0, 5: 45.0, 50: 25.0}}
+    assert pmaxtp_depth(pmaxtp, 60, 5).depth_mm == 45.0
+
+
 @pytest.mark.parametrize(
     ("failure", "expected", "reason"),
     [
