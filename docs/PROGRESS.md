@@ -23,6 +23,7 @@
 | End-to-end chain test (`tests/integration/test_terrain_to_model.py`) | done | a fake Kartograf delivers a real GeoTIFF, GeoPackage and soil raster; then the real commands `terrain download`, `rainfall build`, `model build` (land cover, soil groups, stations), `model run`, `results export`; the build is in the gate, the run is `live`; on SFINCS v2.4.1 and `main` the infiltration of each half of the catchment is the SCS equation of its curve number (51.4 and 6.0 mm of 100 mm; 286.9 m3 in all, 286.9 expected) and the balance closes (0.002 %) |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
 | Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %) |
+| `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
 
@@ -64,9 +65,10 @@ a Python string that holds backslashes.
    its run path, no `LD_LIBRARY_PATH` is needed), `HYDRAULIK_SFINCS_QEXT_UNIT` (`ms` for
    v2.4.1, `m3s` for `main`) and, for the model tests, `HYDRAULIK_SFINCS_EXE`. Open in
    the coupling: the unit of `qext` is not probed, the balance flags a wrong one; your
-   own `--inp` is covered by tests with a fake worker but has had no live run (the live
-   runs use `--network`); the SWMM clock of your input is set to 2000-01-01, so inflow
-   series dated otherwise are lost; Windows and macOS are unchecked.
+   own `--inp` is covered by a live test (the table of the bowl written as a SWMM input
+   gives the volumes of the `--network` run within 1 %, SFINCS v2.4.1 and `main`); the
+   SWMM clock of your input is set to 2000-01-01, so inflow series dated otherwise are
+   lost; Windows and macOS are unchecked.
 6. The weekly live workflow for the library tests (it has to build `libsfincs` with
    `--enable-shared`; the workflow pulls no engine today) and the live run of
    `terrain download` once Kartograf has plain mode.
@@ -85,12 +87,18 @@ a Python string that holds backslashes.
       `coupled_balance` has `network_inflow_m3`, the result has `coupling.inflow`.
       Not built, and a question for the author: SFINCS discharge points (`srcfile`,
       `disfile`) as the place for a hydrograph that enters the surface.
-   3. `docs/USAGE.md` (optional by DOC-1.1; `tests/contract/test_docs_examples.py` runs
-      its `bash` blocks): the task flow from `terrain download` to `results export`, the
-      land-cover options, `swmm run` with a routed hydrograph, `model couple`.
-   4. Last review of the branch: the README links of the Documentation section are
-      relative (DOC-2.1 row 12 wants absolute ones), a search for leftovers (`not wired`,
-      `TODO`, stale counts), and the gate on a clean checkout.
+   3. Done (`docs/USAGE.md`): the task flow from `terrain download` to `results export`,
+      the land-cover options, `swmm run` with a routed hydrograph and `model couple`;
+      `tests/contract/test_docs_examples.py` runs its `bash` blocks (the `--check`
+      examples on the fixtures of the repository). The long walkthrough of the README
+      moved there.
+   4. Done: the last review of the branch. README links absolute; a search for `TODO`,
+      `FIXME`, `not wired`, stub, placeholder, deprecated, shim and alias found nothing;
+      stale counts none; every Markdown link resolves; `known_groups`, `chain_names` and
+      `ExportVariable` had no caller and are gone; `commands list|schema|guide`, `config
+      show`, `engines check` and the error document print English with `LANG=pl_PL` and
+      no `HYDRAULIK_LANG` (Polish only in `i18n.pl` of the catalog and in human output,
+      which defaults to `pl`); the gate passes on a clean clone.
 
 ## Open questions
 
@@ -144,10 +152,95 @@ a Python string that holds backslashes.
 - Provisional thresholds: the sustained-spill volume (1 m3) and the spike tolerance
   (0.05 m, hold time 10 s) are still open in the experiment's README 7.1.
 - May CI pull `deltares/sfincs-cpu` for the weekly live workflow?
-- The author's uncommitted files overlap what this branch adds (`CLAUDE.md`,
-  `docs/PROGRESS.md`, `.gitignore`) and the PoC package uses the same import name:
-  decide the order in which the PoC and this branch reach `develop`.
+- The Hydrolog hand-off (ADR-0009) has five questions for the author:
+  1. A hydrograph that enters the SFINCS SURFACE (a river that flows into the 2D domain,
+     discharge points `srcfile` and `disfile`) is not built; only the network inflow is
+     (ADR-0009 option C). Do you want the surface variant?
+  2. `--inflow` takes one node, like `swmm run`; the library takes a mapping. Should the
+     option repeat for several nodes?
+  3. Do not give the rain of the catchment that the hydrograph came from to the surface
+     as well (the usage guide says so): no check can see the water counted twice.
+  4. `--exchange-interval-s` stays 1 s. At 5 s a flooding manhole raises the
+     `exchange_oscillation` notice (31 sign flips) and the street volume is 1.3 % off
+     the 1 s run, but 75 min take 16 s instead of 81 s. Is 5 s acceptable as a
+     documented speed option?
+  5. The `rainfall` extra pins Hydrolog v0.7.0, which has no `route network`. When
+     Hydrolog tags the routing release, bump the pin and let the weekly live workflow
+     (still to be written; it needs `libsfincs` built with `--enable-shared`) run
+     `test_hydrolog_live.py`.
+- `flooded_m3` of a node in the coupled result is a GROSS volume when a manhole floods
+  (2258 m3 for 279 m3 of hydrograph at 5 s: the street returns water whenever the pipe
+  has room); the net volume is `exchanged_m3`. ADR-0009, the `CoupleDocument` docstring
+  and the usage guide say so; decide whether the result should also carry a net volume
+  per node under a name that cannot be misread.
 - Skipped because they need the author: history rewrite (ADOPTION_PLAN phase 1),
   `main` as default branch, GitHub rulesets, Dependabot security updates and private
   vulnerability reporting (DEV-3.6, DEV-13.6, DEV-13.7), licence and CLA text, tags,
-  pushes, committing the proof of concept from the worktree (DEV-3.5).
+  pushes, committing the proof of concept from the worktree (DEV-3.5), and the merge
+  below.
+
+## Merge plan
+
+State on 2026-10-25, read only. The main tree `~/workspace/Hydraulik` is on `develop` at
+`de97009` (Initial commit: README, LICENSE, CONTRIBUTING, CONTRIBUTORS, `docs/CLA.md`).
+`feature/sfincs-swmm` is 29 commits ahead of that same commit, so `develop` can
+fast-forward to it. Nothing here was pushed, tagged or merged.
+
+**The author's uncommitted files in the main tree and the branch**
+
+| File | Main tree | Branch | Overlap |
+|---|---|---|---|
+| `.gitignore` | empty | 52 lines | path collision |
+| `CLAUDE.md` | 25 lines, Polish, "Faza badawcza, brak kodu"; hydromt_sfincs adapter, container only | 114 lines, English, the working rules of the code | path collision; its statements are out of date |
+| `docs/PROGRESS.md` | 50 lines, Polish: the research (2026-08-19) and brainstorming (2026-08-20) sessions, spec "waits for review" | the progress of this branch | path collision; their sessions exist nowhere on the branch |
+| `docs/PRD.md`, `docs/SCOPE.md`, `docs/research/`, `docs/superpowers/` | the product requirements, the MVP scope, the feasibility report, the design spec | none | no collision; they stay as untracked files |
+| `.claude/worktrees/poc-poznan-screening` | the proof of concept, branch `worktree-poc-poznan-screening` at `de97009`, uncommitted | none | see below |
+
+Git refuses to overwrite the three colliding untracked files (tried in a scratch clone:
+`git merge --ff-only` stops and names `.gitignore`, `CLAUDE.md`, `docs/PROGRESS.md`).
+Procedure that worked in that clone: move those three aside, `git merge --ff-only
+feature/sfincs-swmm`, and the other untracked files stay where they are. The branch's
+`.gitignore` ignores `.claude/`, so the PoC worktree disappears from `git status`; it
+stays registered as a worktree.
+
+**Where the content contradicts the branch** (the author's decisions, not mine)
+
+- Builder. `SCOPE.md` and the spec say HydroMT-SFINCS with subgrid behind an adapter
+  (`hydromt_sfincs==2.0.0rc3`, GPL-3.0). The branch writes regular-grid models itself
+  and has no `hydromt_sfincs` (ADR-0004, ECO-041), so no subgrid and no quadtree.
+  Mountain flash floods, the main goal of the old `CLAUDE.md`, need what the branch
+  lacks (the spec's pilot is the Biala Ladecka, July 1997).
+- Sewer. `SCOPE.md` keeps the 1D sewer coupling out of the MVP and takes a constant
+  capture capacity subtracted from the rain. The branch has the coupling, as an optional
+  feature (decided 2026-10-24), and no constant capacity.
+- Interface. The spec has a YAML scenario, a run directory with `metadata.json`, an
+  `Engine` protocol and a Polish CLI; the branch has the Nogat command catalog, plain
+  files and English machine output. Polish text exists in human output only.
+- Licence and repository. The old `PROGRESS.md` says private repository without a
+  licence; the old `CLAUDE.md` says MIT (2026-08-21); the branch is MIT.
+- Aligned: BDOT10k, NMT and PMAXTP as inputs, buildings by raising the terrain
+  (`--building-raise-m`), the Hydrolog hyetograph, `deltares/sfincs-cpu:sfincs-v2.4.1`.
+- Not on the branch at all: the correction of the terrain and culvert detection, the
+  division into catchments, the scenario matrix and the ensemble, passability and
+  exposure, scenario cards, the QA report.
+
+**The proof of concept** is a package with the SAME import name `hydraulik`, with
+`hydromt_sfincs==2.0.0rc3` and `kartograf` as dependencies. Its paths collide with the
+branch in `pyproject.toml`, `.gitignore`, `README.md` (modified there too),
+`src/hydraulik/__init__.py`, `tests/__init__.py`, `tests/conftest.py`, and a module of
+the PoC is a package on the branch for `catalog`, `cli`, `data` and `terrain`.
+
+**Recommended order**
+
+1. Commit the PoC on its own branch from its worktree (DEV-3.5) and do not merge it into
+   `develop`: two packages named `hydraulik` cannot live in one tree, and its GPL-3.0
+   dependency is what the branch avoids on purpose.
+2. Move `.gitignore` (empty), `CLAUDE.md` and `docs/PROGRESS.md` of the main tree aside
+   and fast-forward `develop` to this branch. Then add the author's research and
+   brainstorming sessions to `docs/PROGRESS.md` as an appendix (they are history), and
+   commit `docs/PRD.md`, `docs/SCOPE.md`, `docs/research/` and `docs/superpowers/` in a
+   docs commit, with a note in `SCOPE.md` for the contradictions above. The old
+   `CLAUDE.md` is replaced by the branch's.
+3. Decide for each contradiction above which side wins before more code: either the
+   branch gains a subgrid adapter (the open `hydromt_sfincs` question) or `SCOPE.md` is
+   changed to say what the branch is.
