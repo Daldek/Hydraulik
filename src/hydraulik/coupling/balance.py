@@ -5,12 +5,13 @@ to the error of SFINCS alone and the network side to SWMM's own continuity error
 :func:`coupled_balance` books every term so both can be told apart and a residual
 above the threshold is reported (spec of 2026-08-20, section 6).
 
-The terms, all in cubic metres: water enters the surface as ``rain`` and ``inflow``,
-leaves it by ``infiltration``, by ``sink`` (a free edge the coupler drains) and by the
-exchange with the network; it is left on the surface (``surface``) or in the network
-(``network``), has left the network through the outfall (``outfall_net``), is spilled
-by SWMM but not yet back on the surface (``pending``), or flooded out of a node that
-has no surface cell (``lost_flooding``).
+The terms, all in cubic metres: water enters the surface as ``rain`` and ``inflow`` and
+the network as ``network_inflow`` (a hydrograph that enters a node from outside the
+surface); it leaves the surface by ``infiltration``, by ``sink`` (a free edge the
+coupler drains) and by the exchange with the network; it is left on the surface
+(``surface``) or in the network (``network``), has left the network through the outfall
+(``outfall_net``), is spilled by SWMM but not yet back on the surface (``pending``), or
+flooded out of a node that has no surface cell (``lost_flooding``).
 """
 
 from __future__ import annotations
@@ -32,6 +33,8 @@ class CoupledBalance:
     ----------
     rain_m3, inflow_m3 : float
         Water that entered the surface as rain and as discharge.
+    network_inflow_m3 : float
+        Water that entered the network from outside the surface (an inflow hydrograph).
     infiltration_m3 : float
         Water that infiltrated.
     surface_m3 : float
@@ -51,17 +54,17 @@ class CoupledBalance:
     lost_flooding_m3 : float
         Flooded out of nodes that have no cell on the surface.
     total_error_m3 : float
-        ``rain + inflow - infiltration - surface - network - outfall - sink - pending -
-        lost_flooding``.
+        ``rain + inflow + network_inflow - infiltration - surface - network - outfall -
+        sink - pending - lost_flooding``.
     surface_side_error_m3 : float
         ``rain + inflow - infiltration - surface - exchanged - sink``: the error of
         SFINCS, or the water that left over its outflow cells.
     network_side_error_m3 : float
-        ``exchanged - pending - network - outfall - lost_flooding``: SWMM's continuity
-        error.
+        ``exchanged + network_inflow - pending - network - outfall - lost_flooding``:
+        SWMM's continuity error.
     total_error_percent : float
-        ``total_error`` as a percentage of the water that entered (rain, inflow and
-        backwater).
+        ``total_error`` as a percentage of the water that entered (rain, inflow, network
+        inflow and backwater).
     """
 
     rain_m3: float
@@ -79,6 +82,7 @@ class CoupledBalance:
     total_error_percent: float
     infiltration_m3: float = 0.0
     lost_flooding_m3: float = 0.0
+    network_inflow_m3: float = 0.0
 
     @property
     def flagged(self) -> bool:
@@ -99,6 +103,7 @@ def coupled_balance(
     pending_m3: float = 0.0,
     infiltration_m3: float = 0.0,
     lost_flooding_m3: float = 0.0,
+    network_inflow_m3: float = 0.0,
 ) -> CoupledBalance:
     """Book the volumes of a coupled run.
 
@@ -124,6 +129,9 @@ def coupled_balance(
         Water that infiltrated into the ground [m3].
     lost_flooding_m3 : float, optional
         Water that flooded out of nodes without a surface cell [m3].
+    network_inflow_m3 : float, optional
+        Water that entered the network from outside the surface, an inflow
+        hydrograph given to a node [m3].
 
     Returns
     -------
@@ -143,10 +151,15 @@ def coupled_balance(
     ...     outfall_net_m3=30.0, exchanged_m3=40.0, infiltration_m3=10.0,
     ... ).total_error_m3
     0.0
+    >>> coupled_balance(  # 40 m3 enter the network from a hydrograph
+    ...     rain_m3=100.0, inflow_m3=0.0, surface_m3=80.0, network_m3=30.0,
+    ...     outfall_net_m3=30.0, exchanged_m3=20.0, network_inflow_m3=40.0,
+    ... ).total_error_m3
+    0.0
     """
-    total = rain_m3 + inflow_m3 - infiltration_m3 - surface_m3 - network_m3
-    total -= outfall_net_m3 + sink_m3 + pending_m3 + lost_flooding_m3
-    entered = rain_m3 + inflow_m3 + outfall_gross_inflow_m3
+    total = rain_m3 + inflow_m3 + network_inflow_m3 - infiltration_m3 - surface_m3
+    total -= network_m3 + outfall_net_m3 + sink_m3 + pending_m3 + lost_flooding_m3
+    entered = rain_m3 + inflow_m3 + network_inflow_m3 + outfall_gross_inflow_m3
     return CoupledBalance(
         rain_m3=rain_m3,
         inflow_m3=inflow_m3,
@@ -162,9 +175,15 @@ def coupled_balance(
             rain_m3 + inflow_m3 - infiltration_m3 - surface_m3 - exchanged_m3 - sink_m3
         ),
         network_side_error_m3=(
-            exchanged_m3 - pending_m3 - network_m3 - outfall_net_m3 - lost_flooding_m3
+            exchanged_m3
+            + network_inflow_m3
+            - pending_m3
+            - network_m3
+            - outfall_net_m3
+            - lost_flooding_m3
         ),
         total_error_percent=100.0 * total / entered if entered > 0.0 else 0.0,
         infiltration_m3=infiltration_m3,
         lost_flooding_m3=lost_flooding_m3,
+        network_inflow_m3=network_inflow_m3,
     )

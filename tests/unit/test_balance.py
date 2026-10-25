@@ -1,4 +1,4 @@
-"""The coupled balance books infiltration and flooding that has no cell to return to."""
+"""The coupled balance books infiltration, a network inflow and lost flooding."""
 
 import pytest
 
@@ -29,3 +29,26 @@ def test_every_term_closes_the_books_and_a_missing_one_shows_on_its_side() -> No
     assert forgotten.surface_side_error_m3 == pytest.approx(0.0)
     assert forgotten.network_side_error_m3 == pytest.approx(6.0)
     assert forgotten.total_error_percent == pytest.approx(6.0) and forgotten.flagged
+
+
+def test_an_inflow_to_the_network_closes_the_books_of_a_dry_surface() -> None:
+    terms = {
+        "rain_m3": 0.0,
+        "inflow_m3": 0.0,
+        "network_inflow_m3": 100.0,  # a hydrograph given to a node
+        "exchanged_m3": -30.0,  # the network gave 30 m3 to the street
+        "surface_m3": 30.0,
+        "network_m3": 10.0,
+        "outfall_net_m3": 60.0,
+    }
+
+    closed = coupled_balance(**terms)
+    short = coupled_balance(**{**terms, "outfall_net_m3": 58.0})
+
+    assert closed.total_error_m3 == pytest.approx(0.0)
+    assert closed.surface_side_error_m3 == pytest.approx(0.0)
+    assert closed.network_side_error_m3 == pytest.approx(0.0)
+    # the percentage is that of the water that entered, here only the hydrograph
+    assert short.total_error_percent == pytest.approx(2.0) and short.flagged
+    assert short.surface_side_error_m3 == pytest.approx(0.0)
+    assert short.network_side_error_m3 == pytest.approx(2.0)

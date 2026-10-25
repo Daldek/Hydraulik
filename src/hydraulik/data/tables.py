@@ -8,8 +8,9 @@ All are CSV with a header and the units in the column names (DEV-8.2):
   the shape of a Hydrolog hyetograph (``HietogramResult``);
 * a **hydrograph table** has ``time_min`` (elapsed) and ``discharge_m3s``, the form in
   which Hydrolog hands a hydrograph to Hydraulik (``hydrolog route network
-  --output-dir`` writes one ``<id>.csv`` for each node of a river network). ``hydraulik
-  swmm run`` reads it as the inflow of a node;
+  --output-dir`` writes one ``<id>.csv`` for each node of a river network).
+  ``hydraulik swmm run`` and ``hydraulik model couple`` read it as the inflow of a
+  node;
 * a **station table** has ``name``, ``x_m`` and ``y_m``: the points where
   ``hydraulik model build`` asks SFINCS for the water level.
 
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 import csv
 import math
+from bisect import bisect_left
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -283,7 +285,7 @@ class Hydrograph:
         times, values = self.times_s, self.discharge_m3s
         if time_s < times[0] or time_s > times[-1]:
             return 0.0
-        high = next(i for i, t in enumerate(times) if t >= time_s)
+        high = bisect_left(times, time_s)  # the first time at or after time_s
         if high == 0 or times[high] == time_s:
             return values[high]
         low = high - 1

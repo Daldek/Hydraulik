@@ -13,3 +13,4 @@ Architecture decision records (DOC §8). Each ADR is a file in
 | [ADR-0006](decisions/0006-kartograf-adapter.md) | Fetch the data through the Kartograf program and the data-output convention | accepted | 2026-10-25 |
 | [ADR-0007](decisions/0007-land-cover-classes.md) | Paint BDOT10k classes on a fine grid and average them into each cell | accepted (values provisional) | 2026-10-25 |
 | [ADR-0008](decisions/0008-land-cover-options-of-model-build.md) | The land cover enters `model build` through five options, and roofs are raised only on request | accepted (values provisional) | 2026-10-25 |
+| [ADR-0009](decisions/0009-network-inflow-of-model-couple.md) | A hydrograph enters one node of the coupled network, and the balance has a term for it | accepted | 2026-10-25 |

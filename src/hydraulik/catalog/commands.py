@@ -994,10 +994,14 @@ _MODEL_COUPLE = CommandSpec(
         "relaxation. It needs the SFINCS shared library that you build with "
         "--enable-shared (sfincs.library; sfincs.qext_unit is `ms` for v2.4.1 and "
         "`m3s` for newer builds), pyswmm, and refuses before any work when one is "
-        "missing. The run happens in a process of its own. Use it to see how a "
-        "surcharging sewer returns water to the street; for the surface alone use "
-        "`model run`, for the network alone `swmm run`. It is a screening: the inlet "
-        "description moves the exchange by 10 to 30 %."
+        "missing. The run happens in a process of its own. An optional inflow "
+        "hydrograph (--inflow, --inflow-node; the table of `time_min,discharge_m3s` "
+        "that `hydrolog route network` writes for a node) enters one node from "
+        "outside, as the water of a catchment that the grid does not cover, and has "
+        "its own term in the balance. Use it to see how a surcharging sewer returns "
+        "water to the street; for the surface alone use `model run`, for the network "
+        "alone `swmm run`. It is a screening: the inlet description moves the "
+        "exchange by 10 to 30 %."
     ),
     options=(
         OptionSpec(
@@ -1034,6 +1038,28 @@ _MODEL_COUPLE = CommandSpec(
                 "model). It is run with a fixed routing step, a clock that matches "
                 "SFINCS and the SurDepth of the mode; the copy is network.inp. Exactly "
                 "one of --network and --inp."
+            ),
+        ),
+        OptionSpec(
+            name="inflow",
+            type="string",
+            path_role="input",
+            examples=("./inflow.csv",),
+            description=(
+                "Hydrograph table (CSV: time_min, discharge_m3s; elapsed time from the "
+                "start of the model run) applied as the lateral inflow of "
+                "--inflow-node: water from outside the model, for example the routed "
+                "hydrograph of a catchment that the grid does not cover. What lies "
+                "beyond the end of the run is cut (a notice)."
+            ),
+        ),
+        OptionSpec(
+            name="inflow_node",
+            type="string",
+            examples=("J1",),
+            description=(
+                "Node that receives the inflow: a junction of --network, any node of "
+                "--inp. It need not lie on the model. Required with --inflow."
             ),
         ),
         OptionSpec(
@@ -1164,12 +1190,22 @@ _MODEL_COUPLE = CommandSpec(
         "give the coordinates in the CRS of the model.",
         "Read the notices: a flagged balance, a continuity error above 5 %, an "
         "oscillation or a numerical spike mean the result needs a second look.",
+        "A hydrograph of --inflow is water from outside the model: do not give the "
+        "rain of the same catchment to the surface as well. Its time is elapsed time "
+        "from the start of the model run, as in the rain table.",
     ),
     examples=(
         Example(
             call=(
                 "hydraulik model couple --model ./model --network ./network.csv "
                 "--output-dir ./coupled --json"
+            ),
+            result={"schema": "hydraulik-couple/1"},
+        ),
+        Example(
+            call=(
+                "hydraulik model couple --model ./model --network ./network.csv "
+                "--inflow ./inflow.csv --inflow-node J1 --output-dir ./coupled --json"
             ),
             result={"schema": "hydraulik-couple/1"},
         ),
@@ -1213,10 +1249,13 @@ _MODEL_COUPLE = CommandSpec(
             "Wymaga biblioteki dzielonej SFINCS zbudowanej z --enable-shared "
             "(sfincs.library; sfincs.qext_unit to `ms` dla v2.4.1 i `m3s` dla "
             "nowszych), pyswmm i odmawia przed jakąkolwiek pracą, gdy czegoś brakuje. "
-            "Przebieg odbywa się w osobnym procesie. Użyj, aby zobaczyć, jak "
-            "przeciążona kanalizacja oddaje wodę na ulicę; samą powierzchnię liczy "
-            "`model run`, samą sieć `swmm run`. To rozpoznanie: opis wpustu zmienia "
-            "wymianę o 10 do 30 %."
+            "Przebieg odbywa się w osobnym procesie. Opcjonalny hydrogram dopływu "
+            "(--inflow, --inflow-node; tabela `time_min,discharge_m3s`, jaką "
+            "`hydrolog route network` zapisuje dla węzła) wpływa z zewnątrz do jednego "
+            "węzła, jako woda zlewni, której siatka nie obejmuje, i ma w bilansie "
+            "osobny składnik. Użyj, aby zobaczyć, jak przeciążona kanalizacja oddaje "
+            "wodę na ulicę; samą powierzchnię liczy `model run`, samą sieć `swmm run`. "
+            "To rozpoznanie: opis wpustu zmienia wymianę o 10 do 30 %."
         ),
         "rules": [
             "Najpierw `engines check --require 'model couple'`: potrzebne są libsfincs "
@@ -1228,6 +1267,9 @@ _MODEL_COUPLE = CommandSpec(
             "Przeczytaj uwagi: oflagowany bilans, błąd ciągłości powyżej 5 %, "
             "oscylacja lub szpilka numeryczna oznaczają, że wynik wymaga ponownego "
             "przejrzenia.",
+            "Hydrogram z --inflow to woda spoza modelu: nie dawaj powierzchni także "
+            "opadu tej samej zlewni. Jego czas liczy się od początku przebiegu modelu, "
+            "jak w tabeli opadu.",
         ],
     },
 )

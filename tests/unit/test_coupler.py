@@ -9,6 +9,7 @@ from hydraulik.coupling.coupler import (
     ExchangeNode,
     couple,
 )
+from hydraulik.data.tables import Hydrograph
 from hydraulik.exceptions import EngineError, InvalidInputError
 
 from ..coupling_fakes import FakeNetwork, FakeSurface
@@ -23,6 +24,7 @@ def balance_of(
     return coupled_balance(
         rain_m3=surface.rain_m3,
         inflow_m3=0.0,
+        network_inflow_m3=result.network_inflow_m3,
         surface_m3=result.surface_final_m3,
         network_m3=result.network_final_m3 - initial_m3,
         outfall_net_m3=result.outfall_net_m3,
@@ -193,3 +195,68 @@ def test_a_network_that_ends_before_the_surface_is_an_error() -> None:
         couple(surface, network, [J1], CouplerSettings(interval_s=5))
 
     assert caught.value.details["reason"] == "swmm_time"
+
+
+def test_an_inflow_at_an_exchange_node_is_added_to_what_the_surface_gives() -> None:
+    surface = FakeSurface([10.0, 10.0], rain_mm_h=600.0, end_s=300.0, step_s=3.0)
+    network = FakeNetwork({"J1": 10.0}, tank_m2=50.0, initial_m3=0.5, end_s=300.0)
+    steady = Hydrograph((0.0, 300.0), (0.01, 0.01))  # 3 m3 over the run
+
+    result = couple(
+        surface, network, [J1], CouplerSettings(interval_s=5), {"J1": steady}
+    )
+
+    balance = balance_of(result, surface)
+    assert result.network_inflow_m3 == pytest.approx(3.0)
+    assert result.inflows_m3 == {"J1": pytest.approx(3.0)}
+    assert result.exchanged_m3 > 0.1  # the node took water from the street as well
+    assert network.inflow["J1"] > 0.01  # and the call carried both of them
+    assert abs(balance.network_side_error_m3) < 1e-6  # neither replaced the other
+    assert abs(balance.total_error_m3) < 1e-6
+
+
+def test_an_inflow_at_a_node_without_a_cell_enters_the_network_all_the_same() -> None:
+    surface = FakeSurface([10.0], end_s=60.0, step_s=1.0)
+    network = FakeNetwork(
+        {"J1": 10.0, "J2": 10.0}, tank_m2=50.0, initial_m3=2.0, end_s=60.0
+    )
+    pulse = Hydrograph((0.0, 30.0, 60.0), (0.0, 0.1, 0.0))  # 3 m3
+
+    result = couple(
+        surface, network, [J1], CouplerSettings(interval_s=5), {"J2": pulse}
+    )
+
+    assert [n.name for n in result.nodes] == ["J1"]  # J2 exchanges nothing
+    assert result.inflows_m3 == {"J2": pytest.approx(3.0)}
+    assert network.volume["J2"] > 2.0 + 1.0  # the pulse is stored in the tank of J2
+    assert abs(balance_of(result, surface, initial_m3=4.0).total_error_m3) < 1e-6
+
+
+def test_an_inflow_is_given_at_the_middle_of_each_interval_the_last_one_shorter() -> (
+    None
+):
+    surface = FakeSurface([10.0], end_s=12.0, step_s=1.0)
+    network = FakeNetwork({"J1": 10.0}, tank_m2=100.0, initial_m3=2.0, end_s=12.0)
+    ramp = Hydrograph((0.0, 100.0), (0.0, 1.0))  # t / 100 m3/s
+
+    result = couple(surface, network, [J1], CouplerSettings(interval_s=5), {"J1": ramp})
+
+    assert result.times_s == [5.0, 10.0, 12.0]
+    # 2.5 s, 7.5 s and 11 s: a line is integrated exactly, 12 s of it is 12**2 / 200
+    assert result.network_inflow_m3 == pytest.approx(0.72)
+    assert network.inflow["J1"] == pytest.approx(0.11)  # the rate of the last interval
+
+
+def test_an_inflow_at_a_node_the_network_does_not_have_is_refused_before_any_step() -> (
+    None
+):
+    surface = FakeSurface([10.0], end_s=60.0)
+    network = FakeNetwork({"J1": 10.0}, initial_m3=0.5, end_s=60.0)
+    settings = CouplerSettings(interval_s=5)
+
+    with pytest.raises(InvalidInputError) as caught:
+        couple(surface, network, [J1], settings, {"X": Hydrograph((0.0, 60.0), (1, 1))})
+
+    assert caught.value.details["reason"] == "unknown_node"
+    assert caught.value.details["value"] == "X"
+    assert surface.calls == [] and network.time_s == 0.0

@@ -524,20 +524,26 @@ class CoupleDocument(_Carrier, Document):
         ``mode``, ``exchange_interval_s``, ``relaxation``, ``rim_tolerance_m``,
         ``inlet`` (``area_m2``, ``weir_coefficient``, ``orifice_coefficient``),
         ``intervals``, ``overshoot_s`` (``mean``, ``max``: how far SFINCS went beyond
-        the end of an interval), ``capped_steps`` and ``nodes_outside`` (nodes with no
-        cell).
+        the end of an interval), ``capped_steps``, ``nodes_outside`` (nodes with no
+        cell) and, when an inflow hydrograph was applied, ``inflow`` with its ``path``,
+        ``node``, ``volume_m3`` (the table), ``given_m3`` (what entered the node) and
+        ``duration_s``.
     balance : dict
         The water of the run in m3: ``rain_m3``, ``infiltration_m3``, ``surface_m3``,
-        ``network_m3``, ``outfall_net_m3``, ``outfall_gross_inflow_m3``,
-        ``exchanged_m3``, ``pending_m3``, ``lost_flooding_m3``, the three errors
-        (``total_error_m3``, ``surface_side_error_m3``, ``network_side_error_m3``),
-        ``total_error_percent``, ``open_boundary``, ``expected_rain_m3`` and ``flags``.
+        ``network_m3``, ``network_inflow_m3`` (the inflow hydrograph),
+        ``outfall_net_m3``, ``outfall_gross_inflow_m3``, ``exchanged_m3``,
+        ``pending_m3``, ``lost_flooding_m3``, the three errors (``total_error_m3``,
+        ``surface_side_error_m3``, ``network_side_error_m3``), ``total_error_percent``,
+        ``open_boundary``, ``expected_rain_m3`` and ``flags``.
     surface : dict
         ``grid``, ``depth`` (maxima and flooded areas) and ``stations`` of the SFINCS
         map, as in ``hydraulik-results/1``.
     network : dict
-        ``duration_s``, ``totals`` (SWMM's water balance and continuity error), and the
-        peaks of every ``nodes`` and ``conduits`` entry, as in ``hydraulik-swmm/1``.
+        ``duration_s``, ``totals`` (SWMM's water balance and continuity error; its
+        ``external_inflow_m3`` is the lateral inflow in all: the inflow hydrograph and
+        the net water taken from the surface, which is negative where the network
+        spilled), and the peaks of every ``nodes`` and ``conduits`` entry, as in
+        ``hydraulik-swmm/1``.
     nodes : list of dict
         For each exchange node: volumes (``exchanged_m3``, ``flooded_m3``,
         ``returned_m3``, ``pending_m3``), peaks, ``held_max_head_m`` with

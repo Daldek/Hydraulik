@@ -22,8 +22,10 @@ from hydraulik.engines.swmm import inp as swmm_inp  # noqa: E402
 from hydraulik.exceptions import (  # noqa: E402
     ConflictError,
     EngineError,
+    InputDataError,
     InvalidInputError,
     MissingDependencyError,
+    NotFoundError,
     UnsupportedError,
 )
 
@@ -64,6 +66,8 @@ SUMMARY: dict[str, Any] = {
     "overshoot_s": {"mean": 0.1, "max": 0.5},
     "outfall_net_m3": 10.0,
     "outfall_gross_inflow_m3": 0.0,
+    "network_inflow_m3": 0.0,
+    "inflows_m3": {},
     "surface_final_m3": 285.0,
     "network_final_m3": 5.0,
     "exchanged_m3": 15.0,
@@ -220,6 +224,8 @@ def test_a_coupled_run_publishes_its_files_and_books_the_water(
     assert balance["surface_side_error_m3"] == pytest.approx(0.0, abs=1e-3)
     assert balance["network_side_error_m3"] == pytest.approx(0.0, abs=1e-3)
     assert balance["flags"] == [] and balance["open_boundary"] is False
+    assert balance["network_inflow_m3"] == 0.0 and "inflow" not in document.coupling
+    assert worker.seen["job"]["inflows"] == {}
     assert document.surface["stations"][0]["name"] == "centre"
     assert document.coupling["intervals"] == 7200 and document.nodes[0]["name"] == "J1"
     assert document.notices == []
@@ -402,6 +408,153 @@ def test_the_coordinator_with_extran_in_your_input_is_a_warning(
     assert surcharge == [100.0, 100.0, 100.0]
 
 
+def hydrograph(folder: Path, rows: str, name: str = "inflow.csv") -> Path:
+    path = folder / name
+    path.write_text("time_min,discharge_m3s\n" + rows, encoding="utf-8")
+    return path
+
+
+def test_an_inflow_hydrograph_goes_into_the_job_and_has_its_own_term_in_the_books(
+    tmp_path: Path, model: Path, network: Path, worker: Worker
+) -> None:
+    from importlib import resources
+
+    table = hydrograph(tmp_path, "0,0\n30,0.02\n60,0\n")  # 36 m3
+    worker.summary.update(
+        network_inflow_m3=36.0, inflows_m3={"J1": 36.0}, outfall_net_m3=46.0
+    )
+    schema = json.loads(
+        resources.files("hydraulik")
+        .joinpath("schemas", "hydraulik-couple-1.schema.json")
+        .read_text(encoding="utf-8")
+    )
+
+    document = couple(
+        model, network, tmp_path / "coupled", inflow=table, inflow_node="J1"
+    )
+
+    Draft202012Validator(schema).validate(document.to_dict())
+    assert worker.seen["job"]["inflows"] == {
+        "J1": {"times_s": [0.0, 1800.0, 3600.0], "discharge_m3s": [0.0, 0.02, 0.0]}
+    }
+    assert document.coupling["inflow"] == {
+        "path": str(table),
+        "node": "J1",
+        "volume_m3": 36.0,
+        "given_m3": 36.0,
+        "duration_s": 3600.0,
+    }
+    balance = document.balance
+    assert balance["network_inflow_m3"] == 36.0 and balance["inflow_m3"] == 0.0
+    assert balance["total_error_m3"] == pytest.approx(0.0, abs=1e-3)
+    assert balance["surface_side_error_m3"] == pytest.approx(0.0, abs=1e-3)
+    assert balance["network_side_error_m3"] == pytest.approx(0.0, abs=1e-3)
+    assert balance["flags"] == [] and document.notices == []
+
+
+def test_a_hydrograph_that_outlasts_the_run_is_cut_and_the_plan_says_so(
+    tmp_path: Path, model: Path, network: Path, worker: Worker
+) -> None:
+    table = hydrograph(tmp_path, "0,0\n60,0.01\n180,0\n")  # 3 h, the run lasts 2 h
+
+    document = couple(
+        model, network, tmp_path / "coupled", inflow=table, inflow_node="J1"
+    )
+    plan = check_command(
+        "model couple",
+        model=str(model),
+        network=str(network),
+        inflow=str(table),
+        inflow_node="J1",
+        output_dir=str(tmp_path / "plan"),
+    )
+
+    cut = [n for n in document.notices if n["code"] == "inflow_cut"]
+    assert len(cut) == 1 and cut[0]["level"] == "warning"
+    assert "10800 s" in cut[0]["message"] and "7200 s" in cut[0]["message"]
+    assert isinstance(plan, PlanDocument)
+    step = next(s for s in plan.steps if s.startswith("apply"))
+    assert "as the inflow of J1" in step
+    assert "so the rest is cut" in step
+
+
+def test_an_inflow_node_that_the_source_does_not_have_is_refused_before_any_write(
+    tmp_path: Path, model: Path, network: Path, worker: Worker
+) -> None:
+    table = hydrograph(tmp_path, "0,0\n60,0.01\n")
+    sewer = tmp_path / "sewer.inp"
+    sewer.write_text(SEWER, encoding="utf-8")
+
+    with pytest.raises(InvalidInputError) as in_table:
+        couple_model(
+            model=model,
+            network=network,
+            inflow=table,
+            inflow_node="OUT",  # the outfall of a table takes no inflow
+            output_dir=tmp_path / "a",
+        )
+    with pytest.raises(InvalidInputError) as in_input:
+        couple_model(
+            model=model,
+            inp=sewer,
+            inflow=table,
+            inflow_node="J9",
+            output_dir=tmp_path / "b",
+        )
+
+    assert in_table.value.details["reason"] == "unknown_node"
+    assert in_table.value.details["allowed"] == ["J1"]
+    assert in_input.value.details["reason"] == "unknown_node"
+    assert in_input.value.details["allowed"] == ["J1", "J2", "J3", "OUT"]
+    assert not (tmp_path / "a").exists() and not (tmp_path / "b").exists()
+    assert worker.seen == {}
+
+
+def test_your_input_takes_an_inflow_at_a_node_that_has_no_cell(
+    tmp_path: Path, model: Path, worker: Worker
+) -> None:
+    table = hydrograph(tmp_path, "0,0\n60,0.01\n")
+    sewer = tmp_path / "sewer.inp"
+    sewer.write_text(SEWER, encoding="utf-8")
+
+    couple_model(
+        model=model,
+        inp=sewer,
+        inflow=table,
+        inflow_node="J3",  # no [COORDINATES]: exchanges nothing, still takes water
+        output_dir=tmp_path / "coupled",
+    )
+
+    assert list(worker.seen["job"]["inflows"]) == ["J3"]
+    assert [n["name"] for n in worker.seen["job"]["nodes"]] == ["J1"]
+
+
+def test_a_hydrograph_that_cannot_be_read_is_refused(
+    tmp_path: Path, model: Path, network: Path, worker: Worker
+) -> None:
+    negative = hydrograph(tmp_path, "0,0\n60,-1\n")
+
+    with pytest.raises(InputDataError) as damaged:
+        couple_model(
+            model=model,
+            network=network,
+            inflow=negative,
+            inflow_node="J1",
+            output_dir=tmp_path / "a",
+        )
+    with pytest.raises(NotFoundError):
+        couple_model(
+            model=model,
+            network=network,
+            inflow=tmp_path / "missing.csv",
+            inflow_node="J1",
+            output_dir=tmp_path / "b",
+        )
+
+    assert damaged.value.details["reason"] == "invalid_hydrograph"
+    assert worker.seen == {}
+
+
 @pytest.mark.parametrize(
     ("options", "reason"),
     [
@@ -410,6 +563,8 @@ def test_the_coordinator_with_extran_in_your_input_is_a_warning(
         ({"inp": "b.inp", "surcharge_method": "SLOT"}, "option_not_applicable"),
         ({"network": "a.csv", "routing_step_s": 2.0}, "out_of_range"),
         ({"network": "a.csv", "exchange_interval_s": 0}, "out_of_range"),
+        ({"network": "a.csv", "inflow": "q.csv"}, "missing_option"),
+        ({"network": "a.csv", "inflow_node": "J1"}, "missing_option"),
     ],
 )
 def test_options_that_do_not_go_together_are_refused(

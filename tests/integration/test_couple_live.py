@@ -9,6 +9,7 @@ The surface is a bowl of 20 x 20 cells of 5 m with a manhole in the middle that 
 small for the rain, so the node fills, floods, and SWMM's flooding returns to the cell.
 """
 
+import csv
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,7 @@ import numpy as np
 import pytest
 
 from hydraulik.cli import main
+from hydraulik.data.tables import read_hydrograph
 from hydraulik.engines.sfincs.model import (
     ModelInputs,
     RegularGrid,
@@ -37,9 +39,18 @@ pytestmark = [
 ]
 
 
-@pytest.fixture
-def bowl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
-    """The model directory and the network table; the environment names the library."""
+HYDROLOG = Path(__file__).resolve().parents[1] / "fixtures" / "hydrolog" / "out"
+"""The tables that ``hydrolog route network`` wrote (the fixture of the hand-off)."""
+
+
+def make_bowl(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    rain_mm_per_step: float,
+    tstop_s: float,
+) -> tuple[Path, Path]:
+    """Write the model and the network table; the environment names the library."""
     pytest.importorskip("netCDF4")
     pytest.importorskip("pyswmm")
     monkeypatch.setenv("HYDRAULIK_SFINCS_LIBRARY", str(LIBRARY))
@@ -56,12 +67,12 @@ def bowl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
             grid=grid,
             elevation_m=bed,
             active=np.ones(grid.shape, dtype=bool),
-            precip=precip_breakpoints([20.0] * 3, 600.0, 1800.0),
-            tstop_s=1800.0,
+            precip=precip_breakpoints([rain_mm_per_step] * 3, 600.0, tstop_s),
+            tstop_s=tstop_s,
             manning=0.03,
             observation_points=((52.5, 52.5, "node"),),
             dtmax_s=60.0,
-            dtout_s=1800.0,
+            dtout_s=tstop_s,
             dthisout_s=60.0,
         ),
     )
@@ -73,6 +84,18 @@ def bowl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
         encoding="utf-8",
     )
     return model, network
+
+
+@pytest.fixture
+def bowl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+    """The bowl with 60 mm of rain in 30 min."""
+    return make_bowl(tmp_path, monkeypatch, rain_mm_per_step=20.0, tstop_s=1800.0)
+
+
+@pytest.fixture
+def dry_bowl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+    """The bowl for 75 min with no rain: an inflow is the only water in it."""
+    return make_bowl(tmp_path, monkeypatch, rain_mm_per_step=0.0, tstop_s=4500.0)
 
 
 def couple(
@@ -202,3 +225,66 @@ def test_check_sees_the_library_and_plans_the_files(
     assert code == 0
     assert envelope["result"]["blockers"] == []
     assert not (tmp_path / "plan").exists()
+
+
+def test_a_hydrograph_of_hydrolog_fills_the_pipe_until_the_street_floods(
+    tmp_path: Path, dry_bowl: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    model, network = dry_bowl
+    table = HYDROLOG / "OUT.csv"
+    out = tmp_path / "coupled"
+
+    code, envelope = couple(
+        capsys, model, network, out, "--exchange-interval-s", "5",
+        "--inflow", str(table), "--inflow-node", "J1",
+    )  # fmt: skip
+
+    assert code == 0, envelope
+    result = envelope["result"]
+    balance, node = result["balance"], result["nodes"][0]
+    volume = read_hydrograph(table).volume_m3
+    assert volume == pytest.approx(278.98, rel=1e-4)
+    assert result["coupling"]["inflow"]["given_m3"] == pytest.approx(volume, rel=1e-6)
+    assert balance["network_inflow_m3"] == pytest.approx(volume, rel=1e-6)
+    assert balance["rain_m3"] == 0.0 and balance["inflow_m3"] == 0.0
+    assert balance["flags"] == [] and abs(balance["total_error_percent"]) < 0.5
+    assert abs(balance["network_side_error_m3"]) < 0.01 * volume
+    assert abs(result["network"]["totals"]["continuity_error_percent"]) < 1.0
+    # the pipe takes 0.02 m3/s of a hydrograph that peaks at 0.175: the manhole floods
+    # (the volume flooded is gross: water that returns to the street can re-enter)
+    assert node["flooded_m3"] > volume / 2
+    assert node["returned_m3"] + node["pending_m3"] == pytest.approx(
+        node["flooded_m3"], abs=1e-6
+    )
+    # the street has no rain: what it holds came from the network
+    assert balance["exchanged_m3"] < -100.0
+    assert balance["surface_m3"] == pytest.approx(-balance["exchanged_m3"], abs=0.5)
+    assert result["surface"]["depth"]["max_depth_m"] > 0.1  # water stands in the street
+    with (out / "coupling.csv").open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    first_spill_s = next(float(r["time_s"]) for r in rows if float(r["spill_m3s"]) > 0)
+    # the manhole holds 2.3 m3, which the table delivers after 250 s; by 600 s it has
+    # delivered 18 m3 and the pipe has taken 12: the street gets water in between
+    assert 240.0 < first_spill_s < 600.0
+
+
+def test_the_coordinator_mode_takes_the_hydrograph_too(
+    tmp_path: Path, dry_bowl: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    model, network = dry_bowl
+    table = HYDROLOG / "OUT.csv"
+
+    code, envelope = couple(
+        capsys, model, network, tmp_path / "c", "--mode", "coordinator",
+        "--exchange-interval-s", "2", "--inflow", str(table), "--inflow-node", "J1",
+    )  # fmt: skip
+
+    assert code == 0, envelope
+    result = envelope["result"]
+    balance, node = result["balance"], result["nodes"][0]
+    volume = read_hydrograph(table).volume_m3
+    assert balance["network_inflow_m3"] == pytest.approx(volume, rel=1e-6)
+    assert abs(balance["total_error_percent"]) < 1.0  # SLOT loses some water
+    assert node["flooded_m3"] == 0.0 and node["peak_return_m3s"] > 0.1  # the law spills
+    assert balance["exchanged_m3"] < -100.0
+    assert result["surface"]["depth"]["max_depth_m"] > 0.1

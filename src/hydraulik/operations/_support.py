@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import shutil
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Final
 
@@ -23,6 +23,7 @@ __all__ = [
     "refuse_option",
     "require_extras",
     "stage_model",
+    "unknown_inflow_node",
 ]
 
 EXTRAS: Final[dict[str, tuple[str, str]]] = {
@@ -158,6 +159,49 @@ def refuse_option(
         details={"option": option},
         hint=hint,
         reason=reason,
+    )
+
+
+def unknown_inflow_node(
+    node: str, allowed: Sequence[str], *, junctions_only: bool
+) -> InvalidInputError:
+    """Return the ``validation_error`` of an inflow at a node the source does not have.
+
+    Parameters
+    ----------
+    node : str
+        The name that ``--inflow-node`` gave.
+    allowed : sequence of str
+        The names the source has (the first 50 go into ``details.allowed``).
+    junctions_only : bool
+        True for a network table, whose outfall takes no inflow; False for the user's
+        SWMM input, where any node does.
+
+    Returns
+    -------
+    InvalidInputError
+        Reason ``unknown_node``, to be raised by the caller.
+
+    Examples
+    --------
+    >>> str(unknown_inflow_node("X", ["J1"], junctions_only=False))
+    "the SWMM input has no node 'X'"
+    """
+    return InvalidInputError(
+        f"the network table has no junction {node!r}"
+        if junctions_only
+        else f"the SWMM input has no node {node!r}",
+        details={
+            "option": "inflow_node",
+            "value": node,
+            "allowed": list(allowed)[:50],
+        },
+        hint=(
+            "Name a junction of the table; the outfall takes no inflow."
+            if junctions_only
+            else "Name a node of the SWMM input."
+        ),
+        reason="unknown_node",
     )
 
 

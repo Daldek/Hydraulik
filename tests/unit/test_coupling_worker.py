@@ -2,6 +2,7 @@
 
 import csv
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from hydraulik.coupling.worker import (  # noqa: E402
     main,
     run_job,
 )
+from hydraulik.data.tables import Hydrograph  # noqa: E402
 from hydraulik.engines.swmm.network import (  # noqa: E402
     SwmmSettings,
     read_network_table,
@@ -110,6 +112,38 @@ def test_the_series_has_a_row_for_every_interval_and_node(stage: Path) -> None:
     assert {row["node"] for row in rows} == {"J1"}
     assert float(rows[-1]["time_s"]) == DURATION_S
     assert all(float(row["zs_m"]) >= 10.0 for row in rows)  # the bed of the cell
+
+
+def test_an_inflow_hydrograph_goes_through_the_job_file_into_the_real_network(
+    tmp_path: Path,
+) -> None:
+    folder = tmp_path / "roomy"
+    folder.mkdir()
+    table = folder / "net.csv"
+    table.write_text(
+        "name,x_m,y_m,rim_m,depth_m,to,diameter_m\n"
+        "J1,2.5,2.5,10.0,2.0,OUT,0.3\n"  # the pipe carries 0.14 m3/s
+        "OUT,50,2.5,9.0,2.0,,\n",
+        encoding="utf-8",
+    )
+    text = write_inp(read_network_table(table), SwmmSettings(float(DURATION_S)))
+    (folder / "network.inp").write_text(text, encoding="utf-8")
+    pulse = Hydrograph((0.0, 120.0, 240.0), (0.0, 0.05, 0.0))  # 6 m3
+    job = replace(job_for(folder), inflows={"J1": pulse})
+    path = folder / "job.json"
+    path.write_text(job.to_json(), encoding="utf-8")
+    surface = FakeSurface([10.0], cell_m=5.0, end_s=float(DURATION_S), step_s=1.0)
+
+    assert CoupleJob.read(path) == job  # the series survives the file
+    summary = run_job(CoupleJob.read(path), surface=surface)
+
+    swmm = summary["swmm"]
+    assert summary["network_inflow_m3"] == pytest.approx(6.0)
+    assert summary["inflows_m3"] == {"J1": pytest.approx(6.0)}
+    assert swmm["external_inflow_m3"] == pytest.approx(6.0, rel=0.01)  # SWMM agrees
+    assert swmm["flooding_m3"] == 0.0 and summary["exchanged_m3"] == 0.0
+    left = summary["outfall_net_m3"] + summary["network_final_m3"]
+    assert left == pytest.approx(6.0, rel=0.01)  # the dry street gave none, took none
 
 
 def test_a_job_survives_its_file_and_a_damaged_file_is_named(tmp_path: Path) -> None:

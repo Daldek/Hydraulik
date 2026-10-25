@@ -180,7 +180,9 @@ hydraulik swmm run --network ./network.csv --inflow ./inflow.csv --inflow-node J
 
 `swmm run` writes `network.inp` and `network.rpt` and reports the water balance of
 SWMM, the peaks of every node and conduit and, as a notice, a continuity error above
-5 %. `--inp` runs your own SWMM input (SI units) instead of a table.
+5 %. `--inp` runs your own SWMM input (SI units) instead of a table. The inflow is the
+table of one node of `hydrolog route network --output-dir DIR`, which writes `<id>.csv`
+for every node of a river network; it is read as it is.
 
 A model and a sewer network together (optional, it needs the SFINCS shared library that
 you build yourself with `--enable-shared`, `HYDRAULIK_SFINCS_LIBRARY`, and `pyswmm`):
@@ -198,6 +200,12 @@ infiltration, surface, network, outfall, exchange) and flags a residual above 1 
 unit shows as a balance that does not close. The coupled run happens in a process of its
 own, because SFINCS keeps its state in global variables. It is a screening: the
 description of the inlets is the main uncertainty.
+
+Water that comes from outside the model, for example the routed hydrograph of a
+catchment that the grid does not cover, enters one node of the network with `--inflow
+FILE --inflow-node NODE` (the same table as `swmm run`; its time is elapsed time from
+the start of the model run, as in the rain table). It has a term of its own in the
+balance (`network_inflow_m3`); a hydrograph that outlasts the run is cut, with a notice.
 
 ## Capabilities
 

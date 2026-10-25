@@ -18,7 +18,7 @@ import dataclasses
 import json
 import sys
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final
 
@@ -39,6 +39,7 @@ from hydraulik.coupling.diagnostics import (
     sustained_spill,
 )
 from hydraulik.coupling.laws import Inlet
+from hydraulik.data.tables import Hydrograph
 from hydraulik.exceptions import InputDataError, error_document
 
 __all__ = ["RESULT_NAME", "SERIES_NAME", "CoupleJob", "main", "run_job", "summarise"]
@@ -78,6 +79,9 @@ class CoupleJob:
         The nodes that may exchange water.
     settings : CouplerSettings
         The loop.
+    inflows : dict of str to Hydrograph
+        Discharge that enters a node of the network from outside, node name to its
+        series (time from the start of the run).
     hold_s : float
         ``T`` of the held maximum of the head [s].
     """
@@ -90,6 +94,7 @@ class CoupleJob:
     out: str
     nodes: tuple[ExchangeNode, ...]
     settings: CouplerSettings
+    inflows: dict[str, Hydrograph] = field(default_factory=dict)
     hold_s: float = DEFAULT_HOLD_S
 
     def to_json(self) -> str:
@@ -110,8 +115,16 @@ class CoupleJob:
             settings = dict(body.pop("settings"))
             inlet = Inlet(**settings.pop("inlet"))
             nodes = tuple(ExchangeNode(**item) for item in body.pop("nodes"))
+            inflows = {
+                name: Hydrograph(
+                    tuple(float(t) for t in item["times_s"]),
+                    tuple(float(q) for q in item["discharge_m3s"]),
+                )
+                for name, item in body.pop("inflows", {}).items()
+            }
             return cls(
                 nodes=nodes,
+                inflows=inflows,
                 settings=CouplerSettings(inlet=inlet, **settings),
                 **body,
             )
@@ -186,6 +199,8 @@ def summarise(
             "mean": float(overshoot.mean()) if overshoot.size else 0.0,
             "max": float(overshoot.max()) if overshoot.size else 0.0,
         },
+        "network_inflow_m3": result.network_inflow_m3,
+        "inflows_m3": dict(result.inflows_m3),
         "outfall_net_m3": result.outfall_net_m3,
         "outfall_gross_inflow_m3": result.outfall_gross_inflow_m3,
         "surface_final_m3": result.surface_final_m3,
@@ -250,7 +265,7 @@ def run_job(job: CoupleJob, *, surface: Any = None) -> dict[str, Any]:
     directory = Path(job.directory)
     with SwmmStepper(job.inp, job.report, job.out, stride_s=1) as stepper:
         if surface is not None:
-            result = couple(surface, stepper, job.nodes, job.settings)
+            result = couple(surface, stepper, job.nodes, job.settings, job.inflows)
         else:
             from hydraulik.engines.sfincs.bmi import SfincsSurface
 
@@ -259,7 +274,7 @@ def run_job(job: CoupleJob, *, surface: Any = None) -> dict[str, Any]:
                 directory,
                 qext_unit=job.qext_unit,  # type: ignore[arg-type]
             ) as sfincs:
-                result = couple(sfincs, stepper, job.nodes, job.settings)
+                result = couple(sfincs, stepper, job.nodes, job.settings, job.inflows)
                 sfincs.finalize()  # writes the map and the log before SWMM's report
         summary = stepper.finish()
     write_series(directory / SERIES_NAME, result)
