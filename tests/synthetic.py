@@ -12,6 +12,7 @@ from __future__ import annotations
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import netCDF4
 import numpy as np
@@ -311,3 +312,54 @@ def read_model_array(directory: Path, name: str, dtype: str) -> Float:
     flat[index - 1] = values
     result: Float = flat.reshape((columns, rows)).T
     return result
+
+
+def write_codes(
+    path: Path,
+    codes: NDArray[np.uint8],
+    *,
+    west: float = 362000.0,
+    north: float = 504020.0,
+    cell: float = 1.0,
+    epsg: int = 2180,
+) -> Path:
+    """Write a single-band uint8 GeoTIFF of class codes (0 is no data), north-up.
+
+    This is the form of the hydrologic soil groups of Kartograf: 1 A to 4 D.
+    """
+    import rasterio
+    from rasterio.transform import from_origin
+
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        height=codes.shape[0],
+        width=codes.shape[1],
+        count=1,
+        dtype="uint8",
+        crs=f"EPSG:{epsg}",
+        transform=from_origin(west, north, cell, cell),
+        nodata=0,
+    ) as target:
+        target.write(codes, 1)
+    return path
+
+
+def add_layer(
+    path: Path,
+    name: str,
+    geometries: list[Any],
+    *,
+    epsg: int = 2180,
+    **attributes: list[Any],
+) -> Path:
+    """Add a layer of shapely geometries to a GeoPackage (a BDOT10k stand-in).
+
+    ``attributes`` are the columns, one value per geometry (``RODZAJ=["las"]``).
+    """
+    import geopandas
+
+    frame = geopandas.GeoDataFrame(attributes, geometry=geometries, crs=f"EPSG:{epsg}")
+    frame.to_file(path, layer=name, driver="GPKG", mode="a")
+    return path

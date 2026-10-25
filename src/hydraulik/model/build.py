@@ -28,7 +28,14 @@ from hydraulik.data.tables import read_rain_table, read_station_table
 from hydraulik.documents import notice
 from hydraulik.engines.sfincs.model import ModelInputs, RegularGrid, precip_breakpoints
 from hydraulik.exceptions import InputDataError, InvalidInputError
-from hydraulik.model.options import DEFAULT_MANNING, BuildOptions
+from hydraulik.model.classes import HSG_LETTERS, load_classes
+from hydraulik.model.landcover import BUILDING_SHARE, LandCoverResult, build_landcover
+from hydraulik.model.options import (
+    CURVE_NUMBER_RASTER,
+    DEFAULT_MANNING,
+    MANNING_RASTER,
+    BuildOptions,
+)
 from hydraulik.terrain.grid import (
     Extent,
     edge_cells,
@@ -37,6 +44,7 @@ from hydraulik.terrain.grid import (
     polygon_mask,
     raster_extent,
     read_geometry,
+    resample_codes,
     resample_raster,
 )
 
@@ -56,15 +64,21 @@ class BuiltModel:
         Ready for :func:`~hydraulik.engines.sfincs.model.write_model`.
     report : dict
         The body of the ``hydraulik-model/1`` document: ``grid``, ``domain``,
-        ``elevation``, ``roughness``, ``infiltration``, ``rain``, ``outlet`` and
-        ``observation_points``.
+        ``elevation``, ``roughness``, ``infiltration``, ``rain``, ``outlet``,
+        ``observation_points`` and ``landcover``.
     notices : list of dict
         Notices for the result: defaults that were applied and gaps that were found.
+    rasters : dict
+        File name to ``(values, tags)`` of the rasters that go beside the model files
+        (:data:`~hydraulik.model.options.MANNING_RASTER` and, with a soil group,
+        :data:`~hydraulik.model.options.CURVE_NUMBER_RASTER`); empty without the land
+        cover.
     """
 
     inputs: ModelInputs
     report: dict[str, Any]
     notices: list[dict[str, str]]
+    rasters: dict[str, tuple[Float, dict[str, str]]]
 
 
 def _bbox_shape(bbox: tuple[float, float, float, float], crs: str, epsg: int) -> Any:
@@ -187,6 +201,103 @@ def _first_gap(gaps: Bool, grid: RegularGrid) -> dict[str, float]:
     return {"x_m": x_m, "y_m": y_m}
 
 
+def _soil_groups(
+    options: BuildOptions,
+    grid: RegularGrid,
+    active: Bool,
+    notices: list[dict[str, str]],
+) -> tuple[NDArray[np.int8], dict[str, Any]]:
+    """Return the soil group of every cell and a report of them.
+
+    The groups are 0 (A) to 3 (D) and -1 where none is known: the cells that the soil
+    raster does not cover, or every cell when there is no raster. ``default_hsg`` fills
+    the cells without a group.
+    """
+    if options.hsg is not None:
+        codes = resample_codes(options.hsg, grid)
+        wrong = active & (codes > len(HSG_LETTERS))
+        if wrong.any():
+            raise InputDataError(
+                f"{int(wrong.sum())} cells of the domain have a code above "
+                f"{len(HSG_LETTERS)} in {options.hsg.name}: it is not a raster of "
+                "soil groups",
+                details={
+                    "path": str(options.hsg),
+                    "cells": int(wrong.sum()),
+                    "value": int(codes[wrong].max()),
+                },
+                hint="Give the soil groups as 1 (A) to 4 (D) and 0 for no data, the "
+                "raster that `terrain download` writes to soil/.",
+                reason="invalid_hsg",
+            )
+        known = (codes >= 1) & (codes <= len(HSG_LETTERS))
+        groups = np.where(known, codes.astype(np.int8) - 1, -1).astype(np.int8)
+    else:
+        groups = np.full(grid.shape, -1, dtype=np.int8)
+    filled = 0
+    if options.default_hsg is not None:
+        lacking = active & (groups < 0)
+        filled = int(lacking.sum())
+        groups = np.where(lacking, HSG_LETTERS.index(options.default_hsg), groups)
+        groups = groups.astype(np.int8)
+        if filled and options.hsg is not None:
+            message = (
+                f"{filled} cells of the domain have no soil group in "
+                f"{options.hsg.name}: they get group {options.default_hsg} "
+                "(--default-hsg)"
+            )
+            notices.append(notice("warning", "hsg_default", message))
+        elif filled:
+            message = (
+                f"no soil raster: every cell gets group {options.default_hsg} "
+                "(--default-hsg)"
+            )
+            notices.append(notice("info", "hsg_default", message))
+    report: dict[str, Any] = {
+        "path": None if options.hsg is None else str(options.hsg),
+        "default": options.default_hsg,
+        "default_cells": filled,
+        "cells": {
+            letter: int((active & (groups == index)).sum())
+            for index, letter in enumerate(HSG_LETTERS)
+        },
+    }
+    return groups, report
+
+
+def _raise_buildings(
+    elevation: Float,
+    active: Bool,
+    landcover: LandCoverResult,
+    raise_m: float,
+    notices: list[dict[str, str]],
+) -> tuple[Float, dict[str, Any]]:
+    """Raise the cells that are mostly under roofs and describe what was done."""
+    roofs = active & (landcover.building_fraction >= BUILDING_SHARE)
+    count = int(roofs.sum())
+    report: dict[str, Any] = {
+        "cells": count,
+        "share": BUILDING_SHARE,
+        "raise_m": raise_m,
+    }
+    if count == 0:
+        return elevation, report
+    share = f"{100.0 * BUILDING_SHARE:g} %"
+    if raise_m > 0.0:
+        elevation = np.where(roofs, elevation + raise_m, elevation)
+        message = (
+            f"{count} cells are {share} or more under roofs: raised by {raise_m:g} m, "
+            "the water runs round them"
+        )
+    else:
+        message = (
+            f"{count} cells are {share} or more under roofs: the buildings are ground "
+            "that the water crosses (--building-raise-m 0)"
+        )
+    notices.append(notice("info", "landcover_buildings", message))
+    return elevation, report
+
+
 def build_inputs(options: BuildOptions) -> BuiltModel:
     """Read the rasters and put them on one grid.
 
@@ -206,8 +317,10 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
         If a file does not exist.
     InputDataError
         If a raster or a table cannot be read, a domain cell has no elevation (reason
-        ``dem_gaps``) or no Manning ``n`` (``manning_gaps``), or a retention is
-        negative (``invalid_retention``).
+        ``dem_gaps``) or no Manning ``n`` (``manning_gaps``), a retention is negative
+        (``invalid_retention``), the soil raster holds a code that is no soil group
+        (``invalid_hsg``), or the land cover or the class table cannot be used
+        (``landcover_layers_missing``, ``invalid_classes_table``).
     UnsupportedError
         If the CRS of the first elevation raster is not a metric EPSG CRS.
     InvalidInputError
@@ -247,8 +360,36 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
         )
     elevation = np.where(active, elevation, np.nan)
 
+    landcover: LandCoverResult | None = None
+    soil: dict[str, Any] | None = None
+    buildings: dict[str, Any] | None = None
+    if options.landcover is not None:
+        class_table = load_classes(options.classes)
+        groups: NDArray[np.int8] | None = None
+        if options.landcover_infiltration:
+            groups, soil = _soil_groups(options, grid, active, notices)
+        landcover = build_landcover(
+            options.landcover,
+            grid,
+            active,
+            class_table,
+            soil_groups=groups,
+            building_roughness=options.building_raise_m > 0.0,
+        )
+        notices.extend(landcover.notices)
+        elevation, buildings = _raise_buildings(
+            elevation, active, landcover, options.building_raise_m, notices
+        )
+
     manning: float | Float
-    if options.manning_raster is not None:
+    roughness: dict[str, Any]
+    if landcover is not None:
+        manning = landcover.manning
+        roughness = {
+            "source": "landcover",
+            **{f"{k}_s_m13": v for k, v in _statistics(manning, active).items()},
+        }
+    elif options.manning_raster is not None:
         layer = resample_raster(options.manning_raster, grid)
         gaps = active & ~np.isfinite(layer.values)
         if gaps.any():
@@ -260,7 +401,7 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
                 reason="manning_gaps",
             )
         manning = layer.values
-        roughness: dict[str, Any] = {
+        roughness = {
             "source": "raster",
             "path": str(options.manning_raster),
             "resampling": layer.resampling,
@@ -280,9 +421,11 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
 
     curve_number: Float | None = None
     infiltration: dict[str, Any] | None = None
+    resampling: str | None = None
     if options.curve_number_raster is not None:
         layer = resample_raster(options.curve_number_raster, grid)
         curve_number = layer.values
+        resampling = layer.resampling
         origin = {
             "source": "curve_number_raster",
             "path": str(options.curve_number_raster),
@@ -298,33 +441,49 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
                 reason="invalid_retention",
             )
         curve_number = 25400.0 / (retention + 254.0)
+        resampling = layer.resampling
         origin = {
             "source": "retention_mm_raster",
             "path": str(options.retention_mm_raster),
         }
+    elif landcover is not None and landcover.curve_number is not None:
+        curve_number = landcover.curve_number
+        resampling = "nearest" if options.hsg is not None else None
+        origin = {"source": "landcover"}
     if curve_number is not None:
         missing = active & ~np.isfinite(curve_number)
         infiltration = {
             **origin,
-            "resampling": layer.resampling,
+            **({} if resampling is None else {"resampling": resampling}),
             "gap_cells": int(missing.sum()),
             "initial_abstraction": 0.2,
         }
         if missing.all():
+            from_soil = origin["source"] == "landcover"
             raise InputDataError(
-                "the infiltration raster covers no cell of the domain",
-                details={"path": origin["path"]},
-                hint="Check its CRS and extent.",
+                "the soil raster covers no cell of the domain"
+                if from_soil
+                else "the infiltration raster covers no cell of the domain",
+                details={"path": origin.get("path", str(options.hsg))},
+                hint="Check its CRS and extent"
+                + (", or give --default-hsg." if from_soil else "."),
                 reason="cn_gaps",
             )
         infiltration["curve_number"] = _statistics(curve_number, active)
+        if soil is not None:
+            infiltration["hsg"] = soil
         if missing.any():
             notices.append(
                 notice(
                     "warning",
                     "cn_gaps",
                     f"{int(missing.sum())} cells of the domain have no curve number: "
-                    "no infiltration there, all rain becomes runoff",
+                    "no infiltration there, all rain becomes runoff"
+                    + (
+                        " (--default-hsg gives them a soil group)"
+                        if landcover is not None
+                        else ""
+                    ),
                 )
             )
     else:
@@ -332,8 +491,11 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
             notice(
                 "info",
                 "no_infiltration",
-                "no curve number or retention raster: infiltration is off and all rain "
-                "becomes runoff",
+                "land cover without a soil group: infiltration is off and all rain "
+                "becomes runoff (--hsg or --default-hsg switches it on)"
+                if landcover is not None
+                else "no curve number or retention raster: infiltration is off and all "
+                "rain becomes runoff",
             )
         )
 
@@ -440,4 +602,27 @@ def build_inputs(options: BuildOptions) -> BuiltModel:
             {"name": name, "x_m": x_m, "y_m": y_m} for x_m, y_m, name in stations
         ],
     }
-    return BuiltModel(inputs, report, notices)
+    if landcover is not None:
+        report["landcover"] = {**landcover.report, "buildings": buildings}
+    else:
+        report["landcover"] = None
+    rasters: dict[str, tuple[Float, dict[str, str]]] = {}
+    if landcover is not None and options.landcover is not None:
+        rasters[MANNING_RASTER] = (
+            landcover.manning,
+            {
+                "variable": "manning_n",
+                "description": "Manning n [s/m^(1/3)] of the land cover",
+                "source": options.landcover.name,
+            },
+        )
+        if landcover.curve_number is not None:
+            rasters[CURVE_NUMBER_RASTER] = (
+                landcover.curve_number,
+                {
+                    "variable": "curve_number",
+                    "description": "SCS curve number of the land cover and the soil",
+                    "source": options.landcover.name,
+                },
+            )
+    return BuiltModel(inputs, report, notices, rasters)

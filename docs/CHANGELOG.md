@@ -86,8 +86,7 @@ follows [Semantic Versioning](https://semver.org/).
   applied and the closed boundary. The result `hydraulik-model/1` describes the grid
   and every input; `--check` plans the grid and the files. The model ran on SFINCS
   v2.4.1 and on `main` in a live test that checks the orientation of the whole chain
-  (water collects at the low edge, the balance closes). Land cover and soil to the
-  Manning and curve-number rasters are not built yet. `hydraulik.data.tables` reads
+  (water collects at the low edge, the balance closes). `hydraulik.data.tables` reads
   station tables; `FILES` moved from the model writer to `engines.sfincs.inp`.
 - The command `model couple` (`hydraulik.couple_model`) and the coupling of SFINCS with
   a SWMM network (ADR-0005): the SFINCS BMI through `ctypes` (`engines.sfincs.bmi`, the
@@ -133,9 +132,22 @@ follows [Semantic Versioning](https://semver.org/).
   the features on a grid of about 1 m in tiles (polygons, roads as lines buffered by half
   their width, buildings as a mask) and averages `n` and the curve number into every
   cell. `terrain.grid` gains `resample_codes` (nearest cell, for the soil groups) and
-  `write_grid_raster`, which `export_geotiff` uses now. The options of `model build`
-  that use them are not wired yet; the values are literature values that the author has
-  not reviewed.
+  `write_grid_raster`, which `export_geotiff` uses now. The values are literature values
+  that the author has not reviewed.
+- `model build` makes Manning `n` and the SCS curve number from the BDOT10k land cover
+  (ADR-0008): `--landcover FILE` paints the classes into `sfincs.man`, `--hsg FILE` (the
+  raster of hydrologic soil groups, the nearest cell) and `--default-hsg A|B|C|D` (the
+  cells it does not cover, or every cell) make the curve number of `sfincs.scs`,
+  `--classes FILE` replaces class values and `--building-raise-m H` raises the cells that
+  are half or more under roofs (default 0: the buildings are ground the water crosses).
+  `manning.tif` and `curve_number.tif` are written beside the model to look at. The
+  combinations are checked before a file is read (`--landcover` excludes `--manning` and
+  `--manning-raster`; the soil options exclude the curve-number and retention rasters;
+  the other four options need `--landcover`), `--check` reads the class table, and the
+  result `hydraulik-model/1` gets the `landcover` key (areas of the classes, roads,
+  buildings, attribute values the mapping lacks) and `infiltration.hsg`. Checked on the
+  real BDOT10k of Poznań: a square kilometre at 10 m builds in under 2 s and runs on
+  SFINCS v2.4.1 with a balance that closes.
 
 ### Fixed
 
