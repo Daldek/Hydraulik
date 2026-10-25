@@ -124,6 +124,18 @@ follows [Semantic Versioning](https://semver.org/).
   with a fake Kartograf program; the live test skips until Kartograf ships plain mode.
   `rebuild_error` (exceptions) maps an error document back to its exception class (the
   coupling worker uses it too) and `sigterm_as_error` (output) is shared by the writer.
+- The land-cover tables and the painter of `model build` step two (ADR-0007), as library
+  modules: `classes.csv` (16 classes, each with a Manning `n` for shallow overland flow,
+  the SCS curve number for the soil groups A to D and the source of every value,
+  `docs/LAND_COVER.md`) and `mapping.csv` (BDOT10k layer, attribute and value to class);
+  `model.classes` reads them and the `--classes` override (comma or semicolon, decimal
+  point or comma; it replaces values, never adds classes), and `model.landcover` paints
+  the features on a grid of about 1 m in tiles (polygons, roads as lines buffered by half
+  their width, buildings as a mask) and averages `n` and the curve number into every
+  cell. `terrain.grid` gains `resample_codes` (nearest cell, for the soil groups) and
+  `write_grid_raster`, which `export_geotiff` uses now. The options of `model build`
+  that use them are not wired yet; the values are literature values that the author has
+  not reviewed.
 
 ### Fixed
 

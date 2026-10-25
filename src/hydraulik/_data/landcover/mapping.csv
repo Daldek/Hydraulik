@@ -1,0 +1,26 @@
+layer,field,value,class
+OT_PTWP_A,,,water
+OT_PTLZ_A,,,forest
+OT_PTRK_A,,,shrub
+OT_PTTR_A,RODZAJ,roślinność trawiasta,grass
+OT_PTTR_A,RODZAJ,uprawa na gruntach ornych,arable
+OT_PTUT_A,,,permanent_crops
+OT_PTGN_A,,,barren
+OT_PTSO_A,,,barren
+OT_PTWZ_A,,,barren
+OT_PTZB_A,RODZAJ,pozostała zabudowa,built_up_low
+OT_PTZB_A,RODZAJ,jednorodzinna,built_up_low
+OT_PTZB_A,RODZAJ,wielorodzinna,built_up_dense
+OT_PTZB_A,RODZAJ,handlowo-usługowa,commercial
+OT_PTZB_A,RODZAJ,przemysłowo-składowa,industrial
+OT_PTNZ_A,,,industrial
+OT_PTKM_A,,,road_paved
+OT_PTPL_A,MATERIALNAWIERZCHNI,grunt naturalny,road_dirt
+OT_PTPL_A,MATERIALNAWIERZCHNI,żwir,road_gravel
+OT_PTPL_A,MATERIALNAWIERZCHNI,tłuczeń,road_gravel
+OT_PTPL_A,MATERIALNAWIERZCHNI,*,road_paved
+OT_SKJZ_L,MATERIALNAWIERZCHNI,grunt naturalny,road_dirt
+OT_SKJZ_L,MATERIALNAWIERZCHNI,żwir,road_gravel
+OT_SKJZ_L,MATERIALNAWIERZCHNI,tłuczeń,road_gravel
+OT_SKJZ_L,MATERIALNAWIERZCHNI,*,road_paved
+OT_BUBD_A,,,building
