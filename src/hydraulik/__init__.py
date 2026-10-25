@@ -33,6 +33,7 @@ from hydraulik.documents import (
     ResultsDocument,
     RunDocument,
     SwmmDocument,
+    TerrainDocument,
 )
 from hydraulik.exceptions import HydraulikError
 from hydraulik.operations.build import build_model
@@ -44,6 +45,7 @@ from hydraulik.operations.model import run_model
 from hydraulik.operations.rainfall import build_rainfall
 from hydraulik.operations.results import export_results, read_results
 from hydraulik.operations.swmm import run_network
+from hydraulik.operations.terrain import download_terrain
 
 __all__ = [
     "CommandsDocument",
@@ -60,6 +62,7 @@ __all__ = [
     "ResultsDocument",
     "RunDocument",
     "SwmmDocument",
+    "TerrainDocument",
     "__version__",
     "build_model",
     "build_rainfall",
@@ -67,6 +70,7 @@ __all__ = [
     "check_engines",
     "command_schema",
     "couple_model",
+    "download_terrain",
     "export_results",
     "list_commands",
     "read_results",

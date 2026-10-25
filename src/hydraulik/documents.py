@@ -31,6 +31,7 @@ __all__ = [
     "ResultsDocument",
     "RunDocument",
     "SwmmDocument",
+    "TerrainDocument",
     "notice",
     "to_jsonable",
 ]
@@ -544,3 +545,39 @@ class CoupleDocument(_Carrier, Document):
     nodes: list[dict[str, Any]]
     elapsed_s: float
     files: list[dict[str, Any]]
+
+
+@dataclass
+class TerrainDocument(_Carrier, Document):
+    """``hydraulik-terrain/1``: terrain, land cover and soil groups from Kartograf.
+
+    Attributes
+    ----------
+    engine : dict
+        ``name`` (``kartograf``), ``version`` and ``location`` of the program that ran.
+    area : dict
+        ``source`` (``bbox`` or ``geometry``) with ``bbox`` and ``crs``, or ``path`` and
+        ``layer``.
+    products : list of dict
+        One entry for each product asked for, in the order fetched: ``product``
+        (``elevation``, ``landcover`` or ``soil``), ``command`` (the Kartograf command),
+        ``directory``, ``status`` (``ok``, ``partial`` or ``failed``), ``files`` (the
+        paths of ``files`` that belong to it) and ``summary`` (what the product is).
+    files : list of dict
+        Every file written: ``path``, ``size_bytes``, ``sha256`` and ``status``
+        (``written`` or ``replaced``), as Kartograf reported them (DEV-19.19).
+    skipped : list of dict
+        The units that plain mode left out, ``id`` (with the product in front),
+        ``reason`` and ``message`` (DEV-19.4).
+    sources : list of dict
+        ``product``, ``provider``, ``licence``, ``attribution`` and ``url`` of the
+        data; plain files carry no sidecar, so the terms are named here.
+    """
+
+    SCHEMA: ClassVar[str] = "hydraulik-terrain/1"
+    engine: dict[str, Any]
+    area: dict[str, Any]
+    products: list[dict[str, Any]]
+    files: list[dict[str, Any]]
+    skipped: list[dict[str, Any]]
+    sources: list[dict[str, Any]]

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Daldek/Hydraulik/schemas/hydraulik-terrain-1.schema.json",
+  "title": "hydraulik-terrain/1",
+  "description": "Terrain, land cover and soil groups fetched with Kartograf as plain files, one sub-directory per product (`terrain download`).",
+  "type": "object",
+  "required": ["schema", "engine", "area", "products", "files", "skipped", "sources"],
+  "properties": {
+    "schema": {"const": "hydraulik-terrain/1"},
+    "engine": {
+      "type": "object",
+      "required": ["name", "version", "location"],
+      "properties": {
+        "name": {"const": "kartograf"},
+        "version": {"type": ["string", "null"]},
+        "location": {"type": ["string", "null"]}
+      }
+    },
+    "area": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": {"enum": ["bbox", "geometry"]},
+        "bbox": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
+        "crs": {"type": "string"},
+        "path": {"type": "string"},
+        "layer": {"type": ["string", "null"]}
+      }
+    },
+    "products": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["product", "command", "directory", "status", "files", "summary"],
+        "properties": {
+          "product": {"enum": ["elevation", "landcover", "soil"]},
+          "command": {"type": "string"},
+          "directory": {"type": "string"},
+          "status": {"enum": ["ok", "partial", "failed"]},
+          "files": {"type": "array", "items": {"type": "string"}},
+          "summary": {"type": "string"}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "size_bytes", "sha256", "status"],
+        "properties": {
+          "path": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "status": {"enum": ["written", "replaced"]}
+        }
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "reason", "message"],
+        "properties": {
+          "id": {"type": "string"},
+          "reason": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["product", "provider", "licence", "attribution", "url"],
+        "properties": {
+          "product": {"enum": ["elevation", "landcover", "soil"]},
+          "provider": {"type": "string"},
+          "licence": {"type": "string"},
+          "attribution": {"type": "string"},
+          "url": {"type": "string"}
+        }
+      }
+    }
+  }
+}

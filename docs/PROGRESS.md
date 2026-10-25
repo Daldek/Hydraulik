@@ -17,7 +17,7 @@
 | Commands `engines check`, `model run`, `results read`, `results export` | done | live tests pass on SFINCS v2.4.1 and `main` (`-m live` with `HYDRAULIK_SFINCS_EXE`) |
 | Command `swmm run` (`operations/swmm.py`) | done | network table or the user's INP, inflow hydrograph; tests on the real SWMM, run through the CLI |
 | Command `rainfall build` (`operations/rainfall.py`, `data/rainfall.py`) | done | Hydrolog shapes, PMAXTP from a document or IMGWTools, Hydrolog document; only the network call is faked in tests |
-| Command `terrain download` (Kartograf CLI adapter) | planned | Next 3; Kartograf has no plain mode yet |
+| Command `terrain download` (`data/kartograf.py`, `operations/terrain.py`) | done | ADR-0006; written against the data-output convention, tested with a fake Kartograf; refuses a Kartograf whose `output_dir` is a store root; the live test skips until Kartograf has plain mode |
 | Command `model build`, step one: your own rasters (`terrain/`, `model/`, `operations/build.py`) | done | elevation, Manning, curve number or retention, rain, outlet, stations; live test on SFINCS v2.4.1 and `main` |
 | `model build`, step two: land cover (BDOT10k) and soil (HSG) to the Manning and curve-number rasters | planned | Next 4; the class values need the author's review |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
@@ -37,36 +37,15 @@ involved, with a `live` test. Option names `path`, `root` and `store` are forbid
 contract test). Write source files with the `write` tool or a quoted heredoc, never with
 a Python string that holds backslashes.
 
-3. **`terrain download`** (`data/kartograf.py`, `operations/terrain.py`): Kartograf is
-   called as a subprocess, never imported, and is targeted at the data-output
-   convention (DEV-19, ECO-051), not at what it has today. Checked on 2026-10-25 in the
-   working tree of Kartograf 0.8.0.dev0: `output_dir` is still `path_role: root` and
-   required, the plan is `check_updates`, a file entry is `{unit, country, file: {path,
-   status, label, sha256}}`, plain mode does not exist. So read `kartograf commands
-   schema --command "<group> <verb>" --json` (`result.commands[0].options[]`: `name`,
-   `path_role`), build the argv only from options the schema declares, and refuse with
-   `missing_dependency` (reason `engine_missing`, the hint says Kartograf must offer
-   `--output-dir`) when `output_dir` is not `path_role: output`. The contract to
-   implement: `kartograf <group> <verb> ... --output-dir DIR --json` gives
-   `kartograf-result/1` (exit 0, 10, 11; an error is the last stderr line,
-   `kartograf-error/1`) with `files[]` = `{path, size_bytes, sha256, status}` and
-   `skipped[]` = `{id, reason, message}`; `--check` gives a plan (`write`, `replace`,
-   `conflict`; its field names are not fixed, relay it). What a PL area needs today:
-   `elevation download --product nmt --country pl --resolution 1m --vertical-crs
-   EVRF2007 --sheet-system 1992` (or `--cutout --horizontal-crs EPSG:2180`, one
-   raster), `landcover download --product bdot10k`, `soil hsg --depth 0-5cm` (HSG
-   GeoTIFF uint8: 1 A, 2 B, 3 C, 4 D, 0 no data); the area is `--bbox` with
-   `--bbox-crs`, or `--geometry` with `--layer`. Command options: `bbox` + `crs` xor
-   `geometry` + `layer` (AGI-3.4), `products`, `output_dir`, `force`, `check`; one
-   sub-directory per product; result `hydraulik-terrain/1` with `files[]`. Tests: a fake
-   `kartograf` program (like `fake_sfincs` in `tests/synthetic.py`) that serves the
-   schema and writes files; the live test is marked `live` and skips itself while the
-   schema lacks plain mode. Not started: the run that built `model build` and `model
-   couple` stopped at its budget before this item. Reusable: `operations/_support.py`
-   (`refuse_option`, `stage_model`, `blocker`), the readers of `data/tables.py`, the
-   fake-program pattern of `tests/synthetic.py` (`fake_sfincs`) and the worker
-   process tests of `tests/unit/test_coupling_worker.py` (a Python process started with
-   `sys.executable`), and `engines/detect.py::detect_kartograf` (setting `kartograf.exe`).
+3. **`terrain download`**: done (ADR-0006). Kartograf is started as a program with
+   `--output-dir`, one sub-directory per product; the options come from `kartograf
+   commands schema`; a Kartograf whose `output_dir` is not `path_role: output` is
+   refused (`engine_incompatible`), also by `engines check`. Not exercised on the real
+   tool: Kartograf 0.8.0.dev0 has no plain mode yet (checked 2026-10-25: `output_dir` is
+   `path_role: root`, the plan is `check_updates`). When it ships, run `pytest -m live
+   tests/integration/test_terrain_live.py` with `HYDRAULIK_KARTOGRAF_EXE`; the plan
+   field names (read as any entry with `action` and `path`) and the item ids are what
+   may differ.
 4. **`model build`, step two** (step one, from the user's rasters, is done:
    `terrain/grid.py`, `model/{options,build}.py`, `operations/build.py`; the options are
    `dem`, `dx_m`, `bbox` + `crs` or `geometry` + `layer`, `manning` or `manning_raster`,

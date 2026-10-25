@@ -306,6 +306,192 @@ _ENGINES_CHECK = CommandSpec(
     },
 )
 
+_TERRAIN_DOWNLOAD = CommandSpec(
+    name="terrain download",
+    operation_id="hydraulik_terrain_download",
+    function="hydraulik.download_terrain",
+    summary="Download the terrain, land cover and soil groups of an area (Kartograf).",
+    description=(
+        "Starts Kartograf (the `kartograf` program, found like an engine) once for "
+        "each "
+        "product and lets it write plain files with its --output-dir into one "
+        "sub-directory of --output-dir: elevation (the 1 m terrain model NMT of GUGiK "
+        "as one GeoTIFF in EPSG:2180), landcover (the BDOT10k GeoPackage of the county "
+        "or counties of the area) and soil (the hydrologic soil groups of SoilGrids as "
+        "a GeoTIFF: 1 A, 2 B, 3 C, 4 D, 0 no data). The area is --bbox with --crs, or "
+        "--geometry (a vector file). Before the first byte is fetched Kartograf is "
+        "asked for its plan of every product, and a conflict in any of them (a file "
+        "that exists, a directory inside a store) fails the whole call; --force "
+        "replaces files. It needs a Kartograf that implements the data-output "
+        "convention (Nogat DEV section 19: its output_dir is a plain target, "
+        "path_role output): an older one is refused with missing_dependency and "
+        "`engines check` says so. Poland only. Use it to fetch the inputs of `model "
+        "build`; it does not read or change the data."
+    ),
+    options=(
+        OptionSpec(
+            name="bbox",
+            type="array",
+            items="number",
+            one_of="area",
+            examples=([361500.0, 504000.0, 363000.0, 505500.0],),
+            description=(
+                "Rectangle of the area: min_x,min_y,max_x,max_y (x is east or "
+                "longitude) in --crs. Needs --crs. Exactly one of --bbox and "
+                "--geometry."
+            ),
+        ),
+        OptionSpec(
+            name="crs",
+            type="string",
+            examples=("EPSG:2180",),
+            description=(
+                "CRS of --bbox, one that Kartograf takes (EPSG:2180, EPSG:4326, "
+                "EPSG:2176 to 2179, EPSG:5514, EPSG:3045)."
+            ),
+        ),
+        OptionSpec(
+            name="geometry",
+            type="string",
+            path_role="input",
+            one_of="area",
+            examples=("./catchment.gpkg",),
+            description=(
+                "Vector file (GeoPackage or Shapefile) of the area; its extent is the "
+                "area."
+            ),
+        ),
+        OptionSpec(
+            name="layer",
+            type="string",
+            examples=("catchment",),
+            description="Layer of --geometry (the first layer when not given).",
+        ),
+        OptionSpec(
+            name="products",
+            type="array",
+            items="string",
+            enum=(
+                (
+                    "elevation",
+                    "the 1 m terrain model (NMT) as one GeoTIFF in EPSG:2180",
+                ),
+                ("landcover", "the BDOT10k GeoPackage of the counties of the area"),
+                ("soil", "the hydrologic soil groups (HSG) as a GeoTIFF"),
+            ),
+            examples=(["elevation"],),
+            description="What to fetch; all three when not given.",
+        ),
+        OptionSpec(
+            name="output_dir",
+            type="string",
+            required=True,
+            path_role="output",
+            short="-o",
+            examples=("./data",),
+            description=(
+                "Directory for the files (plain files, one sub-directory per product, "
+                "created if missing)."
+            ),
+        ),
+        OptionSpec(
+            name="force",
+            type="boolean",
+            default=False,
+            description="Replace files that already exist.",
+        ),
+        OptionSpec(
+            name="check",
+            type="boolean",
+            default=False,
+            description=(
+                "Plan without effects: Kartograf is asked for its plan of every "
+                "product; nothing is fetched or written."
+            ),
+        ),
+    ),
+    result_schema="hydraulik-terrain/1",
+    effects=Effects(read_only=False, writes="replace", idempotent=True, network=True),
+    check="terrain download",
+    rules=(
+        "Give --bbox with --crs, or --geometry; the elevation is cut to that area and "
+        "the BDOT10k counties that it touches are fetched whole (about 100 MB each).",
+        "Run `engines check --require 'terrain download'` first: Kartograf must write "
+        "plain files with --output-dir, which versions before the data-output "
+        "convention do not.",
+        "Name the sources when you publish a result: plain files carry no licence "
+        "sidecar, so the result lists provider, licence and attribution in sources.",
+        "A `partial` status means a product failed after another succeeded: read "
+        "items, then fetch the failed one again with --products.",
+    ),
+    examples=(
+        Example(
+            call=(
+                "hydraulik terrain download --bbox 361500,504000,363000,505500 "
+                "--crs EPSG:2180 --output-dir ./data --json"
+            ),
+            result={"schema": "hydraulik-terrain/1"},
+        ),
+        Example(
+            call=(
+                "hydraulik terrain download --geometry ./catchment.gpkg --products "
+                "elevation --output-dir ./data --check --json"
+            ),
+            result={"schema": "hydraulik-plan/1"},
+        ),
+    ),
+    errors=(
+        "validation_error",
+        "not_found",
+        "conflict",
+        "source_unavailable",
+        "no_data",
+        "unsupported",
+        "calculation_error",
+        "store_unavailable",
+        "forbidden",
+        "missing_dependency",
+        "io_error",
+        "terminated",
+        "cancelled",
+        "internal_error",
+    ),
+    i18n_pl={
+        "summary": (
+            "Pobiera teren, pokrycie terenu i grupy hydrologiczne gleby obszaru "
+            "przez Kartografa."
+        ),
+        "description": (
+            "Uruchamia Kartografa (program `kartograf`, znajdowany jak silnik) raz dla "
+            "każdego produktu i każe mu zapisać zwykłe pliki przez --output-dir do "
+            "osobnego podkatalogu --output-dir: elevation (numeryczny model terenu NMT "
+            "GUGiK 1 m jako jeden GeoTIFF w EPSG:2180), landcover (GeoPackage BDOT10k "
+            "powiatu lub powiatów obszaru) i soil (grupy hydrologiczne gleby z "
+            "SoilGrids jako GeoTIFF: 1 A, 2 B, 3 C, 4 D, 0 brak danych). Obszarem jest "
+            "--bbox z --crs albo --geometry (plik wektorowy). Przed pobraniem "
+            "pierwszego bajtu Kartograf podaje swój plan dla każdego produktu, a "
+            "konflikt w którymkolwiek (plik istnieje, katalog w magazynie) przerywa "
+            "całe wywołanie; --force zastępuje pliki. Wymaga Kartografa z konwencją "
+            "zapisu danych (Nogat DEV, rozdział 19: jego output_dir to zwykły cel, "
+            "path_role output): starszy jest odrzucany błędem missing_dependency, a "
+            "`engines check` o tym mówi. Tylko Polska. Użyj do pobrania danych dla "
+            "`model build`; nie czyta ani nie zmienia danych."
+        ),
+        "rules": [
+            "Podaj --bbox z --crs albo --geometry; teren jest przycinany do obszaru, a "
+            "powiaty BDOT10k, których dotyka, są pobierane w całości (ok. 100 MB "
+            "każdy).",
+            "Najpierw uruchom `engines check --require 'terrain download'`: Kartograf "
+            "musi zapisywać zwykłe pliki przez --output-dir, czego wersje sprzed "
+            "konwencji zapisu danych nie robią.",
+            "Podaj źródła, gdy publikujesz wynik: zwykłe pliki nie mają pliku "
+            "licencji, więc wynik wymienia dostawcę, licencję i atrybucję w sources.",
+            "Status `partial` oznacza, że produkt zawiódł po tym, jak inny się "
+            "powiódł: przeczytaj items i pobierz zawiedziony ponownie z --products.",
+        ],
+    },
+)
+
 _MODEL_BUILD = CommandSpec(
     name="model build",
     operation_id="hydraulik_model_build",
@@ -1533,6 +1719,7 @@ COMMANDS: tuple[CommandSpec, ...] = (
     _COMMANDS_GUIDE,
     _CONFIG_SHOW,
     _ENGINES_CHECK,
+    _TERRAIN_DOWNLOAD,
     _RAINFALL_BUILD,
     _MODEL_BUILD,
     _MODEL_RUN,

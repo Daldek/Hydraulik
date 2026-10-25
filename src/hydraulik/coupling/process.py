@@ -15,22 +15,10 @@ import subprocess
 import sys
 from collections import deque
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from hydraulik.coupling.worker import RESULT_NAME
-from hydraulik.exceptions import (
-    ConflictError,
-    EngineError,
-    ErrorCode,
-    HydraulikError,
-    InputDataError,
-    InvalidInputError,
-    MissingDependencyError,
-    NoDataError,
-    NotFoundError,
-    OutputError,
-    UnsupportedError,
-)
+from hydraulik.exceptions import EngineError, rebuild_error
 
 __all__ = ["LOG_NAME", "LOG_TAIL_LINES", "run_worker"]
 
@@ -40,18 +28,6 @@ LOG_NAME: Final = "coupling.log"
 LOG_TAIL_LINES: Final = 40
 """Lines of that output an error of the run carries."""
 
-_CLASSES: Final[dict[str, type[HydraulikError]]] = {
-    "validation_error": InvalidInputError,
-    "not_found": NotFoundError,
-    "conflict": ConflictError,
-    "data_error": InputDataError,
-    "missing_dependency": MissingDependencyError,
-    "calculation_error": EngineError,
-    "unsupported": UnsupportedError,
-    "io_error": OutputError,
-    "no_data": NoDataError,
-}
-"""The class that raised an error of each code, so the caller can catch the same one."""
 _STOP_GRACE_S: Final = 5.0
 
 
@@ -150,20 +126,12 @@ def run_worker(
         return body
     error = body.get("error")
     if body.get("status") == "error" and isinstance(error, dict):
-        details = dict(error.get("details") or {})
-        reason = details.pop("reason", None)
-        named = str(error.get("code", "internal_error"))
-        message = str(error.get("message", "the coupled run failed"))
-        kind = _CLASSES.get(named)
-        if kind is None:
-            raise HydraulikError(
-                message,
-                code=cast(ErrorCode, named),
-                details=details,
-                hint=error.get("hint"),
-                reason=reason,
-            )
-        raise kind(message, details=details, hint=error.get("hint"), reason=reason)
+        raise rebuild_error(
+            str(error.get("code", "internal_error")),
+            str(error.get("message", "the coupled run failed")),
+            details=error.get("details"),
+            hint=error.get("hint"),
+        )
     raise EngineError(
         f"the coupling process ended with code {code} and left no result",
         details={"returncode": code, "log_tail": _tail(log)},

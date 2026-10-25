@@ -34,7 +34,7 @@
         "type": "object",
         "required": ["reason", "message"],
         "properties": {
-          "reason": {"enum": ["engine_missing", "extra_missing"]},
+          "reason": {"enum": ["engine_missing", "engine_incompatible", "extra_missing"]},
           "message": {"type": "string"},
           "hint": {"type": "string"}
         }

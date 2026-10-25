@@ -108,6 +108,22 @@ follows [Semantic Versioning](https://semver.org/).
   of SFINCS v2.4.1 (`ms`) and `main` (`m3s`) pass; a wrong unit is flagged on both.
   `coupled_balance` books infiltration and flooding without a cell; `stage_model` is
   shared with `model run`.
+- The command `terrain download` (`hydraulik.download_terrain`, ADR-0006): the terrain,
+  the BDOT10k land cover and the soil groups of an area, fetched by starting Kartograf
+  as a program with `--output-dir` (plain files, one sub-directory per product:
+  `elevation` the 1 m NMT as one GeoTIFF in EPSG:2180, `landcover` the BDOT10k county
+  GeoPackage, `soil` the HSG GeoTIFF). It is written against the data-output
+  convention: the options come from `kartograf commands schema`, an argument is built
+  only from a declared option, and a Kartograf whose `output_dir` is a store root
+  (`path_role: root`, as in Kartograf 0.8.0.dev0) is refused with `missing_dependency`
+  (reason `engine_incompatible`) before anything is fetched; `engines check` reports it
+  the same way. The plan of every product is read before the first byte and a conflict
+  in any of them fails the call (DEV-19.6); `--check` returns those plans. The result
+  `hydraulik-terrain/1` lists `files[]`, `skipped[]`, the per-unit `items[]` (status
+  `partial` or `failed` when units fail) and the sources with their licences. Tested
+  with a fake Kartograf program; the live test skips until Kartograf ships plain mode.
+  `rebuild_error` (exceptions) maps an error document back to its exception class (the
+  coupling worker uses it too) and `sigterm_as_error` (output) is shared by the writer.
 
 ### Fixed
 

@@ -68,6 +68,17 @@ FLOWS: Final[tuple[Flow, ...]] = (
         ),
     ),
     Flow(
+        "Fetch the data of a model",
+        (
+            (
+                "terrain download",
+                "Fetch the terrain, the BDOT10k land cover and the soil groups with "
+                "Kartograf (add --check to plan; it needs a Kartograf that writes "
+                "plain files)",
+            ),
+        ),
+    ),
+    Flow(
         "Make the design rain of a model",
         (
             (
