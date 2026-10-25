@@ -34,6 +34,10 @@ environment variable ``FAKE_KARTOGRAF``:
     Command name to a list of ``{id, reason, message}`` reported in ``skipped[]``.
 ``names``
     Command name to the list of file names the call writes (one per call by default).
+``payloads``
+    Command name to the path of a file whose bytes the call writes, under every name it
+    writes, instead of the text that stands for data by default: a real GeoTIFF or
+    GeoPackage that the next step of a test can read.
 """
 
 from __future__ import annotations
@@ -172,6 +176,12 @@ def _content(name: str) -> bytes:
     return (name * 50).encode("utf-8")
 
 
+def _payload(command: str, name: str, scenario: dict[str, Any]) -> bytes:
+    """The bytes of a file: those of the scenario's payload, else a stand-in text."""
+    source = scenario.get("payloads", {}).get(command)
+    return Path(source).read_bytes() if source else _content(name)
+
+
 def _call(command: str, args: list[str], scenario: dict[str, Any]) -> int:
     if command in scenario.get("hang", []):
         time.sleep(60)
@@ -230,7 +240,7 @@ def _call(command: str, args: list[str], scenario: dict[str, Any]) -> int:
     items: list[dict[str, Any]] = []
     directory.mkdir(parents=True, exist_ok=True)
     for path in written:
-        data = _content(path.name)
+        data = _payload(command, path.name, scenario)
         status = "replaced" if path.exists() else "written"
         path.write_bytes(data)
         files.append(
