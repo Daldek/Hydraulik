@@ -1,10 +1,8 @@
 """The real ``hydrolog route network`` still writes the tables of the fixture (live).
 
-Put a Hydrolog that has ``route network`` first on ``PATH`` (the release after v0.7.0,
-or a checkout with ``feature/routing-network``) and run ``pytest -m live``. ``uv run``
-puts the environment of this project first and its Hydrolog is v0.7.0, which has no
-``route network`` (the test then skips): call ``.venv/bin/python -m pytest`` with the
-``PATH`` set. The command runs on the network document and the inflows of
+The ``hydrolog`` console script of the environment (the ``rainfall`` extra pins the
+commit of ``feature/routing-network``) must be on ``PATH``: run ``uv run pytest -m
+live``. It runs offline. The command runs on the network document and the inflows of
 ``tests/fixtures/hydrolog``; every table it writes must be the table of the fixture: the
 same header, the same times and the same discharges. When Hydrolog changes its numbers
 on purpose, make the fixture again with the command of ``result.json`` and record the
@@ -43,9 +41,6 @@ def test_the_tables_that_hydrolog_writes_today_are_the_tables_of_the_fixture(
         "--inflows-file",
         str(FIXTURE / "inflows.csv"),
     ]
-    if subprocess.run([*arguments[:3], "--help"], capture_output=True).returncode:
-        pytest.skip("this Hydrolog has no `route network`")
-
     done = subprocess.run(
         [*arguments, "--output-dir", str(tmp_path / "out"), "--json", "--lang", "en"],
         capture_output=True,

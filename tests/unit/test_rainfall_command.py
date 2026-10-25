@@ -32,7 +32,7 @@ def fetched(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Any, ...]]:
 
     calls: list[tuple[Any, ...]] = []
 
-    def fake(latitude: float, longitude: float, method: str = "POT") -> PMaXTPResult:
+    def fake(latitude: float, longitude: float, *, method: str = "POT") -> PMaXTPResult:
         calls.append((latitude, longitude, method))
         return PMaXTPResult(
             method=method,
@@ -160,7 +160,7 @@ def test_an_unreachable_imgw_is_source_unavailable_and_nothing_is_written(
 ) -> None:
     import imgwtools
 
-    def down(latitude: float, longitude: float, method: str = "POT") -> None:
+    def down(latitude: float, longitude: float, *, method: str = "POT") -> None:
         raise imgwtools.IMGWConnectionError("timed out")
 
     monkeypatch.setattr(imgwtools, "fetch_pmaxtp", down)
