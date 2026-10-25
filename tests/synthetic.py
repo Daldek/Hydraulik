@@ -363,3 +363,41 @@ def add_layer(
     frame = geopandas.GeoDataFrame(attributes, geometry=geometries, crs=f"EPSG:{epsg}")
     frame.to_file(path, layer=name, driver="GPKG", mode="a")
     return path
+
+
+def write_catchment(folder: Path) -> dict[str, Path]:
+    """Write the data of a 100 m x 100 m catchment in the form Kartograf delivers it.
+
+    The terrain (1 m cells, EPSG:2180, south-west corner 362000, 504000) falls 2 % to
+    the south; grass covers the west half and the asphalt of a car park the east half, a
+    BDOT10k GeoPackage with the layers ``OT_PTTR_A`` and ``OT_PTKM_A``; the soil is
+    group C (3) everywhere, one raster cell of 100 m. Returns the paths by product:
+    ``elevation``, ``landcover`` and ``soil``.
+    """
+    from shapely.geometry import box
+
+    west, south = 362000.0, 504000.0
+    ys = south + 100.0 - (np.arange(100) + 0.5)
+    terrain = np.tile((0.02 * (ys - south))[:, None], (1, 100))
+    folder.mkdir(parents=True, exist_ok=True)
+    elevation = write_raster(
+        folder / "elevation.tif", terrain, west=west, north=south + 100.0
+    )
+    landcover = folder / "bdot10k.gpkg"
+    add_layer(
+        landcover,
+        "OT_PTTR_A",
+        [box(west, south, west + 50.0, south + 100.0)],
+        RODZAJ=["roślinność trawiasta"],
+    )
+    add_layer(
+        landcover, "OT_PTKM_A", [box(west + 50.0, south, west + 100.0, south + 100.0)]
+    )
+    soil = write_codes(
+        folder / "soil.tif",
+        np.array([[3]], dtype=np.uint8),
+        west=west,
+        north=south + 100.0,
+        cell=100.0,
+    )
+    return {"elevation": elevation, "landcover": landcover, "soil": soil}
