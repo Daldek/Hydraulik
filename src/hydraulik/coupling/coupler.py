@@ -11,7 +11,10 @@ exchange interval ``dt_c`` at a time:
 3. impose ``-Q`` on the cell and advance SFINCS to the end of the interval; SFINCS
    overshoots the target by up to one adaptive step, so the volume that left the surface
    is ``V = Q * (t_new - t_old)``;
-4. give SWMM exactly ``V / dt_c`` as lateral inflow and advance it by ``dt_c``;
+4. give SWMM exactly ``V / dt_c`` as lateral inflow, plus the discharge of an inflow
+   hydrograph that enters the node from outside (in the same call: SWMM takes the
+   value as the rate of the node, it does not add to the last one), and advance it by
+   ``dt_c``;
 5. hand back what SWMM flooded out of a full node: in ``swmm_flooding`` mode the node
    has no surcharge depth, SWMM floods it and the flooded volume returns to the cell
    over the next interval; in ``coordinator`` mode the node holds the water and the
@@ -19,6 +22,11 @@ exchange interval ``dt_c`` at a time:
 
 Exchanging volumes instead of rates makes the interface mass-conservative by
 construction; what remains is a time shift of at most one SFINCS step.
+
+An inflow is water from outside the surface model, for example the routed hydrograph of
+a catchment that the grid does not cover (``hydrolog route network``). Its discharge is
+taken at the middle of each interval, as ``run_swmm`` does for a stride, and the volume
+given to each node is booked in :attr:`CouplerResult.inflows_m3`.
 
 The loop knows two small protocols, :class:`Surface` and :class:`Network`, not the
 engines: :class:`~hydraulik.engines.sfincs.bmi.SfincsSurface` and
@@ -29,7 +37,7 @@ loop with fakes.
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Literal, Protocol
 
@@ -45,6 +53,7 @@ __all__ = [
     "CouplerResult",
     "CouplerSettings",
     "ExchangeNode",
+    "Inflow",
     "Mode",
     "Network",
     "NodeResult",
@@ -107,6 +116,10 @@ class Network(Protocol):
     def time_s(self) -> float:
         """float: elapsed simulated time [s]."""
 
+    @property
+    def node_names(self) -> tuple[str, ...]:
+        """Tuple of str: every node of the network."""
+
     def head_m(self, name: str) -> float:
         """Return the hydraulic head of a node [m]."""
 
@@ -127,6 +140,13 @@ class Network(Protocol):
 
     def advance(self) -> bool:
         """Advance one stride; False when that stride ended the run."""
+
+
+class Inflow(Protocol):
+    """A discharge that enters a node of the network from outside."""
+
+    def at(self, time_s: float) -> float:
+        """Return the discharge at ``time_s`` [m3/s], time from the start of the run."""
 
 
 @dataclass(frozen=True)
@@ -233,6 +253,8 @@ class CouplerResult:
         that entered the network from them [m3].
     surface_final_m3, network_final_m3 : float
         Water on the surface and in the network at the end [m3].
+    inflows_m3 : dict of str to float
+        Volume of each inflow hydrograph that was given to its node [m3].
     """
 
     times_s: list[float] = field(default_factory=list)
@@ -243,6 +265,7 @@ class CouplerResult:
     outfall_gross_inflow_m3: float = 0.0
     surface_final_m3: float = 0.0
     network_final_m3: float = 0.0
+    inflows_m3: dict[str, float] = field(default_factory=dict)
 
     @property
     def intervals(self) -> int:
@@ -272,6 +295,11 @@ class CouplerResult:
         """float: SWMM's flooding at the exchange nodes [m3]."""
         return sum(node.flooded_m3 for node in self.nodes)
 
+    @property
+    def network_inflow_m3(self) -> float:
+        """float: water that entered the network from outside, all inflows [m3]."""
+        return sum(self.inflows_m3.values())
+
 
 def _check_settings(network: Network, settings: CouplerSettings) -> None:
     """Refuse settings the loop cannot honour."""
@@ -291,11 +319,24 @@ def _check_settings(network: Network, settings: CouplerSettings) -> None:
         )
 
 
+def _check_inflows(network: Network, inflows: Mapping[str, Inflow]) -> None:
+    """Refuse an inflow at a node that the network does not have."""
+    unknown = sorted(set(inflows) - set(network.node_names))
+    if unknown:
+        raise InvalidInputError(
+            f"the network has no node {', '.join(unknown)}",
+            details={"option": "inflow_node", "value": unknown[0]},
+            hint="Node names are those of the SWMM input or the network table.",
+            reason="unknown_node",
+        )
+
+
 def couple(
     surface: Surface,
     network: Network,
     nodes: Sequence[ExchangeNode],
     settings: CouplerSettings,
+    inflows: Mapping[str, Inflow] | None = None,
 ) -> CouplerResult:
     """Run the coupled simulation to the end of the surface model.
 
@@ -309,6 +350,11 @@ def couple(
         The nodes that may exchange water with the surface.
     settings : CouplerSettings
         Interval, mode, relaxation, tolerance and the exchange law.
+    inflows : mapping of str to Inflow, optional
+        Discharge that enters a node of the network from outside, node name to series
+        (time from the start of the run). The node may be an exchange node or any other
+        node; the value at the middle of each interval is added to the lateral inflow
+        of the node, and the volume given is booked in ``CouplerResult.inflows_m3``.
 
     Returns
     -------
@@ -319,7 +365,8 @@ def couple(
     Raises
     ------
     InvalidInputError
-        If the settings are out of range, no node lies on an active cell
+        If the settings are out of range, an inflow names a node that the network does
+        not have (``unknown_node``), no node lies on an active cell
         (``no_exchange_nodes``), or the rim of a node differs from the bed of its cell
         by more than the tolerance (``rim_mismatch``, every offending node is listed).
         No step has been taken then.
@@ -327,6 +374,8 @@ def couple(
         If SFINCS does not advance, or SWMM ends or lags behind the exchange interval.
     """
     _check_settings(network, settings)
+    inflow_series = dict(inflows or {})
+    _check_inflows(network, inflow_series)
     result = CouplerResult()
     cells: dict[str, int] = {}
     for node in nodes:
@@ -384,11 +433,14 @@ def couple(
     previous = dict.fromkeys(cells, 0.0)
     pending = dict.fromkeys(cells, 0.0)
     flooded_seen = dict.fromkeys(cells, 0.0)
+    given = dict.fromkeys(inflow_series, 0.0)
     outfall_flow = 0.0
     k = 0
     while k * interval < end_s - _EPS:
         target_s = min((k + 1) * interval, end_s)
         length_s = target_s - k * interval
+        middle_s = k * interval + 0.5 * length_s
+        external = {name: series.at(middle_s) for name, series in inflow_series.items()}
         start_s = surface.time_s
         spill = {
             name: pending[name] / length_s if flooding_mode else 0.0 for name in cells
@@ -438,7 +490,11 @@ def couple(
             pending[name] -= returned
             record.returned_m3 += returned
             record.exchanged_m3 += taken - returned
-            network.add_inflow(name, taken / length_s)
+            network.add_inflow(name, taken / length_s + external.get(name, 0.0))
+        for name, rate in external.items():
+            if name not in cells:
+                network.add_inflow(name, rate)
+            given[name] += rate * length_s
 
         ended = False
         for _ in range(round(length_s / stride)):
@@ -476,6 +532,7 @@ def couple(
     for name in cells:
         results[name].flooded_m3 = flooded_seen[name]
         results[name].pending_m3 = pending[name]
+    result.inflows_m3 = given
     result.surface_final_m3 = surface.stored_volume_m3()
     result.network_final_m3 = network.stored_volume_m3()
     logger.info(

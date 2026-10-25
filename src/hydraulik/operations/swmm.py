@@ -27,6 +27,7 @@ from hydraulik.operations._support import (
     file_dicts,
     missing_extras,
     require_extras,
+    unknown_inflow_node,
 )
 from hydraulik.output import Writer, plan_directory
 
@@ -142,18 +143,11 @@ def _prepare(
             None,
             None,
         )
-    assert hydrograph is not None and inflow is not None
+    assert hydrograph is not None and inflow is not None and inflow_node is not None
     table = read_network_table(source)
     if inflow_node not in {j.name for j in table.junctions}:
-        raise InvalidInputError(
-            f"the network table has no junction {inflow_node!r}",
-            details={
-                "option": "inflow_node",
-                "value": inflow_node,
-                "allowed": [j.name for j in table.junctions][:50],
-            },
-            hint="Name a junction of the table; the outfall takes no inflow.",
-            reason="unknown_node",
+        raise unknown_inflow_node(
+            inflow_node, [j.name for j in table.junctions], junctions_only=True
         )
     end_s = hydrograph.times_s[-1] + 60.0 * (
         DEFAULT_RECESSION_MIN if recession_min is None else recession_min

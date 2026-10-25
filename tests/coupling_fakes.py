@@ -137,6 +137,10 @@ class FakeNetwork:
     def time_s(self) -> float:
         return self._time
 
+    @property
+    def node_names(self) -> tuple[str, ...]:
+        return tuple(self.rims)
+
     def head_m(self, name: str) -> float:
         return self.invert + self.volume[name] / self.tank
 

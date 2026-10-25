@@ -65,7 +65,18 @@
           "properties": {"mean": {"type": "number"}, "max": {"type": "number"}}
         },
         "capped_steps": {"type": "integer", "minimum": 0},
-        "nodes_outside": {"type": "array", "items": {"type": "string"}}
+        "nodes_outside": {"type": "array", "items": {"type": "string"}},
+        "inflow": {
+          "type": "object",
+          "required": ["path", "node", "volume_m3", "given_m3", "duration_s"],
+          "properties": {
+            "path": {"type": "string"},
+            "node": {"type": "string"},
+            "volume_m3": {"type": "number", "minimum": 0},
+            "given_m3": {"type": "number", "minimum": 0},
+            "duration_s": {"type": "number", "minimum": 0}
+          }
+        }
       }
     },
     "balance": {
@@ -76,6 +87,7 @@
         "infiltration_m3",
         "surface_m3",
         "network_m3",
+        "network_inflow_m3",
         "outfall_net_m3",
         "outfall_gross_inflow_m3",
         "sink_m3",
@@ -95,6 +107,7 @@
         "infiltration_m3": {"type": "number"},
         "surface_m3": {"type": "number"},
         "network_m3": {"type": "number"},
+        "network_inflow_m3": {"type": "number", "minimum": 0},
         "outfall_net_m3": {"type": "number"},
         "outfall_gross_inflow_m3": {"type": "number"},
         "sink_m3": {"type": "number"},

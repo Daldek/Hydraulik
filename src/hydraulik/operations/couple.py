@@ -16,6 +16,7 @@ from hydraulik.coupling.laws import (
     RUBINATO_WEIR_COEFFICIENT,
     Inlet,
 )
+from hydraulik.data.tables import Hydrograph, read_hydrograph
 from hydraulik.documents import CoupleDocument, PlanDocument, notice
 from hydraulik.engines.detect import detect_sfincs_library
 from hydraulik.engines.sfincs.inp import (
@@ -50,6 +51,7 @@ from hydraulik.operations._support import (
     refuse_option,
     require_extras,
     stage_model,
+    unknown_inflow_node,
 )
 from hydraulik.operations.swmm import CONTINUITY_WARNING_PERCENT
 from hydraulik.output import Writer, plan_directory
@@ -111,6 +113,9 @@ class _Job:
     surcharge: str | None
     patched: tuple[str, ...]
     outputs: tuple[str, ...]
+    inflow: Hydrograph | None
+    inflow_path: Path | None
+    inflow_node: str | None
 
 
 def _clock(seconds: float) -> tuple[str, str]:
@@ -151,6 +156,8 @@ def _prepare(
     model: str | os.PathLike[str],
     network: str | os.PathLike[str] | None,
     inp: str | os.PathLike[str] | None,
+    inflow: str | os.PathLike[str] | None,
+    inflow_node: str | None,
     exchange_interval_s: int | None,
     mode: Mode | None,
     relaxation: float | None,
@@ -175,6 +182,13 @@ def _prepare(
             "applies to a network table; your SWMM input keeps its own",
             "option_not_applicable",
             "Set SURCHARGE_METHOD in the SWMM input file.",
+        )
+    if (inflow is None) != (inflow_node is None):
+        raise refuse_option(
+            "inflow_node" if inflow_node is None else "inflow",
+            "--inflow and --inflow-node go together",
+            "missing_option",
+            "The hydrograph enters at one node: name it with --inflow-node.",
         )
     chosen_mode: Mode = "swmm_flooding" if mode is None else mode
     weight = (
@@ -231,11 +245,18 @@ def _prepare(
             details={"path": str(chosen)},
             reason="path_missing",
         )
+    hydrograph = read_hydrograph(Path(inflow)) if inflow is not None else None
     patched: tuple[str, ...] = ()
     no_coordinates: list[str] = []
     surcharge: str | None
     if network is not None:
         table = read_network_table(chosen)
+        if inflow_node is not None and inflow_node not in {
+            j.name for j in table.junctions
+        }:
+            raise unknown_inflow_node(
+                inflow_node, [j.name for j in table.junctions], junctions_only=True
+            )
         surcharge = surcharge_method or (
             "EXTRAN" if chosen_mode == "swmm_flooding" else "SLOT"
         )
@@ -254,6 +275,9 @@ def _prepare(
     else:
         original = chosen.read_text(encoding="utf-8", errors="replace")
         inp_module.require_metric(original)
+        known = inp_module.node_names(original)
+        if inflow_node is not None and inflow_node not in known:
+            raise unknown_inflow_node(inflow_node, known, junctions_only=False)
         text = _patch_user_inp(
             original,
             duration_s=duration_s,
@@ -309,6 +333,9 @@ def _prepare(
         surcharge,
         patched,
         outputs,
+        hydrograph,
+        None if inflow is None else Path(inflow),
+        inflow_node,
     )
 
 
@@ -336,6 +363,16 @@ def _notices(
     }
     for flag in balance["flags"]:
         found.append(notice("warning", flag, messages[flag]))
+    series = job.inflow
+    if series is not None and series.times_s[-1] > job.duration_s:
+        found.append(
+            notice(
+                "warning",
+                "inflow_cut",
+                f"the hydrograph lasts {series.times_s[-1]:g} s but the run "
+                f"{job.duration_s:g} s: the rest of it did not enter the network",
+            )
+        )
     swmm = summary["swmm"]
     error = swmm["continuity_error_percent"]
     if abs(error) > CONTINUITY_WARNING_PERCENT:
@@ -478,6 +515,7 @@ def _document(
         outfall_gross_inflow_m3=summary["outfall_gross_inflow_m3"],
         pending_m3=summary["pending_m3"],
         lost_flooding_m3=lost if lost > 1e-9 else 0.0,
+        network_inflow_m3=summary["network_inflow_m3"],
     )
     flags = [f for f in surface.flags if f not in ("balance_residual", "balance_gain")]
     percent = coupled.total_error_percent
@@ -492,6 +530,25 @@ def _document(
         "flags": flags,
     }
     exceeded = summary["overshoot_s"]
+    coupling: dict[str, Any] = {
+        "mode": job.settings.mode,
+        "exchange_interval_s": job.settings.interval_s,
+        "relaxation": job.settings.relaxation,
+        "rim_tolerance_m": job.settings.rim_tolerance_m,
+        "inlet": dataclasses.asdict(job.settings.inlet),
+        "intervals": summary["intervals"],
+        "overshoot_s": {"mean": exceeded["mean"], "max": exceeded["max"]},
+        "capped_steps": sum(n["capped_steps"] for n in summary["nodes"]),
+        "nodes_outside": [*job.outside, *job.no_coordinates],
+    }
+    if job.inflow is not None:
+        coupling["inflow"] = {
+            "path": str(job.inflow_path),
+            "node": job.inflow_node,
+            "volume_m3": job.inflow.volume_m3,
+            "given_m3": summary["network_inflow_m3"],
+            "duration_s": job.inflow.times_s[-1],
+        }
     document = CoupleDocument(
         engine={
             "sfincs": {
@@ -505,17 +562,7 @@ def _document(
                 "toolkit": extra_version("swmm-toolkit"),
             },
         },
-        coupling={
-            "mode": job.settings.mode,
-            "exchange_interval_s": job.settings.interval_s,
-            "relaxation": job.settings.relaxation,
-            "rim_tolerance_m": job.settings.rim_tolerance_m,
-            "inlet": dataclasses.asdict(job.settings.inlet),
-            "intervals": summary["intervals"],
-            "overshoot_s": {"mean": exceeded["mean"], "max": exceeded["max"]},
-            "capped_steps": sum(n["capped_steps"] for n in summary["nodes"]),
-            "nodes_outside": [*job.outside, *job.no_coordinates],
-        },
+        coupling=coupling,
         balance=balance,
         surface={
             "grid": describe_grid(run, stats),
@@ -550,6 +597,8 @@ def couple_model(
     model: str | os.PathLike[str],
     network: str | os.PathLike[str] | None = None,
     inp: str | os.PathLike[str] | None = None,
+    inflow: str | os.PathLike[str] | None = None,
+    inflow_node: str | None = None,
     exchange_interval_s: int | None = None,
     mode: Mode | None = None,
     relaxation: float | None = None,
@@ -580,6 +629,16 @@ def couple_model(
         within ``rim_tolerance_m`` of the bed of its cell. Your SWMM input is run with a
         fixed routing step, a clock that matches the model and the ``SurDepth`` of the
         mode (a notice lists them).
+    inflow : path-like or None, optional
+        Hydrograph table (``time_min``, ``discharge_m3s``; the table of a node of
+        ``hydrolog route network``): water that comes from outside the model, for
+        example from a catchment that the grid does not cover, and enters
+        ``inflow_node``. Time is elapsed time from the start of the model run, as in
+        the rain table; what lies beyond the end of the run is cut (a notice).
+    inflow_node : str or None, optional
+        The node that receives the inflow: a junction of a network table, any node of
+        your SWMM input. It need not lie on the model. ``inflow`` and ``inflow_node``
+        go together.
     exchange_interval_s : int or None, optional
         The exchange interval [s], a whole number; 1 when not given.
     mode : {"swmm_flooding", "coordinator"} or None, optional
@@ -614,8 +673,9 @@ def couple_model(
     Raises
     ------
     InvalidInputError
-        If the options do not go together, no node lies on the domain
-        (``no_exchange_nodes``) or a rim differs from its bed (``rim_mismatch``).
+        If the options do not go together, an inflow node is not in the network
+        (``unknown_node``), no node lies on the domain (``no_exchange_nodes``) or a rim
+        differs from its bed (``rim_mismatch``).
     NotFoundError
         If the model or the network does not exist.
     UnsupportedError
@@ -640,6 +700,8 @@ def couple_model(
         model=model,
         network=network,
         inp=inp,
+        inflow=inflow,
+        inflow_node=inflow_node,
         exchange_interval_s=exchange_interval_s,
         mode=mode,
         relaxation=relaxation,
@@ -657,21 +719,32 @@ def couple_model(
         blockers = [extra_blocker(name) for name in missing_extras(_PACKAGES)]
         if not library.found:
             blockers.insert(0, blocker("engine_missing", library.detail, library.hint))
-        return PlanDocument.from_write_plan(
-            plan,
-            steps=[
-                f"read the SFINCS model {job.folder}: {job.duration_s:g} s, "
-                f"{len(job.nodes)} of {len(job.nodes) + len(job.outside)} node(s) on "
-                "an active cell",
-                f"{'write' if job.kind == 'network' else 'patch'} {INP_NAME} "
-                f"({job.settings.mode}, "
-                f"SurDepth {0 if job.settings.mode == 'swmm_flooding' else 100})",
-                f"couple SFINCS ({library.location or 'library not found'}) and SWMM "
-                f"every {job.settings.interval_s} s in a process of its own",
-                f"write {', '.join(job.outputs)} and move them into {plan.directory}",
-            ],
-            blockers=blockers,
-        )
+        steps = [
+            f"read the SFINCS model {job.folder}: {job.duration_s:g} s, "
+            f"{len(job.nodes)} of {len(job.nodes) + len(job.outside)} node(s) on "
+            "an active cell",
+            f"{'write' if job.kind == 'network' else 'patch'} {INP_NAME} "
+            f"({job.settings.mode}, "
+            f"SurDepth {0 if job.settings.mode == 'swmm_flooding' else 100})",
+        ]
+        if job.inflow is not None:
+            lasts = job.inflow.times_s[-1]
+            cut = (
+                f"; it lasts {lasts:g} s and the run {job.duration_s:g} s, so the "
+                "rest is cut"
+                if lasts > job.duration_s
+                else ""
+            )
+            steps.append(
+                f"apply {job.inflow_path} ({job.inflow.volume_m3:.1f} m3) as the "
+                f"inflow of {job.inflow_node}{cut}"
+            )
+        steps += [
+            f"couple SFINCS ({library.location or 'library not found'}) and SWMM "
+            f"every {job.settings.interval_s} s in a process of its own",
+            f"write {', '.join(job.outputs)} and move them into {plan.directory}",
+        ]
+        return PlanDocument.from_write_plan(plan, steps=steps, blockers=blockers)
     if not library.found:
         raise MissingDependencyError(
             library.detail,
@@ -709,6 +782,11 @@ def couple_model(
                 out=str(writer.staging / "network.out"),
                 nodes=job.nodes,
                 settings=job.settings,
+                inflows=(
+                    {}
+                    if job.inflow is None or job.inflow_node is None
+                    else {job.inflow_node: job.inflow}
+                ),
             ).to_json(),
             encoding="utf-8",
         )

@@ -148,6 +148,23 @@ follows [Semantic Versioning](https://semver.org/).
   buildings, attribute values the mapping lacks) and `infiltration.hsg`. Checked on the
   real BDOT10k of Poznań: a square kilometre at 10 m builds in under 2 s and runs on
   SFINCS v2.4.1 with a balance that closes.
+- `model couple` takes an inflow hydrograph (ADR-0009): `--inflow FILE --inflow-node
+  NODE`, the table of `time_min,discharge_m3s` that `swmm run` reads and that `hydrolog
+  route network --output-dir` writes for every node of a river network, for water that
+  comes from outside the model, such as a catchment that the grid does not cover. The
+  discharge at the middle of each exchange interval is added to the exchange of the node
+  in one call (SWMM takes the value as the rate of the node); the node is a junction of
+  the table or any node of your input, on the model or not. The balance has a term of
+  its own, `network_inflow_m3` (`coupled_balance(network_inflow_m3=...)`), the result
+  has `coupling.inflow` (file, node, volume of the table, volume given), and a table
+  that outlasts the run is cut with the notice `inflow_cut`. The unit-test fakes, the
+  worker on the real SWMM and the command with a fake worker cover it; a live test fills
+  a 0.15 m pipe with the 279 m3 of a Hydrolog table until the manhole floods and the
+  street holds 0.44 m (-0.23 %, SFINCS v2.4.1 and `main`, and the coordinator mode).
+- A fixture made by the real `hydrolog route network` (`tests/fixtures/hydrolog`: the
+  network document, the inflows, the five tables and the result without its paths) and
+  tests that every table is read with the peak, time and volume that Hydrolog reports
+  and runs through `swmm run` on the real SWMM; a live test makes the tables again.
 
 ### Fixed
 

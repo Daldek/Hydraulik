@@ -22,6 +22,7 @@
 | `model build`, step two: land cover (BDOT10k) and soil (HSG) to Manning `n` and the curve number | done | `--landcover`, `--hsg`, `--default-hsg`, `--classes`, `--building-raise-m` (`model/{options,build,classes,landcover}.py`, `operations/build.py`, `_data/landcover/`, `docs/LAND_COVER.md`, ADR-0007, ADR-0008); tested on synthetic GeoPackages with hand-computed values; by hand on the real BDOT10k and NMT of Poznan, a square kilometre at 10 m, on SFINCS v2.4.1; the class values need the author's review |
 | End-to-end chain test (`tests/integration/test_terrain_to_model.py`) | done | a fake Kartograf delivers a real GeoTIFF, GeoPackage and soil raster; then the real commands `terrain download`, `rainfall build`, `model build` (land cover, soil groups, stations), `model run`, `results export`; the build is in the gate, the run is `live`; on SFINCS v2.4.1 and `main` the infiltration of each half of the catchment is the SCS equation of its curve number (51.4 and 6.0 mm of 100 mm; 286.9 m3 in all, 286.9 expected) and the balance closes (0.002 %) |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
+| Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %) |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
 
@@ -69,29 +70,21 @@ a Python string that holds backslashes.
 6. The weekly live workflow for the library tests (it has to build `libsfincs` with
    `--enable-shared`; the workflow pulls no engine today) and the live run of
    `terrain download` once Kartograf has plain mode.
-7. **Hand-off of Hydrolog's `route network` tables, USAGE and the last review**: not
-   done; this is where to start.
-   1. Finding (checked on Hydrolog `feature/routing-network`, 081fda2, 2026-10-25):
-      `hydrolog route network --network-file N.json --inflows-file I.csv -o DIR` writes
-      `<id>.csv` for every node with the header `time_min,discharge_m3s` at a regular
-      step. That is the hydrograph table that `data.tables.read_hydrograph` and `swmm run
-      --inflow F --inflow-node NODE` read today, so `swmm run` takes such a file as it
-      is. Missing: a fixture from the real command (a small network: subcatchment A, a
-      `lag` reach of 10 min, outlet; A = 0, 0.05, 0.15, 0.25, 0.2, 0.12, 0.06, 0.02, 0 m3/s
-      at 5 min; keep the network document and the inflows beside the output) and a test
-      that `run_network` accepts `A.csv`, `R1.csv` and `OUT.csv`.
-   2. `model couple` has no inflow option. The plan does not call for one (steps 12 and 13
-      name Kartograf, IMGWTools PMAXTP and Hydrolog hyetographs; the registry entry lists
-      `BetaHietogram` and `EulerIIHietogram` only); Hydrolog's INTEGRATION.md and ADR-0010
-      describe the hand-off from their side and call a reader in Hydraulik a `request`
-      issue. If you want it: `Network.add_inflow` sets the rate, so the external rate must
-      be summed with the exchange rate of a node in one call (`coupling/coupler.py`, after
-      `network.add_inflow(name, taken / length_s)`); `couple()` takes a mapping node to
-      a series with `at(time_s)`; `CouplerResult` records the volume given; `coupled_balance`
-      needs its own `network_inflow_m3` term (`inflow_m3` is water that enters the
-      surface); the job file of the worker carries the series; the catalog gets `--inflow`
-      and `--inflow-node` as `swmm run` has them; a live test on `libsfincs` fills a
-      network until it floods the street.
+7. **Hand-off of Hydrolog's `route network` tables, USAGE and the last review**:
+   1. Done (commit `test(swmm)`): the tables of `hydrolog route network -o DIR` (checked
+      on Hydrolog `feature/routing-network`, 081fda2, 2026-10-25) are the hydrograph
+      table that `swmm run --inflow` reads. The fixture `tests/fixtures/hydrolog` was
+      made by the real command; the tests read every table with the peak, time and
+      volume that Hydrolog reports and run it through the real SWMM; the live test
+      `test_hydrolog_live.py` makes the tables again (put a Hydrolog with `route
+      network` first on `PATH` and call `.venv/bin/python -m pytest -m live`, because
+      `uv run` puts the v0.7.0 of the `rainfall` extra first).
+   2. Done (ADR-0009): `model couple --inflow FILE --inflow-node NODE`. The loop sums the
+      discharge with the exchange of the node in one call, `couple()` takes a mapping
+      from node to a series with `at(time_s)`, the worker's job file carries it,
+      `coupled_balance` has `network_inflow_m3`, the result has `coupling.inflow`.
+      Not built, and a question for the author: SFINCS discharge points (`srcfile`,
+      `disfile`) as the place for a hydrograph that enters the surface.
    3. `docs/USAGE.md` (optional by DOC-1.1; `tests/contract/test_docs_examples.py` runs
       its `bash` blocks): the task flow from `terrain download` to `results export`, the
       land-cover options, `swmm run` with a routed hydrograph, `model couple`.

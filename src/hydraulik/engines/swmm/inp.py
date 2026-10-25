@@ -1,8 +1,8 @@
 """Reading and patching a SWMM input file that the user wrote (ADR-0002).
 
-Only what the coupling needs is understood: the sections as text, the junctions, their
-coordinates and the options. Patching changes ``[OPTIONS]`` and the surcharge depth of
-junctions and leaves every other line as it is.
+Only what the coupling needs is understood: the sections as text, the junctions, the
+names of every node, their coordinates and the options. Patching changes ``[OPTIONS]``
+and the surcharge depth of junctions and leaves every other line as it is.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ __all__ = [
     "InpJunction",
     "coordinates",
     "junctions",
+    "node_names",
     "options",
     "patch_junction_surcharge",
     "patch_options",
@@ -181,6 +182,33 @@ def junctions(text: str) -> list[InpJunction]:
                 reason="invalid_inp",
             ) from exc
     return found
+
+
+def node_names(text: str) -> list[str]:
+    r"""Return the names of every node that an INP text declares.
+
+    Parameters
+    ----------
+    text : str
+        The content of an INP file.
+
+    Returns
+    -------
+    list of str
+        The junctions, outfalls, dividers and storage units, in that order and in file
+        order within each.
+
+    Examples
+    --------
+    >>> node_names("[JUNCTIONS]\\nJ1 8.0 2.0\\n[OUTFALLS]\\nOUT 7.0 FREE NO\\n")
+    ['J1', 'OUT']
+    """
+    found = sections(text)
+    return [
+        line.split()[0]
+        for section in ("JUNCTIONS", "OUTFALLS", "DIVIDERS", "STORAGE")
+        for line in found.get(section, [])
+    ]
 
 
 def coordinates(text: str) -> dict[str, tuple[float, float]]:
