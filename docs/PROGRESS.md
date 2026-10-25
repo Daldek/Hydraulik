@@ -69,6 +69,35 @@ a Python string that holds backslashes.
 6. The weekly live workflow for the library tests (it has to build `libsfincs` with
    `--enable-shared`; the workflow pulls no engine today) and the live run of
    `terrain download` once Kartograf has plain mode.
+7. **Hand-off of Hydrolog's `route network` tables, USAGE and the last review**: not
+   done; this is where to start.
+   1. Finding (checked on Hydrolog `feature/routing-network`, 081fda2, 2026-10-25):
+      `hydrolog route network --network-file N.json --inflows-file I.csv -o DIR` writes
+      `<id>.csv` for every node with the header `time_min,discharge_m3s` at a regular
+      step. That is the hydrograph table that `data.tables.read_hydrograph` and `swmm run
+      --inflow F --inflow-node NODE` read today, so `swmm run` takes such a file as it
+      is. Missing: a fixture from the real command (a small network: subcatchment A, a
+      `lag` reach of 10 min, outlet; A = 0, 0.05, 0.15, 0.25, 0.2, 0.12, 0.06, 0.02, 0 m3/s
+      at 5 min; keep the network document and the inflows beside the output) and a test
+      that `run_network` accepts `A.csv`, `R1.csv` and `OUT.csv`.
+   2. `model couple` has no inflow option. The plan does not call for one (steps 12 and 13
+      name Kartograf, IMGWTools PMAXTP and Hydrolog hyetographs; the registry entry lists
+      `BetaHietogram` and `EulerIIHietogram` only); Hydrolog's INTEGRATION.md and ADR-0010
+      describe the hand-off from their side and call a reader in Hydraulik a `request`
+      issue. If you want it: `Network.add_inflow` sets the rate, so the external rate must
+      be summed with the exchange rate of a node in one call (`coupling/coupler.py`, after
+      `network.add_inflow(name, taken / length_s)`); `couple()` takes a mapping node to
+      a series with `at(time_s)`; `CouplerResult` records the volume given; `coupled_balance`
+      needs its own `network_inflow_m3` term (`inflow_m3` is water that enters the
+      surface); the job file of the worker carries the series; the catalog gets `--inflow`
+      and `--inflow-node` as `swmm run` has them; a live test on `libsfincs` fills a
+      network until it floods the street.
+   3. `docs/USAGE.md` (optional by DOC-1.1; `tests/contract/test_docs_examples.py` runs
+      its `bash` blocks): the task flow from `terrain download` to `results export`, the
+      land-cover options, `swmm run` with a routed hydrograph, `model couple`.
+   4. Last review of the branch: the README links of the Documentation section are
+      relative (DOC-2.1 row 12 wants absolute ones), a search for leftovers (`not wired`,
+      `TODO`, stale counts), and the gate on a clean checkout.
 
 ## Open questions
 
