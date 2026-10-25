@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, Literal
 
+from hydraulik.data.kartograf import KartografCli, plain_output_problem
+from hydraulik.exceptions import HydraulikError
 from hydraulik.settings import Settings
 
 __all__ = [
@@ -28,9 +30,13 @@ __all__ = [
     "detect_sfincs",
     "detect_sfincs_library",
     "detect_swmm",
+    "find_kartograf",
+    "inspect_kartograf",
 ]
 
 _PROBE_TIMEOUT_S: Final = 15.0
+_KARTOGRAF_PROBE: Final = "elevation download"
+"""The Kartograf command whose schema tells whether it writes plain files."""
 _BANNER = re.compile(r"Build-Revision:\s*\$Rev:\s*(?P<version>[^\n]+)")
 _TAG = re.compile(r"sfincs-(?P<version>v[0-9][^\s]*)")
 
@@ -298,8 +304,111 @@ def detect_swmm() -> EngineStatus:
     return EngineStatus("swmm", True, "python", "pyswmm", version, detail)
 
 
-def detect_kartograf(settings: Settings) -> EngineStatus:
+def find_kartograf(settings: Settings) -> tuple[EngineStatus, tuple[str, ...] | None]:
     """Find the Kartograf command that downloads terrain and land cover.
+
+    A Kartograf counts as found only when it writes plain files: its schema of
+    ``elevation download`` must declare ``output_dir`` with ``path_role: output``
+    (DEV-19.1). A Kartograf without the data-output convention has ``output_dir`` as
+    the root of a versioned store, and ``--output-dir`` would write a store into the
+    directory of the user, so it is reported as unusable and says why.
+
+    Parameters
+    ----------
+    settings : Settings
+        The resolved settings.
+
+    Returns
+    -------
+    tuple of (EngineStatus, tuple of str or None)
+        What was found and the command that runs it; ``None`` when nothing usable was
+        found. A status that is not ``found`` and has a ``via`` is a Kartograf that
+        runs but cannot write plain files.
+    """
+    configured = settings.value("kartograf.exe")
+    path = shutil.which(str(configured or "kartograf")) or (
+        str(configured) if configured and Path(str(configured)).is_file() else None
+    )
+    hint = "Install Kartograf (github.com/Daldek/Kartograf) or set kartograf.exe."
+    if path is None:
+        return (
+            EngineStatus(
+                "kartograf",
+                False,
+                None,
+                str(configured) if configured else None,
+                None,
+                "the kartograf command was not found",
+                hint,
+            ),
+            None,
+        )
+    via = "setting" if configured else "path"
+    return inspect_kartograf(
+        (path,),
+        via,
+        timeout_s=float(settings.value("kartograf.timeout_s")),
+    )
+
+
+def inspect_kartograf(
+    words: tuple[str, ...], via: str, *, timeout_s: float
+) -> tuple[EngineStatus, tuple[str, ...] | None]:
+    """Look at a Kartograf command: its version and whether it writes plain files.
+
+    Parameters
+    ----------
+    words : tuple of str
+        The command that runs Kartograf; its first word is the program.
+    via : str
+        How the command was found (``setting`` or ``path``).
+    timeout_s : float
+        Seconds a call of Kartograf that fetches data may take (for the command that
+        is returned).
+
+    Returns
+    -------
+    tuple of (EngineStatus, tuple of str or None)
+        ``found`` and ``words`` when ``commands schema --command "elevation
+        download"`` declares ``output_dir`` with ``path_role: output``; otherwise a
+        status that says why not and ``None``.
+    """
+    cli = KartografCli(words, timeout_s=timeout_s, probe_timeout_s=_PROBE_TIMEOUT_S)
+    version = cli.version()
+    try:
+        problem = plain_output_problem(cli.schema(_KARTOGRAF_PROBE))
+    except HydraulikError as exc:
+        problem = str(exc)
+    if problem is not None:
+        return (
+            EngineStatus(
+                "kartograf",
+                False,
+                via,
+                words[0],
+                version,
+                f"{version or 'kartograf'} runs, but {problem}",
+                "Use a Kartograf that implements the data-output convention (Nogat "
+                "DEV section 19, `--output-dir` writes plain files); `terrain "
+                "download` cannot run without it.",
+            ),
+            None,
+        )
+    return (
+        EngineStatus(
+            "kartograf",
+            True,
+            via,
+            words[0],
+            version,
+            "command found; --output-dir writes plain files",
+        ),
+        words,
+    )
+
+
+def detect_kartograf(settings: Settings) -> EngineStatus:
+    """Report the Kartograf that ``terrain download`` would use.
 
     Parameters
     ----------
@@ -309,35 +418,8 @@ def detect_kartograf(settings: Settings) -> EngineStatus:
     Returns
     -------
     EngineStatus
-        ``found`` when ``kartograf.exe`` or ``kartograf`` on ``PATH`` runs; the
-        version is the one ``kartograf --version`` prints.
+        ``found`` when ``kartograf.exe`` or ``kartograf`` on ``PATH`` runs and writes
+        plain files (:func:`find_kartograf`); the version is the one ``kartograf
+        --version`` prints.
     """
-    configured = settings.value("kartograf.exe")
-    path = shutil.which(str(configured or "kartograf")) or (
-        str(configured) if configured and Path(str(configured)).is_file() else None
-    )
-    hint = "Install Kartograf (github.com/Daldek/Kartograf) or set kartograf.exe."
-    if path is None:
-        return EngineStatus(
-            "kartograf",
-            False,
-            None,
-            str(configured) if configured else None,
-            None,
-            "the kartograf command was not found",
-            hint,
-        )
-    try:
-        done = _run([path, "--version"])
-        text = (done.stdout or done.stderr).strip()
-        version = text.splitlines()[0] if text else None
-    except (OSError, subprocess.TimeoutExpired):
-        version = None
-    return EngineStatus(
-        "kartograf",
-        True,
-        "setting" if configured else "path",
-        path,
-        version,
-        "command found",
-    )
+    return find_kartograf(settings)[0]

@@ -22,6 +22,7 @@ from hydraulik.output import (
     plan_directory,
     plan_file,
     remove_stale_staging,
+    sigterm_as_error,
 )
 
 
@@ -219,18 +220,24 @@ def test_staging_is_removed_on_keyboard_interrupt(tmp_path: Path) -> None:
     assert not (tmp_path / STAGING_DIR).exists()
 
 
-def test_the_sigterm_handler_unwinds_the_block_with_a_terminated_error(
-    tmp_path: Path,
-) -> None:
-    with pytest.raises(TerminatedError) as caught:
-        Writer._on_terminate(signal.SIGTERM, None)
+def test_the_sigterm_handler_unwinds_the_block_with_a_terminated_error() -> None:
+    previous = signal.getsignal(signal.SIGTERM)
+
+    with sigterm_as_error():
+        handler = signal.getsignal(signal.SIGTERM)
+        assert callable(handler)
+        with pytest.raises(TerminatedError) as caught:
+            handler(signal.SIGTERM, None)
 
     assert caught.value.code == "terminated"
     assert caught.value.exit_code == 143
+    assert signal.getsignal(signal.SIGTERM) is previous
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM kills the process")
 def test_a_real_sigterm_removes_the_staging_directory(tmp_path: Path) -> None:
+    previous = signal.getsignal(signal.SIGTERM)
+
     with (
         pytest.raises(TerminatedError),
         Writer(plan_directory(tmp_path, ["a.txt"])) as writer,
@@ -240,7 +247,7 @@ def test_a_real_sigterm_removes_the_staging_directory(tmp_path: Path) -> None:
         time.sleep(0.5)  # the handler runs between bytecodes
 
     assert not (tmp_path / STAGING_DIR).exists()
-    assert signal.getsignal(signal.SIGTERM) is not Writer._on_terminate
+    assert signal.getsignal(signal.SIGTERM) is previous
 
 
 def test_missing_output_of_the_run_is_an_error_naming_the_file(tmp_path: Path) -> None:

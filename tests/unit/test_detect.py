@@ -154,17 +154,64 @@ def test_swmm_missing_names_the_extra(monkeypatch: pytest.MonkeyPatch) -> None:
     assert status.hint is not None and "hydraulik[swmm]" in status.hint
 
 
-@posix_only
-def test_kartograf_command_from_the_setting_reports_its_version(tmp_path: Path) -> None:
-    exe = _script(tmp_path / "kartograf", 'print("kartograf 9.9.9")')
+def _fake_kartograf(folder: Path) -> str:
+    """A ``kartograf`` script that runs the fake program of the tests."""
+    from ..fake_kartograf import PROGRAM
 
-    status = detect.detect_kartograf(_settings(tmp_path, **{"kartograf.exe": exe}))
+    body = f"import runpy; runpy.run_path({str(PROGRAM)!r}, run_name='__main__')"
+    return _script(folder / "kartograf", body)
+
+
+@posix_only
+def test_a_kartograf_that_writes_plain_files_is_found_with_its_command(
+    tmp_path: Path,
+) -> None:
+    exe = _fake_kartograf(tmp_path)
+
+    status, command = detect.find_kartograf(
+        _settings(tmp_path, **{"kartograf.exe": exe})
+    )
 
     assert (status.found, status.via, status.version) == (
         True,
         "setting",
-        "kartograf 9.9.9",
+        "kartograf 9.9.9-fake",
     )
+    assert command == (exe,)
+    assert "plain files" in status.detail
+    assert detect.detect_kartograf(_settings(tmp_path, **{"kartograf.exe": exe})).found
+
+
+@posix_only
+def test_a_kartograf_whose_output_dir_is_a_store_root_is_found_but_not_usable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    exe = _fake_kartograf(tmp_path)
+    monkeypatch.setenv("FAKE_KARTOGRAF", '{"plain": false}')
+
+    status, command = detect.find_kartograf(
+        _settings(tmp_path, **{"kartograf.exe": exe})
+    )
+
+    assert command is None and not status.found
+    assert (status.via, status.location) == ("setting", exe)
+    assert status.version == "kartograf 9.9.9-fake"
+    assert "versioned store" in status.detail
+    assert status.hint is not None and "data-output convention" in status.hint
+
+
+@posix_only
+def test_a_kartograf_that_does_not_describe_its_commands_is_not_usable(
+    tmp_path: Path,
+) -> None:
+    exe = _script(tmp_path / "kartograf", 'print("kartograf 0.1.0")')
+
+    status, command = detect.find_kartograf(
+        _settings(tmp_path, **{"kartograf.exe": exe})
+    )
+
+    assert command is None and not status.found and status.version == "kartograf 0.1.0"
+    assert "kartograf-result/1" in status.detail or "commands schema" in status.detail
 
 
 def test_kartograf_missing_is_reported(

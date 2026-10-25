@@ -11,6 +11,7 @@ from jsonschema import Draft202012Validator
 from hydraulik import (
     build_model,
     build_rainfall,
+    download_terrain,
     render_guide,
     run_network,
     show_config,
@@ -156,3 +157,30 @@ def test_model_document_validates_with_every_optional_input(tmp_path: Any) -> No
 
     for document in (minimal, full):
         validator.validate(document.to_dict())
+
+
+def test_terrain_document_and_its_plans_validate(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ..fake_kartograf import install, use
+
+    box = [361500.0, 504000.0, 363000.0, 505500.0]
+    error = {"code": "source_unavailable", "message": "the source is down"}
+    terrain = Draft202012Validator(_schema("hydraulik-terrain-1"))
+    plan = Draft202012Validator(_schema("hydraulik-plan-1"))
+
+    program = install(tmp_path, monkeypatch, errors={"soil hsg": error})
+    use(monkeypatch, program)
+    whole = download_terrain(bbox=box, crs="EPSG:2180", output_dir=tmp_path / "whole")
+    planned = download_terrain(
+        bbox=box, crs="EPSG:2180", output_dir=tmp_path / "plan", check=True
+    )
+    program = install(tmp_path, monkeypatch, plain=False)
+    use(monkeypatch, program)
+    blocked = download_terrain(
+        bbox=box, crs="EPSG:2180", output_dir=tmp_path / "blocked", check=True
+    )
+
+    terrain.validate(whole.to_dict())  # partial: one product failed
+    plan.validate(planned.to_dict())
+    plan.validate(blocked.to_dict())  # a blocker with reason engine_incompatible

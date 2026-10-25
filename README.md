@@ -90,6 +90,23 @@ print([command["name"] for command in catalog["commands"]])
 Every command prints one JSON document with `--json`; logs go to stderr. On an
 error stdout is empty and the last line of stderr is the error document.
 
+The terrain, the BDOT10k land cover and the soil groups of an area come from Kartograf,
+which Hydraulik starts as a program. It needs a Kartograf that writes plain files with
+`--output-dir` (the data-output convention of the Nogat ecosystem); one without it is
+refused, and `engines check` says which you have:
+
+```sh
+hydraulik engines check --require 'terrain download'
+hydraulik terrain download --bbox 361500,504000,363000,505500 --crs EPSG:2180 \
+    --output-dir ./data
+```
+
+Each product goes to its own sub-directory (`data/elevation`, `data/landcover`,
+`data/soil`). Before the first byte the plan of every product is read, and a file that
+exists (without `--force`) fails the whole call. The result lists the files with their
+`sha256`, and the sources with their licences and the attribution to print: plain files
+carry no sidecar. A product that fails after another succeeded gives status `partial`.
+
 A design rain for a model is a Hydrolog hyetograph shape with a depth that you give or
 the PMAXTP depth of IMGW-PIB, from the document of `imgw pmaxtp fetch --json` or, with
 the network and IMGWTools, for a point:
@@ -174,6 +191,7 @@ description of the inlets is the main uncertainty.
 | Render AGENTS.md, llms.txt or the block for another repository | `commands guide` | `hydraulik.render_guide` | `--inject` only |
 | Show the settings and their sources | `config show` | `hydraulik.show_config` | nothing |
 | Report the engines and packages found, and what each command needs | `engines check` | `hydraulik.check_engines` | nothing |
+| Fetch the terrain, land cover and soil groups of an area (Kartograf) | `terrain download` | `hydraulik.download_terrain` | `--output-dir` |
 | Write a SFINCS model directory from terrain, rain and optional rasters | `model build` | `hydraulik.build_model` | `--output-dir` |
 | Run SFINCS on a model directory, read its maxima and water balance | `model run` | `hydraulik.run_model` | `--output-dir` |
 | Read the maxima, flooded areas and water balance of a run | `results read` | `hydraulik.read_results` | nothing |

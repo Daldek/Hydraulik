@@ -19,7 +19,7 @@ import os
 from collections.abc import Mapping
 from pathlib import PurePath
 from types import MappingProxyType
-from typing import Any, ClassVar, Final, Literal
+from typing import Any, ClassVar, Final, Literal, cast
 
 from hydraulik._errors import BY_CODE, CODES, ErrorCodeName, RegistryCode
 
@@ -43,6 +43,7 @@ __all__ = [
     "TerminatedError",
     "UnsupportedError",
     "error_document",
+    "rebuild_error",
 ]
 
 ErrorCode = ErrorCodeName
@@ -382,3 +383,73 @@ def error_document(
     if command is not None:
         document["command"] = command
     return document
+
+
+_CLASS_OF: Final[dict[str, type[HydraulikError]]] = {
+    "validation_error": InvalidInputError,
+    "not_found": NotFoundError,
+    "conflict": ConflictError,
+    "source_unavailable": SourceUnavailableError,
+    "missing_dependency": MissingDependencyError,
+    "data_error": InputDataError,
+    "io_error": OutputError,
+    "forbidden": ForbiddenPathError,
+    "calculation_error": EngineError,
+    "no_data": NoDataError,
+    "unsupported": UnsupportedError,
+    "cancelled": CancelledError,
+    "terminated": TerminatedError,
+}
+"""The class that raises an error of each code, so a caller can catch the same one."""
+
+
+def rebuild_error(
+    code: str,
+    message: str,
+    *,
+    details: Mapping[str, object] | None = None,
+    hint: str | None = None,
+) -> HydraulikError:
+    """Return the exception that an error document of another process describes.
+
+    The coupling worker and the tools Hydraulik starts (Kartograf) report an error as a
+    document with a registry code, a message, details and a hint; the caller raises the
+    same class that would have been raised in its own process, so it can be caught and
+    gives the same exit code.
+
+    Parameters
+    ----------
+    code : str
+        Registry code of the error. A code that is not in the registry becomes
+        ``internal_error`` and is kept in ``details.relayed_code``.
+    message : str
+        The message of the document.
+    details : Mapping or None, optional
+        Its details; ``reason`` is kept.
+    hint : str or None, optional
+        Its hint.
+
+    Returns
+    -------
+    HydraulikError
+        An instance of the class of ``code`` (the base class for a code without one).
+
+    Examples
+    --------
+    >>> error = rebuild_error("no_data", "no sheet", details={"reason": "nothing"})
+    >>> type(error).__name__, error.code, error.details["reason"]
+    ('NoDataError', 'no_data', 'nothing')
+    """
+    body = dict(details or {})
+    if code not in ERROR_CODES:
+        body["relayed_code"] = code
+        return HydraulikError(message, code="internal_error", details=body, hint=hint)
+    reason = body.pop("reason", None)
+    resolved = cast(ErrorCode, code)
+    reason_text = None if reason is None else str(reason)
+    kind = _CLASS_OF.get(code)
+    if kind is None:
+        return HydraulikError(
+            message, code=resolved, details=body, hint=hint, reason=reason_text
+        )
+    return kind(message, details=body, hint=hint, reason=reason_text)

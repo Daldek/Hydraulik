@@ -141,6 +141,19 @@ REASONS_PL: Final[dict[str, str]] = {
     "model_layout": "Model nie jest regularną siatką w trybie wejścia binarnego.",
     "invalid_index": "Plik indeksu modelu nie pasuje do siatki.",
     "invalid_job": "Plik zadania sprzężenia jest niepoprawny.",
+    "engine_incompatible": (
+        "Zainstalowany Kartograf nie zapisuje zwykłych plików (--output-dir) albo "
+        "nie ma opcji, której to polecenie potrzebuje; użyj wersji z konwencją "
+        "zapisu danych."
+    ),
+    "kartograf_timeout": (
+        "Kartograf przekroczył limit czasu i został zatrzymany; zwiększ "
+        "kartograf.timeout_s albo zmniejsz obszar."
+    ),
+    "kartograf_failed": "Kartograf zakończył pracę bez dokumentu błędu.",
+    "kartograf_output": (
+        "Kartograf odpowiedział czymś, co nie jest dokumentem kartograf-result/1."
+    ),
 }
 
 

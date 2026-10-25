@@ -36,7 +36,7 @@ import shutil
 import signal
 import socket
 import time
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from types import FrameType, TracebackType
@@ -59,6 +59,7 @@ __all__ = [
     "plan_directory",
     "plan_file",
     "sha256_file",
+    "sigterm_as_error",
 ]
 
 STAGING_DIR: Final = ".hydraulik-incoming"
@@ -383,6 +384,40 @@ def _host() -> str:
     return re.sub(r"[^A-Za-z0-9.-]", "-", socket.gethostname()) or "host"
 
 
+def _raise_terminated(signum: int, frame: FrameType | None) -> None:
+    raise TerminatedError("Terminated by SIGTERM", details={"signal": signum})
+
+
+@contextlib.contextmanager
+def sigterm_as_error() -> Iterator[None]:
+    """Turn SIGTERM into :class:`~hydraulik.exceptions.TerminatedError` in a block.
+
+    A container stop or a timeout sends SIGTERM; without a handler the process dies
+    where it is, leaving the staging directory of a write and the program it started
+    behind. With this the block unwinds like for Ctrl+C. Only the main thread can set a
+    handler; elsewhere the block runs as it is and only SIGINT unwinds it.
+
+    Yields
+    ------
+    None
+        Nothing; the previous handler is restored when the block ends.
+
+    Examples
+    --------
+    >>> with sigterm_as_error():
+    ...     pass
+    """
+    try:
+        previous = signal.signal(signal.SIGTERM, _raise_terminated)
+    except ValueError:
+        yield
+        return
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+
+
 def remove_stale_staging(directory: Path, now: float | None = None) -> list[Path]:
     """Remove staging directories older than 24 hours (DEV-19.7).
 
@@ -447,8 +482,7 @@ class Writer:
     def __init__(self, plan: WritePlan) -> None:
         self.plan = plan
         self._staging: Path | None = None
-        self._previous_handler: Any = None
-        self._handler_installed = False
+        self._traps = contextlib.ExitStack()
 
     @property
     def staging(self) -> Path:
@@ -506,11 +540,7 @@ class Writer:
                 reason="output_unwritable",
             ) from exc
         self._staging = staging
-        try:
-            self._previous_handler = signal.signal(signal.SIGTERM, self._on_terminate)
-            self._handler_installed = True
-        except ValueError:  # not the main thread: only SIGINT unwinds the block
-            self._handler_installed = False
+        self._traps.enter_context(sigterm_as_error())
         return self
 
     def __exit__(
@@ -520,19 +550,13 @@ class Writer:
         traceback: TracebackType | None,
     ) -> None:
         """Remove the staging directory and restore the SIGTERM handler."""
-        if self._handler_installed:
-            signal.signal(signal.SIGTERM, self._previous_handler)
-            self._handler_installed = False
+        self._traps.close()
         if self._staging is not None:
             shutil.rmtree(self._staging, ignore_errors=True)
             root = self._staging.parent
             self._staging = None
             with contextlib.suppress(OSError):
                 root.rmdir()  # only when no other run is staging there
-
-    @staticmethod
-    def _on_terminate(signum: int, frame: FrameType | None) -> None:
-        raise TerminatedError("Terminated by SIGTERM", details={"signal": signum})
 
     def commit(self, sizes: dict[str, int] | None = None) -> tuple[FileRecord, ...]:
         """Verify every planned file in staging and move it into place.

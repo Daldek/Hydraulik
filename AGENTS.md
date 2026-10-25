@@ -64,6 +64,7 @@ Codes come from the shared registry
 - `commands guide` (`hydraulik.render_guide`): Render AGENTS.md, llms.txt or the block for another repository's AGENTS.md. Details: `hydraulik commands schema --command 'commands guide'`.
 - `config show` (`hydraulik.show_config`): Show every setting of Hydraulik with its value and where the value came from. Details: `hydraulik commands schema --command 'config show'`.
 - `engines check` (`hydraulik.check_engines`): Report the engines and packages Hydraulik can use on this machine. Details: `hydraulik commands schema --command 'engines check'`.
+- `terrain download` (`hydraulik.download_terrain`): Download the terrain, land cover and soil groups of an area (Kartograf). Details: `hydraulik commands schema --command 'terrain download'`.
 - `rainfall build` (`hydraulik.build_rainfall`): Write a design rain as a rain table from a Hydrolog shape and a PMAXTP depth. Details: `hydraulik commands schema --command 'rainfall build'`.
 - `model build` (`hydraulik.build_model`): Write a SFINCS model directory from your terrain, rain and optional rasters. Details: `hydraulik commands schema --command 'model build'`.
 - `model run` (`hydraulik.run_model`): Run SFINCS on a model directory and read its maxima and water balance. Details: `hydraulik commands schema --command 'model run'`.
@@ -86,6 +87,10 @@ Codes come from the shared registry
 **Find out what this machine can run**
 
 1. List the engines and packages and what each command needs: `hydraulik engines check --json`
+
+**Fetch the data of a model**
+
+1. Fetch the terrain, the BDOT10k land cover and the soil groups with Kartograf (add --check to plan; it needs a Kartograf that writes plain files): `hydraulik terrain download --bbox 361500,504000,363000,505500 --crs EPSG:2180 --output-dir ./data --json`
 
 **Make the design rain of a model**
 
