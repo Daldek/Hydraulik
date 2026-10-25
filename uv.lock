@@ -402,10 +402,10 @@ dev = [
 requires-dist = [
     { name = "geopandas", marker = "extra == 'all'", specifier = ">=1.0" },
     { name = "geopandas", marker = "extra == 'model'", specifier = ">=1.0" },
-    { name = "hydrolog", marker = "extra == 'all'", git = "https://github.com/Daldek/Hydrolog?rev=v0.7.0" },
-    { name = "hydrolog", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/Hydrolog?rev=v0.7.0" },
-    { name = "imgwtools", marker = "extra == 'all'", git = "https://github.com/Daldek/IMGWTools?rev=v2.1.1" },
-    { name = "imgwtools", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/IMGWTools?rev=v2.1.1" },
+    { name = "hydrolog", marker = "extra == 'all'", git = "https://github.com/Daldek/Hydrolog?rev=0719c41825416c208f0980f6a76b14dc4e1663b7" },
+    { name = "hydrolog", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/Hydrolog?rev=0719c41825416c208f0980f6a76b14dc4e1663b7" },
+    { name = "imgwtools", marker = "extra == 'all'", git = "https://github.com/Daldek/IMGWTools?rev=7b117550103a3d8d46afc97043b90f0e93314c8b" },
+    { name = "imgwtools", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/IMGWTools?rev=7b117550103a3d8d46afc97043b90f0e93314c8b" },
     { name = "netcdf4", marker = "extra == 'all'", specifier = ">=1.7" },
     { name = "netcdf4", marker = "extra == 'sfincs'", specifier = ">=1.7" },
     { name = "numpy", marker = "extra == 'all'", specifier = ">=1.26" },
@@ -435,10 +435,11 @@ dev = [
 
 [[package]]
 name = "hydrolog"
-version = "0.7.0"
-source = { git = "https://github.com/Daldek/Hydrolog?rev=v0.7.0#08fd6b2557a098ecc5f13f75c7339bf9b26606a5" }
+version = "1.0.0.dev0"
+source = { git = "https://github.com/Daldek/Hydrolog?rev=0719c41825416c208f0980f6a76b14dc4e1663b7#0719c41825416c208f0980f6a76b14dc4e1663b7" }
 dependencies = [
     { name = "numpy" },
+    { name = "platformdirs" },
     { name = "scipy" },
 ]
 
@@ -453,11 +454,13 @@ wheels = [
 
 [[package]]
 name = "imgwtools"
-version = "2.1.1"
-source = { git = "https://github.com/Daldek/IMGWTools?rev=v2.1.1#3368aee9dee20cc5f31a6871c96a3c0b371f174d" }
+version = "3.0.0"
+source = { git = "https://github.com/Daldek/IMGWTools?rev=7b117550103a3d8d46afc97043b90f0e93314c8b#7b117550103a3d8d46afc97043b90f0e93314c8b" }
 dependencies = [
     { name = "httpx" },
+    { name = "platformdirs" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
 ]
 
 [[package]]
@@ -995,6 +998,21 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings"
+version = "2.16.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/05/ca/7817b4bf0c4b15c6a6ab8cdf4cb96c268335a8ca2f525de93b6ebe4c7d28/pydantic_settings-2.16.1.tar.gz", hash = "sha256:aff602a1886338c2df3d1e958e2193a8dc33cec75b91f202e83fd98484b4b0da", size = 303436, upload-time = "2026-10-20T11:37:19.024Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/74/fdf926afe145d8629c4b2ff57f4ea1d64ed7abc4d84d97463b2517a2547e/pydantic_settings-2.16.1-py3-none-any.whl", hash = "sha256:30f5313340da4e8f1b440d1910b92a5bc3ccbb6b4ba70ec2b8395bc921f418f5", size = 80771, upload-time = "2026-10-20T11:37:17.298Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1157,6 +1175,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0e/df/f15f80383f152452d8985b36d95cb8751f901a3e0ff4cd27f7e118f168e2/python_dateutil-3.0.0.tar.gz", hash = "sha256:7ebcb3c29a92f3ceafe79a7a48a5c45677e9e004bbeec5742ac0bbb00560b7a2", size = 271066, upload-time = "2026-10-21T23:41:45.075Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl", hash = "sha256:3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd", size = 94659, upload-time = "2026-10-21T23:41:43.431Z" },
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/26/2fbeedb218a787a5eea551c7532cac4e009f83d689dd2faa0d0353473f86/python_dotenv-1.2.4.tar.gz", hash = "sha256:f0d53e69935a851c0dcc78f3ab7aaccd8cabef0b92382b576b824212902873c0", size = 60824, upload-time = "2026-10-01T05:36:10Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl", hash = "sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc", size = 23266, upload-time = "2026-10-01T05:36:08.633Z" },
 ]
 
 [[package]]

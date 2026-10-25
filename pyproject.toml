@@ -51,11 +51,14 @@ model = [
 sfincs = ["numpy>=1.26", "netcdf4>=1.7"]
 # Run SWMM through pyswmm (the SWMM engine comes with its wheel).
 swmm = ["pyswmm>=2.0"]
-# Design rainfall: Hydrolog hyetographs and IMGWTools PMAXTP depths. The
-# producers are not on PyPI yet, so each is pinned to its release tag (REL-5.1).
+# Design rainfall: Hydrolog hyetographs and IMGWTools PMAXTP depths. The ranges admit
+# the development version of the release that is pending (REL-5.6) and narrow to
+# `>=X.Y.0` in the release pull request. Neither release is tagged, so
+# `[tool.uv.sources]` pins each producer to a commit (REL-5.3); the release pull
+# request replaces the commits with tags (REL-2.1).
 rainfall = [
-    "hydrolog @ git+https://github.com/Daldek/Hydrolog@v0.7.0",
-    "imgwtools @ git+https://github.com/Daldek/IMGWTools@v2.1.1",
+    "hydrolog>=1.0.0.dev0,<2",
+    "imgwtools>=3.0.0.dev0,<4",
 ]
 all = [
     "hydraulik[model,sfincs,swmm,rainfall]",
@@ -81,11 +84,14 @@ dev = [
     "types-jsonschema",
 ]
 
+[tool.uv.sources]
+# Commit pins of the producers' development heads (REL-5.3), not pushed yet:
+# docs/PROGRESS.md, "Resolving the pins".
+hydrolog = { git = "https://github.com/Daldek/Hydrolog", rev = "0719c41825416c208f0980f6a76b14dc4e1663b7" }
+imgwtools = { git = "https://github.com/Daldek/IMGWTools", rev = "7b117550103a3d8d46afc97043b90f0e93314c8b" }
+
 [tool.hatch.version]
 path = "src/hydraulik/__init__.py"
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hydraulik"]

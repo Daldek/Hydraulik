@@ -23,15 +23,13 @@ read three producers through hand-made test data: Hydrolog (the tables of `route
   builders keeps its volume, and a built `precip hietogram` envelope gives the rain of the recorded
   one and goes through `rainfall build --hietogram`. The recorded fixtures stay: they prove what
   one Hydrolog commit wrote; the builders prove what the pinned Hydrolog writes.
-- **The module skips while the pin has no `hydrolog.testing`.** The `rainfall` extra pins Hydrolog
-  v0.7.0, and the routing release is neither tagged nor pushed, so no pin can name it
-  (`uv lock` has to fetch it). The skip names the reason; when the pin moves (PROGRESS, open question
-  on the `rainfall` pin) the tests run in the gate. Until then they were run against a checkout of
-  `feature/routing-network` on `PYTHONPATH`.
+- **The module imports `hydrolog.testing` and does not skip.** It skipped while the `rainfall`
+  extra pinned Hydrolog v0.7.0; ADR-0011 moved the pin to the commit of `feature/routing-network`,
+  which has the module, so a pin without it fails the gate.
 - **The hand-written hydrograph tables of the SWMM and coupling tests stay.** They are inputs in
   Hydraulik's own table format and several are wrong on purpose for Hydrolog (a negative discharge,
-  a step of 0.05 min, a table that starts at 1 min); Hydrolog's builders refuse them. Making them
-  builders would also skip those tests under the old pin.
+  a step of 0.05 min, a table that starts at 1 min); Hydrolog's builders refuse them, so they
+  cannot become builders.
 - **The Kartograf fake stays.** `tests/fake_kartograf_program.py` models the protocol of the program
   (`commands schema`, `--check` plans, error documents and exit codes, `files[]`), not the content of
   a store. `kartograf.testing` builds versioned stores, sidecars and project files, which Hydraulik
@@ -45,4 +43,3 @@ read three producers through hand-made test data: Hydrolog (the tables of `route
 ## Consequences
 
 - A format change in Hydrolog breaks `test_hydrolog_testing.py` when the pin moves.
-- The gate shows one skipped module until then.

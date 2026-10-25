@@ -165,13 +165,25 @@ follows [Semantic Versioning](https://semver.org/).
   network document, the inflows, the five tables and the result without its paths) and
   tests that every table is read with the peak, time and volume that Hydrolog reports
   and runs through `swmm run` on the real SWMM; a live test makes the tables again.
-- Contract tests against `hydrolog.testing` (DEV-10.6, ADR-0010): the case and the `precip hietogram` envelope that Hydrolog builds equal the recorded fixtures and are read by the readers of Hydraulik; the module skips until the pin of the `rainfall` extra has `hydrolog.testing`.
+- Contract tests against `hydrolog.testing` (DEV-10.6, ADR-0010): the case and the `precip hietogram` envelope that Hydrolog builds equal the recorded fixtures and are read by the readers of Hydraulik; the module runs in the gate.
 - `docs/USAGE.md`: the tasks of a flood study from `terrain download` to `model couple`,
   with the examples that the offline tests run; the long walkthrough that the README
   held moved there, and the links of the README are absolute (DOC-1.4).
+
+### Changed
+
+- The `rainfall` extra declares the supported ranges `hydrolog>=1.0.0.dev0,<2` and
+  `imgwtools>=3.0.0.dev0,<4` (REL-5.6) and pins the producers' unpushed heads by commit in
+  `[tool.uv.sources]`: Hydrolog `0719c41` (`feature/routing-network`, 1.0.0.dev0) and
+  IMGWTools `7b11755` (`feature/data-output`, 3.0.0), instead of the tags v0.7.0 and
+  v2.1.1 (REL-5.3, ADR-0011). `tests/fixtures/rain/hietogram_euler_ii.json` is recorded
+  again from the real command.
 
 ### Fixed
 
 - SFINCS keeps the name of an observation point only when the name is quoted in
   `sfincs.obs`; the writer quotes it (an unquoted name became `station_001`) and refuses
   a name that is empty or holds a quote.
+- `rainfall build --latitude` passed `method` to `imgwtools.fetch_pmaxtp` by position;
+  IMGWTools 3.0.0 made it keyword-only, so the call failed with `TypeError` against the
+  real function (the fakes of the tests accepted a positional argument).

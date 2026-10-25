@@ -1,8 +1,11 @@
 """Design rain from Hydrolog and IMGWTools: the library routes and their documents.
 
-``hietogram_euler_ii.json`` is the output of ``hydrolog precip hietogram --json`` as
-Hydrolog prints it; ``pmaxtp_fetch.json`` has the layout that ``imgw pmaxtp fetch
---json`` prints (IMGWTools' own command code made it), with synthetic depths.
+``hietogram_euler_ii.json`` is the output of ``hydrolog precip hietogram
+--hietogram-type euler_ii --total-mm 40 --duration-min 60 --timestep-min 10 --json
+--lang en`` as Hydrolog prints it, with its ``inputs`` member (Hydrolog
+``feature/routing-network``, 0719c41, 1.0.0.dev0, recorded 2026-10-25);
+``pmaxtp_fetch.json`` has the layout that ``imgw pmaxtp fetch --json`` prints
+(IMGWTools' own command code made it), with synthetic depths.
 """
 
 import json
@@ -220,7 +223,7 @@ def test_the_point_is_fetched_through_the_public_function_of_imgwtools(
 
     calls: list[tuple[Any, ...]] = []
 
-    def fake(latitude: float, longitude: float, method: str = "POT") -> PMaXTPResult:
+    def fake(latitude: float, longitude: float, *, method: str = "POT") -> PMaXTPResult:
         calls.append((latitude, longitude, method))
         return PMaXTPResult(
             method=method,
@@ -255,7 +258,7 @@ def test_the_failures_of_imgwtools_become_registry_errors(
 ) -> None:
     import imgwtools
 
-    def fake(latitude: float, longitude: float, method: str = "POT") -> None:
+    def fake(latitude: float, longitude: float, *, method: str = "POT") -> None:
         raise getattr(imgwtools, failure)("it failed")
 
     monkeypatch.setattr(imgwtools, "fetch_pmaxtp", fake)

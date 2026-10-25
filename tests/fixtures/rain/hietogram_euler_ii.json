@@ -41,5 +41,11 @@
    22.32216272760358
   ]
  },
- "notices": []
+ "notices": [],
+ "inputs": {
+  "hietogram_type": "euler_ii",
+  "total_mm": 40.0,
+  "duration_min": 60.0,
+  "timestep_min": 10.0
+ }
 }

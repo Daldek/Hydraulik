@@ -8,9 +8,9 @@ Hydraulik's readers and compare it with the recorded real output of ``tests/fixt
 Hydrolog breaks these tests when the pin of the ``rainfall`` extra moves to it, not at
 a user.
 
-The Hydrolog that the extra pins (v0.7.0) has no ``hydrolog.testing``; the module skips
-until the pin moves to the routing release (``docs/PROGRESS.md``). To run it before, put
-a Hydrolog checkout of ``feature/routing-network`` first on ``PYTHONPATH``.
+The ``rainfall`` extra pins a Hydrolog that has ``hydrolog.testing`` (the commit of
+``feature/routing-network``, ``docs/PROGRESS.md``), so the module imports it and never
+skips: a pin without it fails the gate.
 """
 
 import json
@@ -18,15 +18,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from hydrolog import testing
 
 from hydraulik import build_rainfall
 from hydraulik.data.rainfall import read_hietogram_document
 from hydraulik.data.tables import read_hydrograph, read_rain_table
-
-testing = pytest.importorskip(
-    "hydrolog.testing",
-    reason="the pinned Hydrolog (v0.7.0) has no hydrolog.testing; bump the pin",
-)
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 RECORDED = FIXTURES / "hydrolog"

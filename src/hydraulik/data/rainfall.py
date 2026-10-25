@@ -427,7 +427,7 @@ def fetch_pmaxtp(latitude: float, longitude: float, method: str = "POT") -> Pmax
     """
     imgwtools = require("imgwtools", "rainfall")
     try:
-        result = imgwtools.fetch_pmaxtp(latitude, longitude, method)
+        result = imgwtools.fetch_pmaxtp(latitude, longitude, method=method)
     except imgwtools.IMGWValidationError as exc:
         raise InvalidInputError(
             str(exc),
