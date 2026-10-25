@@ -37,6 +37,7 @@ from hydraulik.exceptions import (
     NotFoundError,
     UnsupportedError,
 )
+from hydraulik.terrain.grid import write_grid_raster
 
 __all__ = [
     "BALANCE_WARNING_PERCENT",
@@ -55,8 +56,6 @@ __all__ = [
 
 BALANCE_WARNING_PERCENT: Final = 1.0
 """Residual [percent of the rain] above which the balance is flagged (spec 6)."""
-
-NODATA: Final = -9999.0
 
 Float = NDArray[np.float64]
 Bool = NDArray[np.bool_]
@@ -615,31 +614,13 @@ def export_geotiff(run: MapRun, variable: str, path: Path) -> None:
             details={"option": "variable", "allowed": sorted(arrays)},
             reason="not_allowed",
         )
-    rasterio = require("rasterio", "model")
-    transform = require("rasterio.transform", "model").from_origin(
-        run.grid.x0_m,
-        run.grid.y0_m + run.grid.rows * run.grid.dx_m,
-        run.grid.dx_m,
-        run.grid.dx_m,
-    )
-    north_up = np.flipud(arrays[variable])
-    data = np.where(np.isfinite(north_up), north_up, NODATA).astype(np.float32)
-    with rasterio.open(
+    write_grid_raster(
         path,
-        "w",
-        driver="GTiff",
-        height=run.grid.rows,
-        width=run.grid.columns,
-        count=1,
-        dtype="float32",
-        crs=f"EPSG:{run.grid.epsg}",
-        transform=transform,
-        nodata=NODATA,
-        compress="deflate",
-    ) as target:
-        target.write(data, 1)
-        target.update_tags(
-            variable=variable,
-            description=EXPORT_VARIABLES[variable],
-            source=run.path.name,
-        )
+        run.grid,
+        arrays[variable],
+        tags={
+            "variable": variable,
+            "description": EXPORT_VARIABLES[variable],
+            "source": run.path.name,
+        },
+    )

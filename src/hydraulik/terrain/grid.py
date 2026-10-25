@@ -37,6 +37,7 @@ from hydraulik.exceptions import (
 
 __all__ = [
     "MAX_CELLS",
+    "NODATA",
     "Extent",
     "Resampled",
     "edge_cells",
@@ -45,11 +46,16 @@ __all__ = [
     "polygon_mask",
     "raster_extent",
     "read_geometry",
+    "resample_codes",
     "resample_raster",
+    "write_grid_raster",
 ]
 
 MAX_CELLS: Final = 25_000_000
 """The most cells a model may have: about 200 MB for each array of the build."""
+
+NODATA: Final = -9999.0
+"""The no-data value of the GeoTIFFs that Hydraulik writes."""
 
 Float = NDArray[np.float64]
 Bool = NDArray[np.bool_]
@@ -294,6 +300,107 @@ def resample_raster(path: Path, grid: RegularGrid) -> Resampled:
         )
     destination[~np.isfinite(destination)] = np.nan
     return Resampled(np.flipud(destination), cell_size, method.name)
+
+
+def resample_codes(path: Path, grid: RegularGrid) -> NDArray[np.uint8]:
+    """Bring band 1 of a raster of class codes onto the grid by the nearest cell.
+
+    A class raster (the hydrologic soil groups) must not be averaged or interpolated:
+    the code of the source cell that holds the centre of a cell of the grid is taken.
+
+    Parameters
+    ----------
+    path : Path
+        The raster; its no-data value and the area it does not cover give code 0.
+    grid : RegularGrid
+        The grid to fill.
+
+    Returns
+    -------
+    ndarray of uint8
+        The codes on the grid, shape ``(rows, columns)``, row 0 south; 0 where there is
+        no data. A value that is not a whole number from 0 to 255 becomes 0.
+
+    Raises
+    ------
+    NotFoundError
+        If the file does not exist.
+    InputDataError
+        If the raster cannot be read or has no CRS.
+    """
+    rasterio = require("rasterio", "model")
+    enums = require("rasterio.enums", "model")
+    warp = require("rasterio.warp", "model")
+    destination = np.full(grid.shape, np.nan, dtype=np.float32)
+    with _open(path) as source:
+        if source.crs is None:
+            raise InputDataError(
+                f"{path.name} has no CRS",
+                details={"path": str(path)},
+                hint="Assign the CRS of the data to the raster.",
+                reason="crs_missing",
+            )
+        warp.reproject(
+            source=rasterio.band(source, 1),
+            destination=destination,
+            dst_transform=_transform(grid),
+            dst_crs=f"EPSG:{grid.epsg}",
+            src_nodata=source.nodata,
+            dst_nodata=np.nan,
+            resampling=enums.Resampling.nearest,
+        )
+    whole = np.isfinite(destination) & (destination == np.rint(destination))
+    valid = whole & (destination >= 0) & (destination <= 255)
+    codes: NDArray[np.uint8] = np.flipud(
+        np.where(valid, np.rint(destination), 0).astype(np.uint8)
+    )
+    return codes
+
+
+def write_grid_raster(
+    path: Path,
+    grid: RegularGrid,
+    values: Float,
+    *,
+    tags: dict[str, str] | None = None,
+) -> None:
+    """Write an array on the grid as a GeoTIFF in the CRS of the model.
+
+    Parameters
+    ----------
+    path : Path
+        The file to create; it is overwritten.
+    grid : RegularGrid
+        The grid; ``values`` has its shape, row 0 at the south.
+    values : ndarray
+        One value per cell; a value that is not finite becomes :data:`NODATA`.
+    tags : dict of str to str or None, optional
+        Tags of the band (the variable, what it was made from).
+
+    Raises
+    ------
+    MissingDependencyError
+        If rasterio is not installed (extra ``model``).
+    """
+    rasterio = require("rasterio", "model")
+    north_up = np.flipud(values)
+    data = np.where(np.isfinite(north_up), north_up, NODATA).astype(np.float32)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        height=grid.rows,
+        width=grid.columns,
+        count=1,
+        dtype="float32",
+        crs=f"EPSG:{grid.epsg}",
+        transform=_transform(grid),
+        nodata=NODATA,
+        compress="deflate",
+    ) as target:
+        target.write(data, 1)
+        if tags:
+            target.update_tags(**tags)
 
 
 def read_geometry(path: Path, layer: str | None, epsg: int) -> Any:
