@@ -8,8 +8,8 @@ replaces values of the first. **The values are literature values that nobody has
 calibrated or reviewed for Polish catchments; the author is asked to review them before a
 result is used** (see the open questions in `docs/PROGRESS.md`).
 
-The code that reads the tables and paints the classes is a library module; the options of
-`model build` that use it are not wired yet (PROGRESS, Next 4).
+`model build` uses them through `--landcover`, `--hsg`, `--default-hsg`, `--classes` and
+`--building-raise-m` (ADR-0008; "In `model build`" below).
 
 ## Method
 
@@ -34,6 +34,33 @@ The code that reads the tables and paints the classes is a library module; the o
    the soil group of the cell (the composite curve number of TR-55, figure 2-3). The soil
    group is the nearest cell of the HSG raster (uint8, 1 A to 4 D, 0 no data), or the
    default group.
+
+## In `model build`
+
+```sh
+hydraulik model build --dem ./data/elevation/nmt.tif --dx-m 5 --rain ./rain.csv \
+    --landcover ./data/landcover/1465.gpkg --hsg ./data/soil/hsg.tif --default-hsg C \
+    --output-dir ./model
+```
+
+* `--landcover` paints the classes; the model gets `sfincs.man` and `manning.tif`.
+* `--hsg` is the raster of soil groups (the nearest cell is taken); `--default-hsg` fills
+  the cells it does not cover or, alone, every cell. With either the model gets
+  `sfincs.scs` and `curve_number.tif`; with neither infiltration is off.
+* `--classes FILE` replaces values (a `class` column and any of `manning_n`, `cn_a` to
+  `cn_d`; a blank cell keeps the shipped value; comma or semicolon, decimal point or
+  comma).
+* `--building-raise-m H` raises the cells that are half or more under roofs by `H` metres
+  and applies the roughness of a roof there. The default is 0: the buildings are ground
+  that the water crosses.
+* `manning.tif` and `curve_number.tif` are GeoTIFFs on the grid of the model, written
+  beside it to look at (SFINCS does not read them).
+* The result has a `landcover` key: the area of every class, the roads that were painted
+  or skipped, the attribute values the mapping does not name and the buildings.
+  `infiltration.hsg` counts the cells of each soil group.
+* `--landcover` excludes `--manning` and `--manning-raster`; `--hsg` and `--default-hsg`
+  exclude `--curve-number-raster` and `--retention-mm-raster`; the four other options
+  need `--landcover`.
 
 ## The classes
 

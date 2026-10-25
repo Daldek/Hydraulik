@@ -115,6 +115,20 @@ REASONS_PL: Final[dict[str, str]] = {
     ),
     "cn_gaps": "Raster infiltracji nie pokrywa żadnej komórki obszaru.",
     "invalid_retention": "Retencja SCS S jest w mm i nie może być ujemna.",
+    "invalid_hsg": (
+        "Raster gleb ma kod, który nie jest grupą hydrologiczną: oczekiwane są 1 (A) "
+        "do 4 (D) i 0 dla braku danych."
+    ),
+    "invalid_classes_table": (
+        "Tabela klas pokrycia terenu jest niepoprawna; zobacz docs/LAND_COVER.md."
+    ),
+    "invalid_mapping": (
+        "Tabela przypisania warstw BDOT10k do klas pokrycia terenu jest niepoprawna."
+    ),
+    "landcover_layers_missing": (
+        "Plik nie ma warstw pokrycia terenu BDOT10k (OT_PT*_A); podaj GeoPackage "
+        "z `terrain download`."
+    ),
     "outlet_outside_domain": "Odpływ (--outlet) nie dotyka obszaru modelu.",
     "outlet_not_on_edge": (
         "Odpływ leży wewnątrz obszaru; woda może wypłynąć tylko brzegiem."

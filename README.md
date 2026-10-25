@@ -138,8 +138,25 @@ The grid is aligned to `--dx-m`; a terrain finer than the grid is averaged to it
 domain is every cell with elevation, or `--geometry` (a polygon), or `--bbox` with
 `--crs`; a cell of the domain without elevation or Manning `n` is an error, and where
 the curve number has gaps there is no infiltration (a warning says how many cells).
-Without `--outlet` the boundary is closed and all the rain stays in the model. Then a
-run and its results:
+Without `--outlet` the boundary is closed and all the rain stays in the model.
+
+Manning `n` and the curve number can come from the land cover that `terrain download`
+fetched (BDOT10k) and from the hydrologic soil groups:
+
+```sh
+hydraulik model build --dem ./data/elevation/nmt.tif --dx-m 5 --rain ./rain.csv \
+    --landcover ./data/landcover/bdot10k.gpkg --hsg ./data/soil/hsg.tif \
+    --default-hsg C --building-raise-m 3 --output-dir ./model
+```
+
+The features are painted as classes on a grid of about 1 m and averaged into every cell
+(`docs/LAND_COVER.md` has every value and its source: literature values that nobody has
+calibrated for Polish catchments; `--classes` replaces them). The soil group is the
+nearest cell of the raster and `--default-hsg` fills the cells it does not cover; without
+a soil group infiltration is off. A roof is ground that the water crosses unless
+`--building-raise-m` raises the cells that are half or more under roofs. `manning.tif`
+and `curve_number.tif` beside the model show what was made, and the `landcover` part of
+the result lists the area of every class. Then a run and its results:
 
 ```sh
 hydraulik engines check --require 'model run'
@@ -192,7 +209,7 @@ description of the inlets is the main uncertainty.
 | Show the settings and their sources | `config show` | `hydraulik.show_config` | nothing |
 | Report the engines and packages found, and what each command needs | `engines check` | `hydraulik.check_engines` | nothing |
 | Fetch the terrain, land cover and soil groups of an area (Kartograf) | `terrain download` | `hydraulik.download_terrain` | `--output-dir` |
-| Write a SFINCS model directory from terrain, rain and optional rasters | `model build` | `hydraulik.build_model` | `--output-dir` |
+| Write a SFINCS model directory from terrain, rain, land cover and optional rasters | `model build` | `hydraulik.build_model` | `--output-dir` |
 | Run SFINCS on a model directory, read its maxima and water balance | `model run` | `hydraulik.run_model` | `--output-dir` |
 | Read the maxima, flooded areas and water balance of a run | `results read` | `hydraulik.read_results` | nothing |
 | Write a map as a GeoTIFF or the station series as a CSV table | `results export` | `hydraulik.export_results` | `--output` |
@@ -251,6 +268,8 @@ under ODbL. Results are written only where you point `--output-dir` or `--output
 ## Documentation
 
 - [CHANGELOG](docs/CHANGELOG.md)
+- [Land cover to Manning n and curve number](docs/LAND_COVER.md): the method, every
+  value and its source
 - [Extraction note](docs/plans/2026-10-24-sfincs-swmm-extraction.md): what the
   earlier SFINCS and SWMM work decided, built and found
 - [Plan](docs/plans/2026-10-24-sfincs-swmm-integration.md)

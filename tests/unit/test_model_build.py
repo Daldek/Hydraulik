@@ -525,6 +525,26 @@ def test_existing_files_are_a_conflict_until_force_replaces_them(
         ),
         ({"bbox": [0, 0, 1], "crs": "EPSG:2180"}, "invalid_bbox"),
         ({"recession_min": -1.0}, "out_of_range"),
+        ({"hsg": "s.tif"}, "option_not_applicable"),
+        ({"default_hsg": "C"}, "option_not_applicable"),
+        ({"classes": "c.csv"}, "option_not_applicable"),
+        ({"building_raise_m": 2.0}, "option_not_applicable"),
+        ({"landcover": "b.gpkg", "manning": 0.03}, "exclusive_options"),
+        ({"landcover": "b.gpkg", "manning_raster": "n.tif"}, "exclusive_options"),
+        (
+            {"landcover": "b.gpkg", "hsg": "s.tif", "curve_number_raster": "cn.tif"},
+            "exclusive_options",
+        ),
+        (
+            {
+                "landcover": "b.gpkg",
+                "default_hsg": "C",
+                "retention_mm_raster": "s.tif",
+            },
+            "exclusive_options",
+        ),
+        ({"landcover": "b.gpkg", "default_hsg": "E"}, "not_allowed"),
+        ({"landcover": "b.gpkg", "building_raise_m": -1.0}, "out_of_range"),
     ],
 )
 def test_options_that_do_not_go_together_are_refused_before_a_file_is_read(

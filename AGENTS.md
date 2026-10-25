@@ -66,7 +66,7 @@ Codes come from the shared registry
 - `engines check` (`hydraulik.check_engines`): Report the engines and packages Hydraulik can use on this machine. Details: `hydraulik commands schema --command 'engines check'`.
 - `terrain download` (`hydraulik.download_terrain`): Download the terrain, land cover and soil groups of an area (Kartograf). Details: `hydraulik commands schema --command 'terrain download'`.
 - `rainfall build` (`hydraulik.build_rainfall`): Write a design rain as a rain table from a Hydrolog shape and a PMAXTP depth. Details: `hydraulik commands schema --command 'rainfall build'`.
-- `model build` (`hydraulik.build_model`): Write a SFINCS model directory from your terrain, rain and optional rasters. Details: `hydraulik commands schema --command 'model build'`.
+- `model build` (`hydraulik.build_model`): Write a SFINCS model directory from terrain, rain, land cover and optional rasters. Details: `hydraulik commands schema --command 'model build'`.
 - `model run` (`hydraulik.run_model`): Run SFINCS on a model directory and read its maxima and water balance. Details: `hydraulik commands schema --command 'model run'`.
 - `model couple` (`hydraulik.couple_model`): Run SFINCS and a SWMM sewer network together and book the water they exchange. Details: `hydraulik commands schema --command 'model couple'`.
 - `results read` (`hydraulik.read_results`): Read the maxima, flooded areas and water balance of a SFINCS run. Details: `hydraulik commands schema --command 'results read'`.

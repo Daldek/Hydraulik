@@ -83,7 +83,7 @@
       "type": "object",
       "required": ["source"],
       "properties": {
-        "source": {"enum": ["uniform", "raster"]},
+        "source": {"enum": ["uniform", "raster", "landcover"]},
         "value_s_m13": {"type": "number", "exclusiveMinimum": 0},
         "path": {"type": "string"},
         "resampling": {"enum": ["average", "bilinear"]},
@@ -94,11 +94,11 @@
     },
     "infiltration": {
       "type": ["object", "null"],
-      "required": ["source", "path", "resampling", "gap_cells", "initial_abstraction", "curve_number"],
+      "required": ["source", "gap_cells", "initial_abstraction", "curve_number"],
       "properties": {
-        "source": {"enum": ["curve_number_raster", "retention_mm_raster"]},
+        "source": {"enum": ["curve_number_raster", "retention_mm_raster", "landcover"]},
         "path": {"type": "string"},
-        "resampling": {"enum": ["average", "bilinear"]},
+        "resampling": {"enum": ["average", "bilinear", "nearest"]},
         "gap_cells": {"type": "integer", "minimum": 0},
         "initial_abstraction": {"type": "number", "minimum": 0, "maximum": 1},
         "curve_number": {
@@ -108,6 +108,25 @@
             "min": {"type": "number"},
             "mean": {"type": "number"},
             "max": {"type": "number"}
+          }
+        },
+        "hsg": {
+          "type": "object",
+          "required": ["path", "default", "default_cells", "cells"],
+          "properties": {
+            "path": {"type": ["string", "null"]},
+            "default": {"enum": ["A", "B", "C", "D", null]},
+            "default_cells": {"type": "integer", "minimum": 0},
+            "cells": {
+              "type": "object",
+              "required": ["A", "B", "C", "D"],
+              "properties": {
+                "A": {"type": "integer", "minimum": 0},
+                "B": {"type": "integer", "minimum": 0},
+                "C": {"type": "integer", "minimum": 0},
+                "D": {"type": "integer", "minimum": 0}
+              }
+            }
           }
         }
       }
@@ -165,6 +184,82 @@
           "size_bytes": {"type": "integer", "minimum": 0},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "status": {"enum": ["written", "replaced"]}
+        }
+      }
+    },
+    "landcover": {
+      "type": ["object", "null"],
+      "required": [
+        "path",
+        "table",
+        "layers",
+        "classes",
+        "unclassified_percent",
+        "roads",
+        "unmapped",
+        "painting_cell_m",
+        "buildings"
+      ],
+      "properties": {
+        "path": {"type": "string"},
+        "table": {
+          "type": "object",
+          "required": ["source", "overridden"],
+          "properties": {
+            "source": {"type": "string"},
+            "overridden": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "layers": {
+          "type": "object",
+          "required": ["missing"],
+          "properties": {"missing": {"type": "array", "items": {"type": "string"}}}
+        },
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["class", "area_m2", "percent"],
+            "properties": {
+              "class": {"type": "string", "minLength": 1},
+              "area_m2": {"type": "number", "minimum": 0},
+              "percent": {"type": "number", "minimum": 0, "maximum": 100.0001}
+            }
+          }
+        },
+        "unclassified_percent": {"type": "number", "minimum": 0, "maximum": 100.0001},
+        "roads": {
+          "type": ["object", "null"],
+          "required": ["features", "skipped_not_on_ground", "skipped_conventional", "default_width"],
+          "properties": {
+            "features": {"type": "integer", "minimum": 0},
+            "skipped_not_on_ground": {"type": "integer", "minimum": 0},
+            "skipped_conventional": {"type": "integer", "minimum": 0},
+            "default_width": {"type": "integer", "minimum": 0}
+          }
+        },
+        "unmapped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["layer", "field", "value", "features"],
+            "properties": {
+              "layer": {"type": "string"},
+              "field": {"type": "string"},
+              "value": {"type": ["string", "null"]},
+              "features": {"type": "integer", "minimum": 1}
+            }
+          }
+        },
+        "painting_cell_m": {"type": "number", "exclusiveMinimum": 0},
+        "buildings": {
+          "type": "object",
+          "required": ["cells", "share", "raise_m"],
+          "properties": {
+            "cells": {"type": "integer", "minimum": 0},
+            "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "raise_m": {"type": "number", "minimum": 0}
+          }
         }
       }
     }

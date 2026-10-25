@@ -464,17 +464,21 @@ class ModelDocument(_Carrier, Document):
     domain : dict
         ``source`` (``dem``, ``bbox`` or ``geometry``) and what describes it.
     elevation : dict
-        ``min_m``, ``mean_m`` and ``max_m`` over the active cells, and ``sources``:
-        for each raster its ``path``, ``cell_size_m``, ``resampling`` (``average`` or
-        ``bilinear``) and the number of ``cells`` it supplied.
+        ``min_m``, ``mean_m`` and ``max_m`` over the active cells (raised buildings
+        included), and ``sources``: for each raster its ``path``, ``cell_size_m``,
+        ``resampling`` (``average`` or ``bilinear``) and the number of ``cells`` it
+        supplied.
     roughness : dict
-        ``source`` (``uniform`` or ``raster``) and the Manning ``n`` (``value_s_m13``,
-        or ``min_s_m13``, ``mean_s_m13`` and ``max_s_m13`` with ``path`` and
-        ``resampling``).
+        ``source`` (``uniform``, ``raster`` or ``landcover``) and the Manning ``n``
+        (``value_s_m13``, or ``min_s_m13``, ``mean_s_m13`` and ``max_s_m13``, with
+        ``path`` and ``resampling`` for a raster).
     infiltration : dict or None
-        ``None`` when infiltration is off; otherwise ``source``, ``path``,
-        ``resampling``, ``gap_cells`` (active cells without a curve number), the
-        ``curve_number`` statistics and ``initial_abstraction``.
+        ``None`` when infiltration is off; otherwise ``source``
+        (``curve_number_raster``, ``retention_mm_raster`` or ``landcover``), ``path``
+        and ``resampling`` of a raster, ``gap_cells`` (active cells without a curve
+        number), the ``curve_number`` statistics, ``initial_abstraction`` and, from the
+        land cover, ``hsg``: ``path`` of the soil raster, ``default`` group,
+        ``default_cells`` it filled and the ``cells`` of each group ``A`` to ``D``.
     rain : dict
         ``path``, ``total_mm``, ``duration_min``, ``timestep_min``,
         ``peak_intensity_mm_h``, ``recession_min`` and ``tstop_s``.
@@ -485,6 +489,13 @@ class ModelDocument(_Carrier, Document):
         ``name``, ``x_m`` and ``y_m`` of each station.
     files : list of dict
         The files written: ``path``, ``size_bytes``, ``sha256``, ``status``.
+    landcover : dict or None
+        ``None`` without ``--landcover``; otherwise ``path`` of the GeoPackage, the
+        class ``table`` (``source``, ``overridden``), ``layers`` (``missing``), the
+        ``classes`` with their ``area_m2`` and ``percent`` of the domain,
+        ``unclassified_percent``, the ``roads`` painted and skipped, the ``unmapped``
+        attribute values, ``painting_cell_m`` and ``buildings`` (``cells`` that are
+        ``share`` or more under roofs, ``raise_m``).
     """
 
     SCHEMA: ClassVar[str] = "hydraulik-model/1"
@@ -497,6 +508,7 @@ class ModelDocument(_Carrier, Document):
     outlet: dict[str, Any] | None
     observation_points: list[dict[str, Any]]
     files: list[dict[str, Any]]
+    landcover: dict[str, Any] | None = None
 
 
 @dataclass

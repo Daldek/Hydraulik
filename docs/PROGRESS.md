@@ -19,7 +19,7 @@
 | Command `rainfall build` (`operations/rainfall.py`, `data/rainfall.py`) | done | Hydrolog shapes, PMAXTP from a document or IMGWTools, Hydrolog document; only the network call is faked in tests |
 | Command `terrain download` (`data/kartograf.py`, `operations/terrain.py`) | done | ADR-0006; written against the data-output convention, tested with a fake Kartograf; refuses a Kartograf whose `output_dir` is a store root; the live test skips until Kartograf has plain mode |
 | Command `model build`, step one: your own rasters (`terrain/`, `model/`, `operations/build.py`) | done | elevation, Manning, curve number or retention, rain, outlet, stations; live test on SFINCS v2.4.1 and `main` |
-| `model build`, step two: land cover (BDOT10k) and soil (HSG) to Manning `n` and the curve number | partly done | the tables with their sources, the loader with the `--classes` override and the painter are library modules (`model/classes.py`, `model/landcover.py`, `_data/landcover/`, `docs/LAND_COVER.md`, ADR-0007), tested on synthetic GeoPackages and on the real BDOT10k of Poznan; the options of `model build` are not wired (Next 4); the values need the author's review |
+| `model build`, step two: land cover (BDOT10k) and soil (HSG) to Manning `n` and the curve number | done | `--landcover`, `--hsg`, `--default-hsg`, `--classes`, `--building-raise-m` (`model/{options,build,classes,landcover}.py`, `operations/build.py`, `_data/landcover/`, `docs/LAND_COVER.md`, ADR-0007, ADR-0008); tested on synthetic GeoPackages with hand-computed values; by hand on the real BDOT10k and NMT of Poznan, a square kilometre at 10 m, on SFINCS v2.4.1; the class values need the author's review |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
@@ -46,46 +46,15 @@ a Python string that holds backslashes.
    tests/integration/test_terrain_live.py` with `HYDRAULIK_KARTOGRAF_EXE`; the plan
    field names (read as any entry with `action` and `path`) and the item ids are what
    may differ.
-4. **`model build`, step two: wire the land cover in.** Done and tested: the tables
-   (`src/hydraulik/_data/landcover/{classes,mapping}.csv`, documented in
-   `docs/LAND_COVER.md`), `model.classes.load_classes(path | None)` and `load_mapping`,
-   `model.landcover.build_landcover(path, grid, active, table, soil_groups=,
-   building_roughness=)` (arrays `manning`, `curve_number`, `building_fraction`, the
-   `report` of the `landcover` key and the notices), `terrain.grid.resample_codes` (the
-   soil groups, nearest cell) and `write_grid_raster`. Still to do, in this order:
-   1. `BuildOptions` (`model/options.py`): `landcover`, `hsg`, `default_hsg` (A to D),
-      `classes`, `building_raise_m` (>= 0, default 0); `planned_names()` adds the Manning
-      role for `landcover`, the curve-number role for `landcover` with `hsg` or
-      `default_hsg`, and the two QA rasters `manning.tif` and `curve_number.tif`
-      (written with `write_grid_raster`).
-   2. `_prepare` (`operations/build.py`): `hsg`, `default_hsg`, `classes` and
-      `building_raise_m` need `landcover` (`option_not_applicable`); `landcover` excludes
-      `manning` and `manning_raster`, and `hsg` or `default_hsg` exclude
-      `curve_number_raster` and `retention_mm_raster` (`exclusive_options`); `--check`
-      loads `--classes` (cheap, no numpy) and says that the files exist.
-   3. `build_inputs` (`model/build.py`): after `active`, soil groups from
-      `resample_codes(hsg)` minus 1 (-1 where 0), `default_hsg` fills the gaps and counts
-      them; `build_landcover(..., building_roughness=building_raise_m > 0)`; Manning from
-      it (`roughness.source = "landcover"`); curve number from it (missing cells stay NaN
-      and give the existing `cn_gaps` warning; `infiltration.source = "landcover"`,
-      `resampling = "nearest"`, a `hsg` entry with the counts); the elevation of the cells
-      with `building_fraction >= BUILDING_SHARE` rises by `building_raise_m`; the notice
-      `no_infiltration` should say that `--hsg` or `--default-hsg` switches it on; the
-      `landcover` key of the report and its notices go to the document.
-   4. `ModelDocument` gets `landcover: dict | None = None` after `files`, and
-      `hydraulik-model-1.schema.json` the enum values `landcover` (roughness and
-      infiltration source), `nearest` (resampling) and the optional `landcover` and
-      `hsg` objects (loosen `required` of `infiltration` to the keys that always exist).
-   5. Catalog entry of `model build`: the five options with their English and Polish
-      texts, rules, an example; Polish reason texts `invalid_classes_table`,
-      `landcover_layers_missing`, `invalid_mapping` in `cli/messages.py`; README quick
-      start; CHANGELOG; regenerate AGENTS.md and llms.txt.
-   6. Tests: a model from a synthetic GeoPackage and HSG raster (the files `sfincs.man` and
-      `sfincs.scs` against `read_model_array`, orientation, the two GeoTIFFs, the raise,
-      the refusals of 2); then a smoke run on the real data of the proof of concept
-      (read only, never write there): `~/hydraulik-work/poznan_rataje_poc/data`
-      (`nmt_1m.tif`, EPSG:2180, `bdot10k/bdot10k_teryt_3064.gpkg`), a 1 km square at 10 m
-      with `--default-hsg C`, and a `live` run on SFINCS.
+4. **`model build`, step two: wire the land cover in**: done (ADR-0008). The options
+   `landcover`, `hsg`, `default_hsg`, `classes` and `building_raise_m` are in
+   `BuildOptions`, the catalog (English and Polish texts, rules, an example), the schema
+   (`landcover` key, `infiltration.hsg`) and the README; `manning.tif` and
+   `curve_number.tif` are written beside the model. Checked by hand on the real data of
+   the proof of concept (read only: `~/hydraulik-work/poznan_rataje_poc/data`, a 1 km
+   square of Poznan at 10 m, group C, 40 mm in 2 h: 1.7 s to build, infiltration 66 %
+   of the rain, balance residual -0.003 %; group D, 100 mm in 1 h, buildings raised by
+   3 m: 1.6 m deepest, 0.12 km2 deeper than 0.1 m, residual 0.0002 %).
 5. **BMI wrapper, coupler, `model couple`**: done, see ADR-0005. Live tests: build SFINCS
    v2.4.1 and `main` with gfortran and netCDF-Fortran (`./configure --enable-shared`,
    plain `make`, extraction note 7) and run `pytest -m live` with
@@ -118,6 +87,11 @@ a Python string that holds backslashes.
   (`roślinność krzewiasta`, shrubs) and PTUT (`uprawa trwała`, permanent crops) get
   those of arable land, and PTTR (grass and arable land) is missing. This branch cannot
   change another project: it is a `request` issue for Hydrograf (DEV-17.5).
+- `--building-raise-m` is 0 by default: the houses then do not obstruct the water and the
+  roof roughness does not apply (a notice says so). A regular-grid SFINCS model has no
+  building footprints, and raising the cells that are half or more under roofs is the
+  usual way to make the flow go round them. Which default do you want for an urban
+  model, and which height (3 m is what I used in the checks)?
 - Kartograf has no plain mode yet (KartografAdopt7, 2026-10-25): `terrain download`
   cannot be exercised on the real tool until the data-output convention is implemented
   there; the field names of its plan and the ids of its items are the unknowns.

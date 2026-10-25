@@ -5,9 +5,11 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Literal
 
 from hydraulik.documents import ModelDocument, PlanDocument
-from hydraulik.exceptions import InvalidInputError
+from hydraulik.exceptions import InvalidInputError, NotFoundError
+from hydraulik.model.classes import HSG_LETTERS, load_classes
 from hydraulik.model.options import DEFAULT_RECESSION_MIN, BuildOptions
 from hydraulik.operations._support import (
     extra_blocker,
@@ -23,9 +25,51 @@ __all__ = ["build_model"]
 _PACKAGES = ("numpy", "rasterio", "geopandas", "shapely", "pyproj")
 """What the build imports: the ``model`` extra."""
 
+SoilGroup = Literal["A", "B", "C", "D"]
+
 
 def _path(value: str | os.PathLike[str] | None) -> Path | None:
     return None if value is None else Path(value)
+
+
+def _landcover_step(options: BuildOptions) -> str:
+    """Return the line of the ``--check`` plan about the land cover.
+
+    The inputs of the land cover are looked for and the class table is read here, so
+    that a plan fails on what a run would fail on.
+    """
+    for path, what in (
+        (options.landcover, "land-cover file"),
+        (options.hsg, "soil raster"),
+    ):
+        if path is not None and not path.is_file():
+            raise NotFoundError(
+                f"{what} not found: {path}",
+                details={"path": str(path)},
+                reason="path_missing",
+            )
+    table = load_classes(options.classes)
+    values = (
+        "the shipped class values"
+        if options.classes is None
+        else f"the class values of {options.classes} ({len(table.overridden)} replaced)"
+    )
+    step = f"paint the land cover of {options.landcover} with {values} into Manning n"
+    if options.hsg is not None and options.default_hsg is not None:
+        step += (
+            f" and, with the soil groups of {options.hsg} (group {options.default_hsg} "
+            "where it has none), into the curve number"
+        )
+    elif options.hsg is not None:
+        step += f" and, with the soil groups of {options.hsg}, into the curve number"
+    elif options.default_hsg is not None:
+        step += (
+            f" and, with soil group {options.default_hsg} everywhere, into the curve "
+            "number"
+        )
+    if options.building_raise_m > 0.0:
+        step += f"; raise the cells under roofs by {options.building_raise_m:g} m"
+    return step
 
 
 def _prepare(
@@ -45,6 +89,11 @@ def _prepare(
     outlet: str | os.PathLike[str] | None,
     outlet_layer: str | None,
     observation_points: str | os.PathLike[str] | None,
+    landcover: str | os.PathLike[str] | None,
+    hsg: str | os.PathLike[str] | None,
+    default_hsg: str | None,
+    classes: str | os.PathLike[str] | None,
+    building_raise_m: float | None,
 ) -> BuildOptions:
     """Check the combination of options and return them as ``BuildOptions``."""
     if not dem:
@@ -108,6 +157,51 @@ def _prepare(
             "exclusive_options",
             "SCS retention S in mm and the curve number say the same thing.",
         )
+    if landcover is None:
+        for option, value in (
+            ("hsg", hsg),
+            ("default_hsg", default_hsg),
+            ("classes", classes),
+            ("building_raise_m", building_raise_m),
+        ):
+            if value is not None:
+                raise refuse_option(
+                    option,
+                    f"--{option.replace('_', '-')} belongs to --landcover, which was "
+                    "not given",
+                    "option_not_applicable",
+                    "Give the BDOT10k GeoPackage of the area with --landcover.",
+                )
+    else:
+        if manning is not None or manning_raster is not None:
+            raise refuse_option(
+                "landcover",
+                "the roughness comes from the land cover, not from --manning or "
+                "--manning-raster",
+                "exclusive_options",
+                "Drop --landcover, or the Manning option; --classes changes the "
+                "values of the land cover.",
+            )
+        if (hsg is not None or default_hsg is not None) and (
+            curve_number_raster is not None or retention_mm_raster is not None
+        ):
+            raise refuse_option(
+                "hsg" if hsg is not None else "default_hsg",
+                "the curve number comes from the land cover and the soil group, not "
+                "from --curve-number-raster or --retention-mm-raster",
+                "exclusive_options",
+                "Give the soil group, or the curve-number raster.",
+            )
+    if default_hsg is not None and default_hsg not in HSG_LETTERS:
+        raise refuse_option(
+            "default_hsg",
+            f"the soil group is one of {', '.join(HSG_LETTERS)}, got {default_hsg!r}",
+            "not_allowed",
+        )
+    if building_raise_m is not None and building_raise_m < 0:
+        raise refuse_option(
+            "building_raise_m", "the height must not be negative", "out_of_range"
+        )
     if recession_min is not None and recession_min < 0:
         raise InvalidInputError(
             "--recession-min must not be negative",
@@ -132,6 +226,11 @@ def _prepare(
         outlet=_path(outlet),
         outlet_layer=outlet_layer,
         observation_points=_path(observation_points),
+        landcover=_path(landcover),
+        hsg=_path(hsg),
+        default_hsg=default_hsg,
+        classes=_path(classes),
+        building_raise_m=0.0 if building_raise_m is None else float(building_raise_m),
     )
 
 
@@ -152,6 +251,11 @@ def build_model(
     outlet: str | os.PathLike[str] | None = None,
     outlet_layer: str | None = None,
     observation_points: str | os.PathLike[str] | None = None,
+    landcover: str | os.PathLike[str] | None = None,
+    hsg: str | os.PathLike[str] | None = None,
+    default_hsg: SoilGroup | None = None,
+    classes: str | os.PathLike[str] | None = None,
+    building_raise_m: float | None = None,
     output_dir: str | os.PathLike[str],
     force: bool = False,
     check: bool = False,
@@ -161,8 +265,9 @@ def build_model(
     The terrain is averaged (or interpolated) onto a grid of ``dx_m`` cells that is
     aligned to ``dx_m``; the domain is a polygon, a rectangle or the cells with
     elevation; Manning ``n`` and the SCS curve number are uniform or rasters on the same
-    grid; the rain is the table of ``rainfall build``. Nothing reaches ``output_dir``
-    before every file is written and checked.
+    grid, or are made from the BDOT10k land cover (``landcover``) and the hydrologic
+    soil groups (``hsg``, ``default_hsg``); the rain is the table of ``rainfall build``.
+    Nothing reaches ``output_dir`` before every file is written and checked.
 
     Parameters
     ----------
@@ -198,6 +303,26 @@ def build_model(
         Without an outlet the boundary is closed.
     observation_points : path-like or None, optional
         Station table (``name``, ``x_m``, ``y_m`` in the CRS of the model).
+    landcover : path-like or None, optional
+        BDOT10k GeoPackage (``terrain download`` writes it to ``landcover/``): Manning
+        ``n`` and, with a soil group, the curve number are made from its classes
+        (``docs/LAND_COVER.md``) and written as ``manning.tif`` and
+        ``curve_number.tif``. Excludes ``manning`` and ``manning_raster``.
+    hsg : path-like or None, optional
+        Raster of hydrologic soil groups (uint8: 1 A to 4 D, 0 no data; the nearest
+        cell is taken). Needs ``landcover``; excludes ``curve_number_raster`` and
+        ``retention_mm_raster``.
+    default_hsg : {"A", "B", "C", "D"} or None, optional
+        The soil group of the cells that ``hsg`` does not cover, or of every cell when
+        there is no ``hsg``. Needs ``landcover``.
+    classes : path-like or None, optional
+        CSV that replaces values of the shipped class table: a ``class`` column and any
+        of ``manning_n`` and ``cn_a`` to ``cn_d``. Needs ``landcover``.
+    building_raise_m : float or None, optional
+        Height [m] by which the cells that are half or more under roofs are raised, so
+        the water runs round the buildings (the roughness of a roof then applies); 0
+        when not given: the buildings are ground that the water crosses. Needs
+        ``landcover``.
     output_dir : path-like
         Directory for the model files; created when missing.
     force : bool, optional
@@ -216,16 +341,18 @@ def build_model(
     ------
     InvalidInputError
         If the options do not go together (reasons ``missing_option``,
-        ``exclusive_options``, ``option_not_applicable``, ``invalid_bbox``,
-        ``invalid_crs``), the domain is empty (``empty_domain``) or too large
-        (``grid_too_large``), the outlet is outside the domain or not on its edge, or
-        a station is outside it.
+        ``exclusive_options``, ``option_not_applicable``, ``not_allowed``,
+        ``out_of_range``, ``invalid_bbox``, ``invalid_crs``), the domain is empty
+        (``empty_domain``) or too large (``grid_too_large``), the outlet is outside the
+        domain or not on its edge, or a station is outside it.
     NotFoundError
         If an input file does not exist.
     InputDataError
         If a raster, a vector file or a table cannot be read, the terrain does not
         cover the domain (``dem_gaps``) or the Manning raster does not
-        (``manning_gaps``).
+        (``manning_gaps``), the soil raster is not one of soil groups
+        (``invalid_hsg``), or the land cover or the class table cannot be used
+        (``landcover_layers_missing``, ``invalid_classes_table``).
     UnsupportedError
         If the CRS of the first elevation raster is not a metric EPSG CRS.
     MissingDependencyError
@@ -257,6 +384,11 @@ required
         outlet=outlet,
         outlet_layer=outlet_layer,
         observation_points=observation_points,
+        landcover=landcover,
+        hsg=hsg,
+        default_hsg=default_hsg,
+        classes=classes,
+        building_raise_m=building_raise_m,
     )
     plan = plan_directory(output_dir, options.planned_names(), force=force)
     missing = missing_extras(_PACKAGES)
@@ -268,6 +400,8 @@ required
             f"read {options.rain} and write its rain, then the files of the model",
             f"move {', '.join(options.planned_names())} into {plan.directory}",
         ]
+        if options.landcover is not None:
+            steps.insert(1, _landcover_step(options))
         if not missing:
             from hydraulik.model.build import plan_grid
 
@@ -283,10 +417,15 @@ required
     require_extras(*_PACKAGES)
     from hydraulik.engines.sfincs.model import write_model
     from hydraulik.model.build import build_inputs
+    from hydraulik.terrain.grid import write_grid_raster
 
     built = build_inputs(options)
     with Writer(plan) as writer:
         write_model(writer.staging, built.inputs)
+        for name, (values, tags) in built.rasters.items():
+            write_grid_raster(
+                writer.staging / name, built.inputs.grid, values, tags=tags
+            )
         records = writer.commit()
     document = ModelDocument(**built.report, files=file_dicts(records))
     document.notices.extend(built.notices)

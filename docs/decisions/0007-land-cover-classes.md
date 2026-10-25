@@ -52,8 +52,7 @@ documented in `docs/LAND_COVER.md`).
   painted at 98 over them: a few curve-number points to the wet side in dense blocks.
 - The shallow-flow `n` values are several times those of floodplain tables; they slow the
   water on vegetated land. SFINCS has no roughness that depends on the depth.
-- The painter and the tables are a library module; wiring them into `model build`
-  (options, result, files) is the next step.
+- The painter and the tables are wired into `model build` by ADR-0008.
 
 ## Errata
 

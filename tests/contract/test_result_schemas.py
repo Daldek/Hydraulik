@@ -120,9 +120,9 @@ def test_model_document_validates_with_every_optional_input(tmp_path: Any) -> No
     pytest.importorskip("rasterio")
     pytest.importorskip("geopandas")
     import numpy as np
-    from shapely.geometry import LineString
+    from shapely.geometry import LineString, box
 
-    from ..synthetic import write_raster, write_vector
+    from ..synthetic import add_layer, write_codes, write_raster, write_vector
 
     ground = write_raster(
         tmp_path / "dem.tif", np.full((20, 40), 5.0), west=362000.0, north=504020.0
@@ -154,8 +154,37 @@ def test_model_document_validates_with_every_optional_input(tmp_path: Any) -> No
         crs="EPSG:2180",
         output_dir=tmp_path / "full",
     )
+    bdot = tmp_path / "bdot10k.gpkg"
+    add_layer(bdot, "OT_PTLZ_A", [box(362000.0, 504000.0, 362020.0, 504020.0)])
+    add_layer(
+        bdot,
+        "OT_PTTR_A",
+        [box(362020.0, 504000.0, 362040.0, 504020.0)],
+        RODZAJ=["inne"],  # a value the mapping lacks: an entry of `unmapped`
+    )
+    add_layer(bdot, "OT_BUBD_A", [box(362000.0, 504000.0, 362010.0, 504010.0)])
+    soil = write_codes(
+        tmp_path / "hsg.tif",
+        np.array([[2]], dtype=np.uint8),
+        west=362000.0,
+        north=504020.0,
+        cell=20.0,
+    )
+    painted = build_model(
+        dem=[ground],
+        dx_m=5.0,
+        rain=rain,
+        landcover=bdot,
+        hsg=soil,
+        default_hsg="C",
+        building_raise_m=3.0,
+        output_dir=tmp_path / "painted",
+    )
+    without_soil = build_model(
+        dem=[ground], dx_m=5.0, rain=rain, landcover=bdot, output_dir=tmp_path / "bare"
+    )
 
-    for document in (minimal, full):
+    for document in (minimal, full, painted, without_soil):
         validator.validate(document.to_dict())
 
 

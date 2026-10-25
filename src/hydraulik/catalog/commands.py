@@ -497,7 +497,8 @@ _MODEL_BUILD = CommandSpec(
     operation_id="hydraulik_model_build",
     function="hydraulik.build_model",
     summary=(
-        "Write a SFINCS model directory from your terrain, rain and optional rasters."
+        "Write a SFINCS model directory from terrain, rain, land cover and optional "
+        "rasters."
     ),
     description=(
         "Puts your elevation rasters (GeoTIFF, a metric CRS with an EPSG code) on a "
@@ -505,17 +506,21 @@ _MODEL_BUILD = CommandSpec(
         "cells when they are finer than the grid, bilinear otherwise), and writes "
         "the model files of SFINCS into --output-dir: sfincs.inp, the index, mask and "
         "elevation files, the rain of --rain (the table of `rainfall build`), and "
-        "when given Manning n (--manning, or --manning-raster), the SCS curve "
-        "number (--curve-number-raster, or the retention S in mm with "
-        "--retention-mm-raster, CN = 25400 / (S + 254)), the outflow cells where the "
-        "water leaves (--outlet) and the stations (--observation-points). The domain "
-        "is --geometry (a polygon), --bbox with --crs, or every cell that has "
-        "elevation. The run lasts the rain plus --recession-min. Use it to make a "
+        "when given Manning n (--manning, --manning-raster, or the BDOT10k land cover "
+        "of --landcover), the SCS curve number (--curve-number-raster, the retention "
+        "S in mm with --retention-mm-raster, CN = 25400 / (S + 254), or the land "
+        "cover with a hydrologic soil group: --hsg and --default-hsg), the outflow "
+        "cells where the water leaves (--outlet) and the stations "
+        "(--observation-points). The land cover is painted on a grid of about 1 m "
+        "and averaged into every cell (class values: docs/LAND_COVER.md; --classes "
+        "replaces them, --building-raise-m raises the cells under roofs); "
+        "manning.tif and curve_number.tif are written beside the model to check it. "
+        "The domain is --geometry (a polygon), --bbox with --crs, or every cell that "
+        "has elevation. The run lasts the rain plus --recession-min. Use it to make a "
         "model for `model run` or `model couple`; it does not download data "
-        "(`terrain download`), turn land cover into Manning or curve-number rasters, "
-        "or write subgrid or quadtree models. Nothing is guessed: a domain cell "
-        "without elevation or Manning n is an error, a gap in the curve numbers is a "
-        "warning."
+        "(`terrain download`) or write subgrid or quadtree models. Nothing is "
+        "guessed: a domain cell without elevation or Manning n is an error, a gap in "
+        "the curve numbers is a warning."
     ),
     options=(
         OptionSpec(
@@ -667,6 +672,70 @@ _MODEL_BUILD = CommandSpec(
             ),
         ),
         OptionSpec(
+            name="landcover",
+            type="string",
+            path_role="input",
+            examples=("./data/landcover/1465.gpkg",),
+            description=(
+                "BDOT10k GeoPackage (`terrain download` writes it to landcover/). "
+                "Manning n, and with a soil group the curve number, are made from its "
+                "classes (docs/LAND_COVER.md); manning.tif and curve_number.tif go "
+                "beside the model. Not with --manning or --manning-raster."
+            ),
+        ),
+        OptionSpec(
+            name="hsg",
+            type="string",
+            path_role="input",
+            examples=("./data/soil/hsg.tif",),
+            description=(
+                "Hydrologic soil groups (GeoTIFF, uint8: 1 A to 4 D, 0 no data; the "
+                "nearest cell is taken). Needs --landcover; not with "
+                "--curve-number-raster or --retention-mm-raster. A cell it does not "
+                "cover has no curve number unless --default-hsg gives it one."
+            ),
+        ),
+        OptionSpec(
+            name="default_hsg",
+            type="string",
+            enum=(
+                ("A", "high infiltration: sand, loamy sand"),
+                ("B", "moderate infiltration: loam, silt loam"),
+                ("C", "slow infiltration: sandy clay loam"),
+                ("D", "very slow infiltration: clay"),
+            ),
+            examples=("C",),
+            description=(
+                "Soil group of the cells --hsg does not cover, or of every cell when "
+                "there is no --hsg. Needs --landcover."
+            ),
+        ),
+        OptionSpec(
+            name="classes",
+            type="string",
+            path_role="input",
+            examples=("./classes.csv",),
+            description=(
+                "CSV that replaces values of the shipped class table: a class column "
+                "and any of manning_n, cn_a, cn_b, cn_c, cn_d (comma or semicolon, "
+                "decimal point or comma); a blank cell keeps the shipped value. Needs "
+                "--landcover."
+            ),
+        ),
+        OptionSpec(
+            name="building_raise_m",
+            type="number",
+            unit="m",
+            min=0.0,
+            examples=(3.0,),
+            description=(
+                "Height by which the cells that are half or more under roofs are "
+                "raised, so the water runs round the buildings (and the roughness of a "
+                "roof applies); 0 (default) leaves the buildings as ground that the "
+                "water crosses. Needs --landcover."
+            ),
+        ),
+        OptionSpec(
             name="output_dir",
             type="string",
             required=True,
@@ -702,6 +771,12 @@ _MODEL_BUILD = CommandSpec(
         "elevation is an error.",
         "Mark where the water leaves with --outlet; without it the boundary is closed "
         "and all the rain stays in the model.",
+        "With --landcover Manning n and the curve number come from the classes of "
+        "docs/LAND_COVER.md: literature values that nobody has calibrated. Read "
+        "`landcover` of the result and change values with --classes.",
+        "The curve number of the land cover needs a soil group: give --hsg (the raster "
+        "`terrain download` writes) and, for the cells it does not cover, "
+        "--default-hsg; with neither, infiltration is off.",
         "Read the notices: the defaults that were applied and the gaps of the curve "
         "numbers.",
     ),
@@ -721,6 +796,14 @@ _MODEL_BUILD = CommandSpec(
             ),
             result={"schema": "hydraulik-plan/1"},
         ),
+        Example(
+            call=(
+                "hydraulik model build --dem ./data/elevation/nmt.tif --dx-m 5 "
+                "--landcover ./data/landcover/1465.gpkg --hsg ./data/soil/hsg.tif "
+                "--default-hsg C --rain ./rain.csv --output-dir ./model --json"
+            ),
+            result={"schema": "hydraulik-model/1"},
+        ),
     ),
     errors=(
         "validation_error",
@@ -736,8 +819,8 @@ _MODEL_BUILD = CommandSpec(
     ),
     i18n_pl={
         "summary": (
-            "Zapisuje katalog modelu SFINCS z własnego terenu, opadu i opcjonalnych "
-            "rastrów."
+            "Zapisuje katalog modelu SFINCS z terenu, opadu, pokrycia terenu i "
+            "opcjonalnych rastrów."
         ),
         "description": (
             "Układa Twoje rastry wysokości (GeoTIFF, układ metryczny z kodem EPSG) na "
@@ -745,17 +828,22 @@ _MODEL_BUILD = CommandSpec(
             "źródłowych, gdy są drobniejsze niż siatka, w przeciwnym razie "
             "interpolacja dwuliniowa) i zapisuje pliki modelu SFINCS w --output-dir: "
             "sfincs.inp, pliki indeksu, maski i wysokości, opad z --rain (tabela "
-            "`rainfall build`) oraz, gdy podane, współczynnik Manninga n (--manning "
-            "albo --manning-raster), liczbę krzywej CN SCS (--curve-number-raster "
-            "albo retencję S w mm z --retention-mm-raster, CN = 25400 / (S + 254)), "
-            "komórki odpływu, którędy woda opuszcza obszar (--outlet) i stacje "
-            "(--observation-points). Obszarem jest --geometry (wielokąt), --bbox z "
-            "--crs albo każda komórka z wysokością. Przebieg trwa tyle co opad plus "
-            "--recession-min. Użyj, aby przygotować model dla `model run` lub `model "
-            "couple`; nie pobiera danych (`terrain download`), nie zamienia pokrycia "
-            "terenu w rastry Manninga ani CN i nie zapisuje modeli subgrid ani "
-            "quadtree. Niczego się nie zgaduje: komórka obszaru bez wysokości lub bez "
-            "n Manninga to błąd, luka w liczbach CN to ostrzeżenie."
+            "`rainfall build`) oraz, gdy podane, współczynnik Manninga n (--manning, "
+            "--manning-raster albo pokrycie terenu BDOT10k z --landcover), liczbę "
+            "krzywej CN SCS (--curve-number-raster, retencję S w mm z "
+            "--retention-mm-raster, CN = 25400 / (S + 254), albo pokrycie terenu z "
+            "hydrologiczną grupą gleby: --hsg i --default-hsg), komórki odpływu, "
+            "którędy woda opuszcza obszar (--outlet) i stacje (--observation-points). "
+            "Pokrycie terenu jest malowane na siatce około 1 m i uśredniane w każdej "
+            "komórce (wartości klas: docs/LAND_COVER.md; --classes je zastępuje, "
+            "--building-raise-m podnosi komórki pod dachami); obok modelu powstają "
+            "manning.tif i curve_number.tif do kontroli. Obszarem jest --geometry "
+            "(wielokąt), --bbox z --crs albo każda komórka z wysokością. Przebieg "
+            "trwa tyle co opad plus --recession-min. Użyj, aby przygotować model dla "
+            "`model run` lub `model couple`; nie pobiera danych (`terrain download`) "
+            "ani nie zapisuje modeli subgrid i quadtree. Niczego się nie zgaduje: "
+            "komórka obszaru bez wysokości lub bez n Manninga to błąd, luka w "
+            "liczbach CN to ostrzeżenie."
         ),
         "rules": [
             "Podaj teren w układzie metrycznym z kodem EPSG; pierwszy raster ustala "
@@ -764,6 +852,12 @@ _MODEL_BUILD = CommandSpec(
             "to błąd.",
             "Miejsce odpływu wskaż przez --outlet; bez niego brzeg jest zamknięty, a "
             "cały opad zostaje w modelu.",
+            "Z --landcover n Manninga i liczba CN pochodzą z klas z "
+            "docs/LAND_COVER.md: wartości z literatury, których nikt nie skalibrował. "
+            "Sprawdź `landcover` w wyniku, a wartości zmień przez --classes.",
+            "Liczba CN z pokrycia terenu wymaga grupy gleby: podaj --hsg (raster z "
+            "`terrain download`) i, dla komórek, których nie obejmuje, --default-hsg; "
+            "bez nich infiltracja jest wyłączona.",
             "Przeczytaj uwagi: zastosowane wartości domyślne i luki w liczbach CN.",
         ],
     },
