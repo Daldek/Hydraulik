@@ -90,122 +90,13 @@ print([command["name"] for command in catalog["commands"]])
 Every command prints one JSON document with `--json`; logs go to stderr. On an
 error stdout is empty and the last line of stderr is the error document.
 
-The terrain, the BDOT10k land cover and the soil groups of an area come from Kartograf,
-which Hydraulik starts as a program. It needs a Kartograf that writes plain files with
-`--output-dir` (the data-output convention of the Nogat ecosystem); one without it is
-refused, and `engines check` says which you have:
-
-```sh
-hydraulik engines check --require 'terrain download'
-hydraulik terrain download --bbox 361500,504000,363000,505500 --crs EPSG:2180 \
-    --output-dir ./data
-```
-
-Each product goes to its own sub-directory (`data/elevation`, `data/landcover`,
-`data/soil`). Before the first byte the plan of every product is read, and a file that
-exists (without `--force`) fails the whole call. The result lists the files with their
-`sha256`, and the sources with their licences and the attribution to print: plain files
-carry no sidecar. A product that fails after another succeeded gives status `partial`.
-
-A design rain for a model is a Hydrolog hyetograph shape with a depth that you give or
-the PMAXTP depth of IMGW-PIB, from the document of `imgw pmaxtp fetch --json` or, with
-the network and IMGWTools, for a point:
-
-```bash
-hydraulik rainfall build --hietogram-type euler_ii --total-mm 40 --duration-min 120 --output ./rain.csv --check
-```
-
-```sh
-hydraulik rainfall build --hietogram-type euler_ii --latitude 52.23 --longitude 21.01 \
-    --probability-percent 10 --duration-min 60 --output ./rain.csv
-hydraulik rainfall build --hietogram ./hietogram.json --output ./rain.csv
-```
-
-The second call converts the document of `hydrolog precip hietogram --json`. The table
-has `time_min,depth_mm`; a PMAXTP depth comes with a notice to name IMGW-PIB as its
-source.
-
-A model is built from your terrain (GeoTIFFs in a metric CRS, for Poland EPSG:2180), the
-rain table and, when you have them, a Manning raster and a curve-number raster (or the
-SCS retention `S` in mm):
-
-```sh
-hydraulik model build --dem ./nmt_1m.tif --dx-m 5 --rain ./rain.csv \
-    --curve-number-raster ./cn.tif --outlet ./outlet.gpkg --output-dir ./model
-```
-
-The grid is aligned to `--dx-m`; a terrain finer than the grid is averaged to it. The
-domain is every cell with elevation, or `--geometry` (a polygon), or `--bbox` with
-`--crs`; a cell of the domain without elevation or Manning `n` is an error, and where
-the curve number has gaps there is no infiltration (a warning says how many cells).
-Without `--outlet` the boundary is closed and all the rain stays in the model.
-
-Manning `n` and the curve number can come from the land cover that `terrain download`
-fetched (BDOT10k) and from the hydrologic soil groups:
-
-```sh
-hydraulik model build --dem ./data/elevation/nmt.tif --dx-m 5 --rain ./rain.csv \
-    --landcover ./data/landcover/bdot10k.gpkg --hsg ./data/soil/hsg.tif \
-    --default-hsg C --building-raise-m 3 --output-dir ./model
-```
-
-The features are painted as classes on a grid of about 1 m and averaged into every cell
-(`docs/LAND_COVER.md` has every value and its source: literature values that nobody has
-calibrated for Polish catchments; `--classes` replaces them). The soil group is the
-nearest cell of the raster and `--default-hsg` fills the cells it does not cover; without
-a soil group infiltration is off. A roof is ground that the water crosses unless
-`--building-raise-m` raises the cells that are half or more under roofs. `manning.tif`
-and `curve_number.tif` beside the model show what was made, and the `landcover` part of
-the result lists the area of every class. Then a run and its results:
-
-```sh
-hydraulik engines check --require 'model run'
-hydraulik model run --model ./model --output-dir ./run
-hydraulik results read --run ./run
-hydraulik results export --run ./run --variable max_depth --output ./hmax.tif
-```
-
-`model run` writes `sfincs_map.nc`, `sfincs_his.nc` and `sfincs.log` only when SFINCS
-finished and its map can be read. The water balance is `rain - infiltration - stored =
-residual`: in a closed model the residual is the error and above 1 % of the rain it is
-flagged; with outflow cells it is the water that left.
-
-A sewer network on its own, from a network table (one row per node) and the inflow
-hydrograph that Hydrolog gives (`time_min,discharge_m3s`):
-
-```sh
-hydraulik swmm run --network ./network.csv --inflow ./inflow.csv --inflow-node J1 \
-    --output-dir ./swmm
-```
-
-`swmm run` writes `network.inp` and `network.rpt` and reports the water balance of
-SWMM, the peaks of every node and conduit and, as a notice, a continuity error above
-5 %. `--inp` runs your own SWMM input (SI units) instead of a table. The inflow is the
-table of one node of `hydrolog route network --output-dir DIR`, which writes `<id>.csv`
-for every node of a river network; it is read as it is.
-
-A model and a sewer network together (optional, it needs the SFINCS shared library that
-you build yourself with `--enable-shared`, `HYDRAULIK_SFINCS_LIBRARY`, and `pyswmm`):
-
-```sh
-hydraulik engines check --require 'model couple'
-hydraulik model couple --model ./model --network ./network.csv --output-dir ./coupled
-```
-
-Every `--exchange-interval-s` the nodes of the network take water from the SFINCS cell
-they lie on and hand back what SWMM floods out of a full node; the volumes are exchanged,
-not the rates, so the interface adds no mass error. The result books the water (rain,
-infiltration, surface, network, outfall, exchange) and flags a residual above 1 %. Set
-`HYDRAULIK_SFINCS_QEXT_UNIT=ms` for SFINCS v2.4.1 and `m3s` for newer builds: a wrong
-unit shows as a balance that does not close. The coupled run happens in a process of its
-own, because SFINCS keeps its state in global variables. It is a screening: the
-description of the inlets is the main uncertainty.
-
-Water that comes from outside the model, for example the routed hydrograph of a
-catchment that the grid does not cover, enters one node of the network with `--inflow
-FILE --inflow-node NODE` (the same table as `swmm run`; its time is elapsed time from
-the start of the model run, as in the rain table). It has a term of its own in the
-balance (`network_inflow_m3`); a hydrograph that outlasts the run is cut, with a notice.
+The whole flow of a flood study is in [USAGE](https://github.com/Daldek/Hydraulik/blob/main/docs/USAGE.md):
+terrain, land cover and soil from Kartograf (`terrain download`), a design rain
+(`rainfall build`), the model (`model build`), the run and its results (`model run`,
+`results read`, `results export`), a sewer network on its own (`swmm run`) and its
+coupling with the model (`model couple`), including water that enters the network from
+outside the model, such as a hydrograph routed by Hydrolog. Every writing command has
+`--check`; run it first.
 
 ## Capabilities
 
@@ -275,19 +166,25 @@ under ODbL. Results are written only where you point `--output-dir` or `--output
 
 ## Documentation
 
-- [CHANGELOG](docs/CHANGELOG.md)
-- [Land cover to Manning n and curve number](docs/LAND_COVER.md): the method, every
-  value and its source
-- [Extraction note](docs/plans/2026-10-24-sfincs-swmm-extraction.md): what the
-  earlier SFINCS and SWMM work decided, built and found
-- [Plan](docs/plans/2026-10-24-sfincs-swmm-integration.md)
+- [USAGE](https://github.com/Daldek/Hydraulik/blob/main/docs/USAGE.md): the tasks of a
+  flood study, command by command
+- [CHANGELOG](https://github.com/Daldek/Hydraulik/blob/main/docs/CHANGELOG.md)
+- [DECISIONS](https://github.com/Daldek/Hydraulik/blob/main/docs/DECISIONS.md): why the
+  tool is built the way it is
+- [Land cover to Manning n and curve number](https://github.com/Daldek/Hydraulik/blob/main/docs/LAND_COVER.md):
+  the method, every value and its source
+- [Extraction note](https://github.com/Daldek/Hydraulik/blob/main/docs/plans/2026-10-24-sfincs-swmm-extraction.md):
+  what the earlier SFINCS and SWMM work decided, built and found
+- [Plan](https://github.com/Daldek/Hydraulik/blob/main/docs/plans/2026-10-24-sfincs-swmm-integration.md)
 
 ## Development
 
-See [CLAUDE.md](CLAUDE.md). The gate is `scripts/gate.sh`; contributions follow
-[CONTRIBUTING.md](CONTRIBUTING.md).
+See [CLAUDE.md](https://github.com/Daldek/Hydraulik/blob/main/CLAUDE.md). The gate is
+`scripts/gate.sh`; contributions follow
+[CONTRIBUTING.md](https://github.com/Daldek/Hydraulik/blob/main/CONTRIBUTING.md).
 
 ## Status, licence, author
 
-Pre-alpha (registry status `research`). MIT licence, see [LICENSE](LICENSE).
+Pre-alpha (registry status `research`). MIT licence, see
+[LICENSE](https://github.com/Daldek/Hydraulik/blob/main/LICENSE).
 Author: Piotr de Bever.

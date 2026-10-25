@@ -165,6 +165,9 @@ follows [Semantic Versioning](https://semver.org/).
   network document, the inflows, the five tables and the result without its paths) and
   tests that every table is read with the peak, time and volume that Hydrolog reports
   and runs through `swmm run` on the real SWMM; a live test makes the tables again.
+- `docs/USAGE.md`: the tasks of a flood study from `terrain download` to `model couple`,
+  with the examples that the offline tests run; the long walkthrough that the README
+  held moved there, and the links of the README are absolute (DOC-1.4).
 
 ### Fixed
 

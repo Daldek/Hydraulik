@@ -14,6 +14,7 @@ or `--output`.
 ## Documentation
 
 - [README](https://raw.githubusercontent.com/Daldek/Hydraulik/main/README.md): what the tool is for, install, settings, licences
+- [Usage](https://raw.githubusercontent.com/Daldek/Hydraulik/main/docs/USAGE.md): the tasks of a flood study, command by command
 - [AGENTS.md](https://raw.githubusercontent.com/Daldek/Hydraulik/main/AGENTS.md): how an agent calls the tool, result and error documents
 - [CHANGELOG](https://raw.githubusercontent.com/Daldek/Hydraulik/main/docs/CHANGELOG.md): what changed between versions
 - [Decisions](https://raw.githubusercontent.com/Daldek/Hydraulik/main/docs/DECISIONS.md): why the tool is built the way it is

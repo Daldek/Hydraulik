@@ -193,6 +193,7 @@ def render_llms() -> str:
     """
     entries = (
         ("README", "README.md", "what the tool is for, install, settings, licences"),
+        ("Usage", "docs/USAGE.md", "the tasks of a flood study, command by command"),
         (
             "AGENTS.md",
             "AGENTS.md",
