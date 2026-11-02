@@ -25,6 +25,7 @@
 | Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %); contract tests against `hydrolog.testing` (ADR-0010) run in the gate |
 | Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `5fa22b35` (`feature/routing-schematic`, 1.0.0.dev0) and IMGWTools `6bd35a49` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the earlier IMGWTools pin `3f7de36` (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `0719c41` (tables equal the fixture of 081fda2), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
 | `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
+| Field run on a real catchment (Kamiennik, 37.22 km2, 2026-11-01/02) | in progress | Next 9: runs 1 and 2 done, run 3 running; eight findings for `model build`, `model run`, `results` and `rainfall build`, none fixed in the code yet |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
 
@@ -107,6 +108,99 @@ a Python string that holds backslashes.
    release pull request narrows the ranges to `>=1.0.0,<2` and `>=3.0.0,<4`, replaces the two
    source entries with the tags (or removes them), runs `uv lock` and the gate, and records
    the fixtures again if the producers changed them.
+9. **Findings of the first field run (Kamiennik, 2026-11-01/02).** The catchment of the
+   Kamiennik above segment 21911 of Hydrograf (37.22 km2; the dam of the Świerzawa
+   reservoir has no bottom outlet in the model, the author's decision), the 5 m NMT from
+   Hydrograf, BDOT10k and HSG, a Beta (2, 5) hyetograph, a 5 m grid of 1 491 703 active
+   cells (2187 x 1340), SFINCS v2.4.1 in Docker with 2 threads. The work directory is
+   `~/hydraulik-work/kamiennik-12h-p1/` (outside the repository). Run 1: 12 h, p = 1 %,
+   105 mm, the default `huthresh` 0.05. Run 2: the same with `huthresh` 0.001. Run 3: 24
+   h, p = 1 %, 134.5 mm and 12 h after (`tstop` 36 h), hourly maps and seven
+   cross-sections, running since 2026-11-02 01:03 (45 % at 06:52, end expected about
+   13:00); its comparison with the Hydrolog hydrographs of the sections
+   (`compare_sections.py` in the work directory) comes after it. Every finding below was
+   worked around by hand outside Hydraulik; the fix of each is a proposal.
+   1. **`huthresh` 0.05 m does not suit rain on the grid.** Run 1 kept the water under 5
+      cm where it fell: 1.7 thousand m3 left through the outlet (0.04 % of the rain), the
+      deepest cell 2.27 m, 0.57 km2 deeper than 0.1 m, the reservoir station 0.05 m, the
+      station below the dam 0.048 m (the threshold itself). Run 2 with 0.001 (edited in
+      `sfincs.inp`): 11.6 thousand m3 (0.30 % of the rain, about 1 % of the runoff),
+      12.31 m at the dam, 1.92 km2 deeper than 0.1 m (1.16 km2 deeper than 0.3 m against
+      0.11), the reservoir 9.13 m deep, level 277.48 m a.s.l. at 18 h, under the spillway
+      (279.63). Rain 3.916, infiltration 2.774 and runoff 1.141 million m3 are the same in
+      both runs. Run 2 took 4 h 50 min, run 1 50 min. Fix: a `--huthresh-m` option of
+      `model build` (the writer already has `SfincsInputs.huthresh_m`), and a default for
+      rain models that the author chooses (Open questions).
+   2. **No output intervals and no cross-sections in `model build`.** `model/build.py`
+      sets `dtout_s` and the writer sets `dtmaxout` to `tstop_s`, and the writer writes no
+      `crsfile`. Run 3 needed `dtout = 3600` (hourly `zs` and `h` to look at during the
+      run), `dtmaxout = 129600` and `crsfile = sfincs.crs`, all added to `sfincs.inp` by
+      hand: K1 to K4 on the Kamiennik, C1 on the Czerwieniec, T2 and T3 on two unnamed
+      tributaries. The format, read in `sfincs_crosssections.f90` of v2.4.1: a name line
+      (one token, no spaces), `nrows ncols` (`2 2`), then the `x y` rows; the his file
+      gets `crosssection_name` and `crosssection_discharge` [m3/s], positive to the left
+      of the direction of the line (drawn from the left to the right bank, looking
+      downstream, the flow is positive). A 30 min test wrote 16 x 7 values; at 273 min
+      of run 3 all seven sections were positive (T3 0.13, T2 0.06, K1 0.034 m3/s). Fix:
+      `--dtout-s` and `--dtmaxout-s` (both `tstop` by default) and `--cross-sections`
+      (lines from a GeoPackage, the name from a column, checked for spaces and for the
+      domain) in `model build`; `results read` and a `results export` variable for the
+      discharge of the sections.
+   3. **The maxima of the last frame only.** SFINCS v2.4.1 resets `zsmax` and `vmax`
+      after each write at `dtmaxout` (`sfincs_output.f90`), so with `dtmaxout < tstop` the
+      map holds one `timemax` frame per window, each the maximum of its own window.
+      `MapRun` in `engines/sfincs/results.py` reads `hmax`, `vmax`, `cumprcp` and
+      `cuminf` from the last frame (`_filled(dataset[name], -1)`), so `results read` and
+      `results export --variable max_depth|max_velocity` report the last window, not the
+      run. Run 3 kept `dtmaxout = tstop` (one window) to avoid it. Fix: take the maximum
+      of `hmax` and `vmax` over the `timemax` frames (NaN-aware, then the domain mask);
+      check whether `cumprcp` and `cuminf` are reset too (not checked in the session),
+      since the balance reads them; a test on a map with two frames.
+   4. **`--output-dir` inside the model directory fails.** With the model in `<copy>` and
+      `--output-dir <copy>/run`, `model run` ended with exit 9 (`io_error`).
+      `stage_model` (`operations/_support.py`) skips hidden entries and the staging
+      directory only at the top of the model directory, so it copies `run/` together with
+      `run/.hydraulik-incoming/<staging>/`, the directory it is copying into: a recursive
+      copy. Workaround: separate directories. Fix: leave out the entry that is or contains
+      the output directory (resolved paths), or refuse it in the plan with an
+      `invalid_input` and a hint; a regression test.
+   5. **The grid is half a cell off the NMT.** `terrain/grid.py` (`grid_for_extent`)
+      puts the corner on a multiple of `--dx-m` (documented in USAGE and the CHANGELOG:
+      models of one cell size share their edges). The GUGiK NMT has its corners at x.5
+      m, so at 5 m the model grid lies 2.5 m off in x and y and every cell is interpolated
+      instead of copied. At the dam the spillway is 279.63 m a.s.l. in the NMT and about
+      281.2 m in the terrain of the model; Hydrograf, which draws the result over its own
+      NMT grid, shows single points at the edge of the reservoir as dry. Fix: an option
+      that takes the origin of the first elevation raster (or `--origin-x-m`,
+      `--origin-y-m`) when the cell size is its pixel or a multiple of it; which one is
+      the default is the author's decision (an ADR, since it changes a documented rule).
+   6. **`rainfall build` knows PMAXTP up to 3 h.** `PMAXTP_DURATIONS_MIN` in
+      `data/rainfall.py` is 15 to 180 min, while IMGWTools 3.0.0 (`fetch_pmaxtp`)
+      documents 16 durations: 5, 10, 15, 30, 45, 60, 90, 120, 180, 360, 720, 1080, 1440,
+      2160, 2880 and 4320 min. The 12 h and 24 h depths were taken by hand from the
+      PMAXTP points (inverse distance, power 2, the four nearest to the centroid: 105.0
+      and 134.5 mm at p = 1 %) and given with `--total-mm`. Fix: take the durations of
+      IMGWTools; a test for a 24 h depth.
+   7. **`results export` has no water level.** Its variables are `max_depth`,
+      `max_velocity`, `final_depth`, `infiltration` and `stations`. Hydrograf needed the
+      highest water level for its terrain profile and read `zsmax` from `sfincs_map.nc`
+      by hand (`zsmax = zb + hmax` exactly, 103 667 wet cells, 2.59 km2, 260.16 to 471.76
+      m a.s.l.). Fix: a `max_water_level` variable (`zsmax`, masked under `huthresh` like
+      `max_depth`, the maximum over frames of finding 3) in `EXPORT_VARIABLES`, the
+      catalog with its Polish text, the schema and the README.
+   8. **An interrupted run can leave the SFINCS container running.** On 2026-11-01 the
+      first run was started as a background job of the agent session and that job was
+      killed: the container `hydraulik-sfincs-d1930b01` went on without its `hydraulik`
+      and was removed with `docker rm -f`. On 2026-11-02 at 01:03 SIGTERM to the
+      `hydraulik` of run 3 did stop its container (`hydraulik-sfincs-d8b623c2`), removed
+      the staging and wrote `terminated`, so the SIGTERM path works. `_stop` in
+      `engines/sfincs/run.py` runs only when Python unwinds (SIGINT, SIGTERM through
+      `sigterm_as_error`); a signal that kills the process without that (SIGKILL, or
+      SIGHUP, which is not trapped) leaves the daemon's container, `docker run --rm`
+      removes it only when it ends. Which signal the session sent was not recorded. Fix:
+      trap SIGHUP like SIGTERM, and name or label the container with the host and PID
+      like the staging directory, so that `model run` and `engines check` find the
+      containers of a dead `hydraulik` and stop them or report them in a notice.
 
 ## Open questions
 
@@ -141,7 +235,12 @@ a Python string that holds backslashes.
   (`swmm_flooding`) or 0.1 (`coordinator`) and calls more than 20 sign changes of the
   exchange of a node an oscillation. The default `huthresh` of the model writer, 0.05 m,
   keeps water under 5 cm where it fell: a light rain does not run off (the live tests
-  use 100 mm). Should `model build` expose `huthresh`?
+  use 100 mm). The Kamiennik run settled that `model build` has to expose it (Next 9.1):
+  at 0.05 the 12 h rain hardly ran off, at 0.001 it did, and the run took 4 h 50 min
+  instead of 50 min. Open: the default of `--huthresh-m` for rain on the grid.
+- Grid alignment (Next 9.5): should the grid follow the terrain raster (no half-cell
+  interpolation on the GUGiK NMT) by default, or keep the corner on a multiple of
+  `--dx-m` so that models of one cell size share their edges?
 - English and Polish (AGI-9.2): machine output is English everywhere and Polish exists
   only in the translation resources (`cli/messages.py`, `i18n_pl` of the catalog); the
   new commands follow that and have Polish reason texts. Open: in Polish human output
