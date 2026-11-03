@@ -1622,8 +1622,8 @@ _RAINFALL_BUILD = CommandSpec(
         "Design: a Hydrolog hyetograph shape (--hietogram-type, the options of "
         "`hydrolog precip hietogram`) with a depth that you give (--total-mm) or "
         "the PMAXTP depth of IMGW-PIB for --duration-min and --probability-percent, "
-        "taken from the document of `imgw pmaxtp fetch --json` (--pmaxtp, offline) "
-        "or fetched for a point through IMGWTools (--latitude and --longitude, "
+        "taken from the document of `obserwator pmaxtp fetch` (--pmaxtp, offline) "
+        "or fetched for a point through Obserwator (--latitude and --longitude, "
         "needs the network). Document: --hietogram converts the result of "
         "`hydrolog precip hietogram --json` as it is. With --check nothing is "
         "fetched. Use it for the design storm of one model; it computes no runoff "
@@ -1673,7 +1673,7 @@ _RAINFALL_BUILD = CommandSpec(
             one_of="depth",
             examples=("./pmaxtp.json",),
             description=(
-                "Document of `imgw pmaxtp fetch --json`: the depth is its quantile "
+                "Document of `obserwator pmaxtp fetch`: the depth is its quantile "
                 "for --duration-min and --probability-percent. One source of the "
                 "depth only."
             ),
@@ -1832,8 +1832,8 @@ _RAINFALL_BUILD = CommandSpec(
             "Projekt: kształt hietogramu Hydrologa (--hietogram-type, opcje `hydrolog "
             "precip hietogram`) z wysokością podaną (--total-mm) albo wysokością "
             "PMAXTP z IMGW-PIB dla --duration-min i --probability-percent, z "
-            "dokumentu `imgw pmaxtp fetch --json` (--pmaxtp, bez sieci) albo "
-            "pobraną dla punktu przez IMGWTools (--latitude i --longitude, wymaga "
+            "dokumentu `obserwator pmaxtp fetch` (--pmaxtp, bez sieci) albo "
+            "pobraną dla punktu przez Obserwatora (--latitude i --longitude, wymaga "
             "sieci). Dokument: --hietogram przelicza wynik `hydrolog precip "
             "hietogram --json` bez zmian. Z --check niczego nie pobiera. Użyj dla "
             "deszczu projektowego jednego modelu; nie liczy odpływu (to robi "

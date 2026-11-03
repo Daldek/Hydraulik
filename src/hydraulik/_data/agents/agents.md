@@ -10,7 +10,7 @@ balance, and optionally couple SFINCS with an EPA SWMM sewer network.
 
 Do not use it for operational forecasts, for river bathymetry or subgrid and
 quadtree models (regular grids only), to download geodata (Kartograf), to look
-up design rainfall depths (IMGWTools), to design a hyetograph shape alone
+up design rainfall depths (Obserwator), to design a hyetograph shape alone
 (Hydrolog) or to edit a sewer network (SWMM, QGIS).
 
 ## Install
@@ -18,7 +18,7 @@ up design rainfall depths (IMGWTools), to design a hyetograph shape alone
 - CLI: `uv tool install git+https://github.com/Daldek/Hydraulik`
 - Library: `uv add git+https://github.com/Daldek/Hydraulik`
 - Extras: `model` (rasters and vectors), `sfincs` (read results), `swmm`
-  (pyswmm), `rainfall` (Hydrolog and IMGWTools), `all`. Python 3.12 or newer.
+  (pyswmm), `rainfall` (Hydrolog and Obserwator), `all`. Python 3.12 or newer.
 - The engines are not part of the package and are never installed by it; a
   missing one is `missing_dependency` and the hint names how to install it.
 

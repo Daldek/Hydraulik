@@ -6,9 +6,9 @@
 
 ## Context
 
-The `rainfall` extra pinned the tags Hydrolog v0.7.0 and IMGWTools v2.1.1. Both are behind the
-data-output convention: v0.7.0 has no `route network` and no `hydrolog.testing` (the contract
-module of ADR-0010 skipped), and IMGWTools 3.0.0 made `method` of `fetch_pmaxtp` keyword-only.
+The `rainfall` extra pinned the tags Hydrolog v0.7.0 and IMGWTools (now Obserwator) v2.1.1. Both
+are behind the data-output convention: v0.7.0 has no `route network` and no `hydrolog.testing`
+(the contract module of ADR-0010 skipped), and IMGWTools 3.0.0 made `method` of `fetch_pmaxtp` keyword-only.
 The releases that carry these changes (Hydrolog 1.0.0, IMGWTools 3.0.0) are not tagged and the
 commits are not pushed.
 
@@ -57,3 +57,12 @@ take the six whole probabilities of the catalog.
 the head of the same branch, which is on GitHub. The head only flushes stray stdout to stderr
 before its MCP server leaves stdio; Hydraulik calls `imgwtools.fetch_pmaxtp` of the library, so
 nothing in Hydraulik changes.
+
+**Erratum 3 (2026-11-03):** IMGWTools is called Obserwator (its ADR-009, Nogat ECO-057). The
+extra requires `obserwator>=3.0.0.dev0,<4` and `[tool.uv.sources]` pins
+`obserwator = { git = "https://github.com/Daldek/IMGWTools", rev =
+"651d4d73dc6e6a2a2a75ec8476a35ee050ed787d" }` (branch `feature/obserwator`, 3.0.0; the repository
+URL stays until the author renames it). Hydraulik calls `obserwator.fetch_pmaxtp` and catches
+`ObserwatorError` and its subclasses; the PMAXTP document is the `obserwator-result/1` envelope
+that `obserwator pmaxtp fetch` prints, and the store marker it refuses to write into is
+`obserwator-store.json`. The release pull request narrows the range to `>=3.0.0,<4` as above.

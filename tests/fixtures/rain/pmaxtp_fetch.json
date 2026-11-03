@@ -1,5 +1,5 @@
 {
- "schema": "imgw-result/1",
+ "schema": "obserwator-result/1",
  "command": "pmaxtp fetch",
  "check": false,
  "status": "ok",

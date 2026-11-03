@@ -11,8 +11,8 @@ every format another project reads from its files, and a consumer's contract tes
 the producer version the consumer pins, instead of hand-written copies of the formats. Hydraulik
 read three producers through hand-made test data: Hydrolog (the tables of `route network
 --output-dir`, the `precip hietogram` envelope), Kartograf (the program, through a fake
-`kartograf` script) and IMGWTools (`imgwtools.fetch_pmaxtp` replaced by a fake, and a
-`pmaxtp_fetch.json`).
+`kartograf` script) and IMGWTools (now Obserwator; `imgwtools.fetch_pmaxtp` replaced by a fake,
+and a `pmaxtp_fetch.json`).
 
 ## Decision
 

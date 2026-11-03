@@ -16,14 +16,14 @@
 | SFINCS runner, results reader, water balance (`engines/sfincs/{run,inp,results}.py`) | done | exe or Docker (Docker only with a fake `docker`: no daemon here) |
 | Commands `engines check`, `model run`, `results read`, `results export` | done | live tests pass on SFINCS v2.4.1 and `main` (`-m live` with `HYDRAULIK_SFINCS_EXE`) |
 | Command `swmm run` (`operations/swmm.py`) | done | network table or the user's INP, inflow hydrograph; tests on the real SWMM, run through the CLI |
-| Command `rainfall build` (`operations/rainfall.py`, `data/rainfall.py`) | done | Hydrolog shapes, PMAXTP from a document or IMGWTools, Hydrolog document; only the network call is faked in tests |
+| Command `rainfall build` (`operations/rainfall.py`, `data/rainfall.py`) | done | Hydrolog shapes, PMAXTP from a document or Obserwator, Hydrolog document; only the network call is faked in tests |
 | Command `terrain download` (`data/kartograf.py`, `operations/terrain.py`) | done | ADR-0006; written against the data-output convention, tested with a fake Kartograf; refuses a Kartograf whose `output_dir` is a store root; the live test skips until Kartograf has plain mode |
 | Command `model build`, step one: your own rasters (`terrain/`, `model/`, `operations/build.py`) | done | elevation, Manning, curve number or retention, rain, outlet, stations; live test on SFINCS v2.4.1 and `main` |
 | `model build`, step two: land cover (BDOT10k) and soil (HSG) to Manning `n` and the curve number | done | `--landcover`, `--hsg`, `--default-hsg`, `--classes`, `--building-raise-m` (`model/{options,build,classes,landcover}.py`, `operations/build.py`, `_data/landcover/`, `docs/LAND_COVER.md`, ADR-0007, ADR-0008); tested on synthetic GeoPackages with hand-computed values; by hand on the real BDOT10k and NMT of Poznan, a square kilometre at 10 m, on SFINCS v2.4.1; the class values need the author's review |
 | End-to-end chain test (`tests/integration/test_terrain_to_model.py`) | done | a fake Kartograf delivers a real GeoTIFF, GeoPackage and soil raster; then the real commands `terrain download`, `rainfall build`, `model build` (land cover, soil groups, stations), `model run`, `results export`; the build is in the gate, the run is `live`; on SFINCS v2.4.1 and `main` the infiltration of each half of the catchment is the SCS equation of its curve number (51.4 and 6.0 mm of 100 mm; 286.9 m3 in all, 286.9 expected) and the balance closes (0.002 %) |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
 | Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %); contract tests against `hydrolog.testing` (ADR-0010) run in the gate |
-| Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `2a5ba1ac` (`feature/routing-schematic`, 1.0.0.dev0) and IMGWTools `71bae778` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the earlier IMGWTools pin `4faf884` (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `6bf2c5f` (tables equal the fixture of 10f8c44), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
+| Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `2a5ba1ac` (`feature/routing-schematic`, 1.0.0.dev0) and Obserwator `651d4d73` (`feature/obserwator`, 3.0.0; IMGWTools before ECO-057, ADR-0011 erratum 3) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `obserwator>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the earlier IMGWTools pin `4faf884` (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `6bf2c5f` (tables equal the fixture of 10f8c44), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
 | `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
 | Field run on a real catchment (Kamiennik, 37.22 km2, 2026-11-01/02) | done | Next 9: runs 1 to 3 done; run 3 (24 h, p = 1 %) is in Hydrograf production as `sfincs-kamiennik-24h-p1` (the 12 h result removed); compared with Hydrolog and ISOK MZP; eight findings for `model build`, `model run`, `results` and `rainfall build`, none fixed in the code yet |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
@@ -101,8 +101,8 @@ a Python string that holds backslashes.
       no `HYDRAULIK_LANG` (Polish only in `i18n.pl` of the catalog and in human output,
       which defaults to `pl`); the gate passes on a clean clone.
 8. **Resolving the pins** (ADR-0011). The `rainfall` extra pins Hydrolog
-   `2a5ba1ac175cc710a8d6a23f477e09ca7257974a` (`feature/routing-schematic`) and IMGWTools
-   `71bae778a6573019a0b8da6498b4429f0e03ddfb` (`feature/data-output`) in
+   `2a5ba1ac175cc710a8d6a23f477e09ca7257974a` (`feature/routing-schematic`) and Obserwator
+   `651d4d73dc6e6a2a2a75ec8476a35ee050ed787d` (`feature/obserwator`) in
    `[tool.uv.sources]`; both commits are on GitHub, so `uv lock`, `uv sync --locked`, the CI
    jobs and a Docker build resolve them without a local git cache. When the tags exist, the
    release pull request narrows the ranges to `>=1.0.0,<2` and `>=3.0.0,<4`, replaces the two
@@ -178,12 +178,12 @@ a Python string that holds backslashes.
       `--origin-y-m`) when the cell size is its pixel or a multiple of it; which one is
       the default is the author's decision (an ADR, since it changes a documented rule).
    6. **`rainfall build` knows PMAXTP up to 3 h.** `PMAXTP_DURATIONS_MIN` in
-      `data/rainfall.py` is 15 to 180 min, while IMGWTools 3.0.0 (`fetch_pmaxtp`)
+      `data/rainfall.py` is 15 to 180 min, while Obserwator 3.0.0 (`fetch_pmaxtp`)
       documents 16 durations: 5, 10, 15, 30, 45, 60, 90, 120, 180, 360, 720, 1080, 1440,
       2160, 2880 and 4320 min. The 12 h and 24 h depths were taken by hand from the
       PMAXTP points (inverse distance, power 2, the four nearest to the centroid: 105.0
       and 134.5 mm at p = 1 %) and given with `--total-mm`. Fix: take the durations of
-      IMGWTools; a test for a 24 h depth.
+      Obserwator; a test for a 24 h depth.
    7. **`results export` has no water level.** Its variables are `max_depth`,
       `max_velocity`, `final_depth`, `infiltration` and `stations`. Hydrograf needed the
       highest water level for its terrain profile and read `zsmax` from `sfincs_map.nc`
@@ -251,7 +251,7 @@ a Python string that holds backslashes.
   message); a Polish table for hints and notice codes would close it.
 - `rainfall build` names its options after `hydrolog precip hietogram` (`hietogram_type`,
   `total_mm`, `duration_min`, `timestep_min`, `alpha`, `beta`, `peak_position`) and
-  `imgw pmaxtp fetch` (`latitude`, `longitude`, `method`), by AGI-1.2.
+  `obserwator pmaxtp fetch` (`latitude`, `longitude`, `method`), by AGI-1.2.
 - Decided on 2026-10-24 by the coordinator, the author's delegate: the plan is approved
   (`Approved:` line, ADR-0001 to ADR-0004 accepted); the SWMM coupling stays an optional
   feature (`SCOPE.md` keeps the full 1D sewer coupling out of the MVP), so Q1 is closed.
@@ -275,7 +275,7 @@ a Python string that holds backslashes.
      the 1 s run, but 75 min take 16 s instead of 81 s. Is 5 s acceptable as a
      documented speed option?
   5. Closed by ADR-0011: the `rainfall` extra pins Hydrolog `2a5ba1ac` (`feature/routing-schematic`)
-     and IMGWTools `71bae778` (`feature/data-output`) by commit, so `route network` and
+     and Obserwator `651d4d73` (`feature/obserwator`) by commit, so `route network` and
      `hydrolog.testing` are there and `tests/contract/test_hydrolog_testing.py` runs in the
      gate. Still open: the weekly live workflow (it needs `libsfincs` built with
      `--enable-shared`) that runs `test_hydrolog_live.py`, and the tags that replace the

@@ -78,7 +78,7 @@ REASONS_PL: Final[dict[str, str]] = {
         "Hietogram jest niepoprawny; podaj wynik `hydrolog precip hietogram`."
     ),
     "invalid_pmaxtp": (
-        "Dokument PMAXTP jest niepoprawny; podaj wynik `imgw pmaxtp fetch`."
+        "Dokument PMAXTP jest niepoprawny; podaj wynik `obserwator pmaxtp fetch`."
     ),
     "pmaxtp_no_data": (
         "PMAXTP nie ma wysokości dla tego czasu trwania i prawdopodobieństwa."

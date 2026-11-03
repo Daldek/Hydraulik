@@ -84,7 +84,7 @@ FLOWS: Final[tuple[Flow, ...]] = (
             (
                 "rainfall build",
                 "Write a rain table from a Hydrolog shape and a depth, or from a "
-                "Hydrolog or IMGWTools document (add --check to plan, it fetches "
+                "Hydrolog or Obserwator document (add --check to plan, it fetches "
                 "nothing)",
             ),
         ),

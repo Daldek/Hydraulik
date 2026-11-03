@@ -26,9 +26,9 @@ def _reason(caught: pytest.ExceptionInfo[InvalidInputError]) -> object:
 
 @pytest.fixture
 def fetched(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Any, ...]]:
-    """Replace the network call of IMGWTools; the list records every call."""
-    import imgwtools
-    from imgwtools import PMaXTPData, PMaXTPResult
+    """Replace the network call of Obserwator; the list records every call."""
+    import obserwator
+    from obserwator import PMaXTPData, PMaXTPResult
 
     calls: list[tuple[Any, ...]] = []
 
@@ -41,7 +41,7 @@ def fetched(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Any, ...]]:
             data=PMaXTPData(ks={"60": {"10": 31.5, "1": 50.0}}),
         )
 
-    monkeypatch.setattr(imgwtools, "fetch_pmaxtp", fake)
+    monkeypatch.setattr(obserwator, "fetch_pmaxtp", fake)
     return calls
 
 
@@ -101,7 +101,7 @@ def test_the_pmaxtp_document_gives_the_depth_and_the_attribution_comes_with_it(
     assert "IMGW-PIB" in attribution["message"]
 
 
-def test_a_point_is_fetched_once_through_imgwtools_and_not_while_planning(
+def test_a_point_is_fetched_once_through_obserwator_and_not_while_planning(
     tmp_path: Path, fetched: list[tuple[Any, ...]]
 ) -> None:
     options: dict[str, Any] = {
@@ -158,12 +158,12 @@ def test_the_method_of_a_point_is_passed_on_and_a_missing_pair_is_no_data(
 def test_an_unreachable_imgw_is_source_unavailable_and_nothing_is_written(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import imgwtools
+    import obserwator
 
     def down(latitude: float, longitude: float, *, method: str = "POT") -> None:
-        raise imgwtools.IMGWConnectionError("timed out")
+        raise obserwator.ObserwatorConnectionError("timed out")
 
-    monkeypatch.setattr(imgwtools, "fetch_pmaxtp", down)
+    monkeypatch.setattr(obserwator, "fetch_pmaxtp", down)
 
     with pytest.raises(SourceUnavailableError) as caught:
         build_rainfall(
@@ -440,10 +440,10 @@ def test_missing_packages_are_blockers_of_the_plan_and_refusals_of_the_run(
     assert [b["reason"] for b in blockers] == ["extra_missing"] * 2
     assert all("hydraulik[rainfall]" in b["hint"] for b in blockers)
     assert caught.value.details["extras"] == ["rainfall"]
-    assert caught.value.details["modules"] == ["hydrolog", "imgwtools"]
+    assert caught.value.details["modules"] == ["hydrolog", "obserwator"]
 
 
-def test_the_document_route_needs_neither_hydrolog_nor_imgwtools(
+def test_the_document_route_needs_neither_hydrolog_nor_obserwator(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(

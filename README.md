@@ -20,7 +20,7 @@ belongs to the Nogat ecosystem of Polish and Czech geodata and hydrology tools.
   screening, not a calibrated model.
 - Fluvial flooding that needs river bathymetry, or SFINCS subgrid and quadtree
   models: this version writes regular-grid models only.
-- Downloading geodata (use Kartograf), design rainfall depths (use IMGWTools),
+- Downloading geodata (use Kartograf), design rainfall depths (use Obserwator),
   hydrographs and hyetograph shapes (use Hydrolog).
 - Sewer design or network editing (use SWMM, QGIS or PCSWMM).
 
@@ -32,7 +32,7 @@ uv add git+https://github.com/Daldek/Hydraulik                   # library
 ```
 
 Python 3.12 or newer. Extras: `model` (rasters and vectors), `sfincs` (read
-results), `swmm` (pyswmm), `rainfall` (Hydrolog and IMGWTools), `all`.
+results), `swmm` (pyswmm), `rainfall` (Hydrolog and Obserwator), `all`.
 
 ### Settings
 
@@ -136,7 +136,7 @@ Generic drivers for any command: `hydraulik.validate_command`,
 
 - [Kartograf](https://github.com/Daldek/Kartograf) downloads the terrain and land
   cover that a model is built from; Hydraulik calls it as a program.
-- [IMGWTools](https://github.com/Daldek/IMGWTools) gives design rainfall depths
+- [Obserwator](https://github.com/Daldek/IMGWTools) gives design rainfall depths
   (PMAXTP) and [Hydrolog](https://github.com/Daldek/Hydrolog) the hyetograph
   shapes; Hydraulik uses both as libraries.
 - Prefer HydroMT-SFINCS (GPL-3.0) for SFINCS models with subgrid tables or

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hydraulik"
 dynamic = ["version"]
-description = "Builds SFINCS flood models from Kartograf terrain and Hydrolog or IMGWTools rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library."
+description = "Builds SFINCS flood models from Kartograf terrain and Hydrolog or Obserwator rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -51,14 +51,14 @@ model = [
 sfincs = ["numpy>=1.26", "netcdf4>=1.7"]
 # Run SWMM through pyswmm (the SWMM engine comes with its wheel).
 swmm = ["pyswmm>=2.0"]
-# Design rainfall: Hydrolog hyetographs and IMGWTools PMAXTP depths. The ranges admit
+# Design rainfall: Hydrolog hyetographs and Obserwator PMAXTP depths. The ranges admit
 # the development version of the release that is pending (REL-5.6) and narrow to
 # `>=X.Y.0` in the release pull request. Neither release is tagged, so
 # `[tool.uv.sources]` pins each producer to a commit (REL-5.3); the release pull
 # request replaces the commits with tags (REL-2.1).
 rainfall = [
     "hydrolog>=1.0.0.dev0,<2",
-    "imgwtools>=3.0.0.dev0,<4",
+    "obserwator>=3.0.0.dev0,<4",
 ]
 all = [
     "hydraulik[model,sfincs,swmm,rainfall]",
@@ -88,7 +88,7 @@ dev = [
 # Commit pins of the producers' development heads (REL-5.3), both on GitHub:
 # docs/PROGRESS.md, "Resolving the pins".
 hydrolog = { git = "https://github.com/Daldek/Hydrolog", rev = "2a5ba1ac175cc710a8d6a23f477e09ca7257974a" }
-imgwtools = { git = "https://github.com/Daldek/IMGWTools", rev = "71bae778a6573019a0b8da6498b4429f0e03ddfb" }
+obserwator = { git = "https://github.com/Daldek/IMGWTools", rev = "651d4d73dc6e6a2a2a75ec8476a35ee050ed787d" }
 
 [tool.hatch.version]
 path = "src/hydraulik/__init__.py"
@@ -132,8 +132,8 @@ module = [
     "pyswmm.*",
     "hydrolog",
     "hydrolog.*",
-    "imgwtools",
-    "imgwtools.*",
+    "obserwator",
+    "obserwator.*",
     "jsonschema",
     "jsonschema.*",
 ]

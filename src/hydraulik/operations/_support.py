@@ -35,7 +35,7 @@ EXTRAS: Final[dict[str, tuple[str, str]]] = {
     "pyproj": ("pyproj", "model"),
     "pyswmm": ("pyswmm", "swmm"),
     "hydrolog": ("hydrolog", "rainfall"),
-    "imgwtools": ("imgwtools", "rainfall"),
+    "obserwator": ("obserwator", "rainfall"),
 }
 """Import name to (distribution, extra of Hydraulik that installs it)."""
 
