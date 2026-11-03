@@ -250,10 +250,10 @@ has the other `qext` unit, and the `Approved:` line of the integration plan.
 
 ## 10. Sources of the old branch, by commit
 
-`e2cde5d` feasibility test; `65ea369` inflow variant; `7210606`, `989a363`,
+`e2cde5d` feasibility test; `65ea369` inflow variant; `f1ee2db`, `989a363`,
 `90887f8`, `c2ecdfe`, `fdad33f` literature notes and report; `de39c0e`,
 `fedd186`, `a229916` D-Flow FM; `26da228` continuous exchange law;
 `68e765f` semi-implicit exchange; `8e92c52` sensitivity; `74f59c4` SWMM alone;
-`962b6ec` flooding by SWMM; `3740262` manhole as SWMM orifice; `338c7d3`,
-`391274d`, `1f6b81c`, `304a967` validation on A Coruña; `6f9e8ce`, `4223046`
+`962b6ec` flooding by SWMM; `7232505` manhole as SWMM orifice; `338c7d3`,
+`391274d`, `1f6b81c`, `304a967` validation on A Coruña; `6f9e8ce`, `441594e`
 3D export; `ac8cca7` pressure spikes.
