@@ -11,9 +11,9 @@ checked is marked `[INFERENCE]`.
 
 | Source | What it is | Where it stands |
 |---|---|---|
-| Remote branch `origin/claude/elegant-planck-v242bb` | 24 commits from 2026-10-20 to 2026-10-21 on `de97009`, all under `experiments/sfincs_swmm_coupling/` (75 files, about 34 000 lines, mostly generated results): a feasibility study of coupling SFINCS to EPA SWMM through the SFINCS BMI, a validation on laboratory data, a D-Flow FM comparison and a literature review. Commit messages are Polish and carry `Claude-Session:` trailers. | Read in full. Cited here by short commit hash; not merged (a clean re-application is `feature/sfincs-swmm`). |
+| Remote branch `origin/claude/elegant-planck-v242bb` | 24 commits from 2026-10-20 to 2026-10-21 on `3703913`, all under `experiments/sfincs_swmm_coupling/` (75 files, about 34 000 lines, mostly generated results): a feasibility study of coupling SFINCS to EPA SWMM through the SFINCS BMI, a validation on laboratory data, a D-Flow FM comparison and a literature review. Commit messages are Polish and carry `Claude-Session:` trailers. | Read in full. Cited here by short commit hash; not merged (a clean re-application is `feature/sfincs-swmm`). |
 | Uncommitted files of the `develop` working tree (8 entries) | `CLAUDE.md`, `.gitignore` (empty), `docs/PRD.md`, `docs/SCOPE.md`, `docs/PROGRESS.md`, `docs/research/2026-08-19-hydromt-sfincs-integracja-research.md`, `docs/superpowers/specs/2026-08-20-hydraulik-mvp-design.md`, `.claude/` (agent worktrees). All Polish. | Read-only. Untouched. They overlap files this branch adds (see 8). |
-| Worktree `poc-poznan-screening` (branch `worktree-poc-poznan-screening`, still at `de97009`) | The author's proof of concept: about 9 000 lines of `src/hydraulik` (urban pluvial screening for Poznań-Rataje and Pobiedziska through `hydromt_sfincs` 2.0.0rc3 and the SFINCS Docker image), 22 test modules, `docs/poc/`, `docs/architektura/` (integration with Hydrograf, decisions D-1 to D-21, JSON Schemas of the job documents). Uncommitted. | Read-only. Not copied. Treated as the author's existing SFINCS code (ADOPTION_PLAN phase 2: committing it is the author's decision). |
+| Worktree `poc-poznan-screening` (branch `worktree-poc-poznan-screening`, still at `3703913`) | The author's proof of concept: about 9 000 lines of `src/hydraulik` (urban pluvial screening for Poznań-Rataje and Pobiedziska through `hydromt_sfincs` 2.0.0rc3 and the SFINCS Docker image), 22 test modules, `docs/poc/`, `docs/architektura/` (integration with Hydrograf, decisions D-1 to D-21, JSON Schemas of the job documents). Uncommitted. | Read-only. Not copied. Treated as the author's existing SFINCS code (ADOPTION_PLAN phase 2: committing it is the author's decision). |
 | The author's scratch directory `hydraulik-work` (16 GB) | Outputs and logs of the PoC runs. | Context only. |
 | Nogat standard 2.1 (commit `cc656e7`), registry entry of Hydraulik, Hydrograf `docs/PROGRESS.md` (session 99) | The rules this branch follows; Hydraulik is `tool`, status `research`, CLI `hydraulik`, no MCP, no REST, data source `osm`, provides `hydraulik-job`, depends on Kartograf (CLI), IMGWTools (`fetch_pmaxtp`), Hydrolog (`BetaHietogram`, `EulerIIHietogram`). Hydrograf paused its side of the integration until Hydraulik is mature. | Rules applied in 3. |
 
@@ -229,7 +229,7 @@ Coupler and model:
 | `dflowfm/` (build kit with 62 KB of patches, 1D2D comparison) | obsolete: a different engine and a compiler study | not carried |
 | exchange law v1, equalisation limiter, semi-implicit exchange, `swmm_orifice` spill | negative or superseded results | not carried; recorded here |
 | `results/summary.json` (640 KB), figures, `plots.py`, `sensitivity.py`, `viz/export_3d.py` | generated evidence and presentation | not carried |
-| `reports/` and `research_notes/` (Polish literature review) | knowledge, no code | cited by commit `4e669bb`; findings summarised in 3 and 6 |
+| `reports/` and `research_notes/` (Polish literature review) | knowledge, no code | cited by commit `fdad33f`; findings summarised in 3 and 6 |
 | The coordinator's habits: one process per scenario because of SFINCS global state, `sys.path` edits, global `INLET`, `os.chdir`, hard-coded geometry | defects of an experiment | the coupler runs one model per process behind `hydraulik model run`, with explicit objects |
 
 The author's uncommitted `CLAUDE.md`, `docs/PROGRESS.md`, `docs/PRD.md`,
@@ -250,10 +250,10 @@ has the other `qext` unit, and the `Approved:` line of the integration plan.
 
 ## 10. Sources of the old branch, by commit
 
-`50c260f` feasibility test; `c69b9f5` inflow variant; `7210606`, `42913d4`,
-`f3de7a2`, `7b3b581`, `4e669bb` literature notes and report; `5084f61`,
-`93364c9`, `f58c3a7` D-Flow FM; `044f9ab` continuous exchange law;
-`4d36696` semi-implicit exchange; `74e27df` sensitivity; `451f6c1` SWMM alone;
-`ed9ebea` flooding by SWMM; `3740262` manhole as SWMM orifice; `478891a`,
-`e7ef64d`, `a78bd80`, `01cd8b0` validation on A Coruña; `647539b`, `4223046`
-3D export; `26cd61e` pressure spikes.
+`e2cde5d` feasibility test; `65ea369` inflow variant; `7210606`, `989a363`,
+`90887f8`, `c2ecdfe`, `fdad33f` literature notes and report; `de39c0e`,
+`fedd186`, `a229916` D-Flow FM; `26da228` continuous exchange law;
+`68e765f` semi-implicit exchange; `8e92c52` sensitivity; `74f59c4` SWMM alone;
+`962b6ec` flooding by SWMM; `3740262` manhole as SWMM orifice; `338c7d3`,
+`391274d`, `1f6b81c`, `304a967` validation on A Coruña; `6f9e8ce`, `4223046`
+3D export; `ac8cca7` pressure spikes.

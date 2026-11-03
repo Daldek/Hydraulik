@@ -14,8 +14,8 @@ commits are not pushed.
 
 ## Decision
 
-- **Pin the commits** (REL-5.3): Hydrolog `0719c41825416c208f0980f6a76b14dc4e1663b7` (branch
-  `feature/routing-network`, 1.0.0.dev0) and IMGWTools `7b117550103a3d8d46afc97043b90f0e93314c8b`
+- **Pin the commits** (REL-5.3): Hydrolog `6bf2c5f12aaf477257253c7af031e4c3fd23d4f0` (branch
+  `feature/routing-network`, 1.0.0.dev0) and IMGWTools `97c10570bb306630616012e968cb222dfa39cb1a`
   (branch `feature/data-output`, 3.0.0). The pins are in `[tool.uv.sources]` and `uv.lock`.
 - **Declare the range in the extra** (REL-5.6): `hydrolog>=1.0.0.dev0,<2` and
   `imgwtools>=3.0.0.dev0,<4`. A direct URL requirement cannot carry a version range, so the range
@@ -44,16 +44,16 @@ commits are not pushed.
 
 **Erratum 1 (2026-10-25):** both producers pushed their heads, so GitHub has the commits and `uv
 lock`, `uv sync --locked`, CI and the Docker build resolve them without a local git cache. The
-pins are Hydrolog `5fa22b35e5e1ec9076c41d0be04d2a99458f5049` (branch `feature/routing-schematic`, 1.0.0.dev0; it holds
-`feature/routing-network` and the schematic) and IMGWTools `3f7de36f98f1ba40d72ab5556942567cfbc55b92` (branch
+pins are Hydrolog `2a5ba1ac175cc710a8d6a23f477e09ca7257974a` (branch `feature/routing-schematic`, 1.0.0.dev0; it holds
+`feature/routing-network` and the schematic) and IMGWTools `4faf884f1f695635e1589c9ebb3b6d4ad34073f1` (branch
 `feature/data-output`, 3.0.0). The `Consequences` item about unpushed commits no longer applies.
-IMGWTools accepts a fractional PMAXTP probability in `get_precipitation` since `9291eb3`;
+IMGWTools accepts a fractional PMAXTP probability in `get_precipitation` since `277f68d`;
 Hydraulik does not call it and reads the tables itself, which had read a key as its digits only
 (`"0.5"` became 5 and met `"5"` of the same table). `_quantiles` now keeps the fraction (a whole
 percentage stays an `int`, so `row.get(50)` finds `"50"`); the options of `rainfall build` still
 take the six whole probabilities of the catalog.
 
-**Erratum 2 (2026-10-25):** the IMGWTools pin is now `6bd35a49b329f99b591ffdee39367daec0e75af7`,
+**Erratum 2 (2026-10-25):** the IMGWTools pin is now `71bae778a6573019a0b8da6498b4429f0e03ddfb`,
 the head of the same branch, which is on GitHub. The head only flushes stray stdout to stderr
 before its MCP server leaves stdio; Hydraulik calls `imgwtools.fetch_pmaxtp` of the library, so
 nothing in Hydraulik changes.

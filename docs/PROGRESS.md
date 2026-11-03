@@ -23,7 +23,7 @@
 | End-to-end chain test (`tests/integration/test_terrain_to_model.py`) | done | a fake Kartograf delivers a real GeoTIFF, GeoPackage and soil raster; then the real commands `terrain download`, `rainfall build`, `model build` (land cover, soil groups, stations), `model run`, `results export`; the build is in the gate, the run is `live`; on SFINCS v2.4.1 and `main` the infiltration of each half of the catchment is the SCS equation of its curve number (51.4 and 6.0 mm of 100 mm; 286.9 m3 in all, 286.9 expected) and the balance closes (0.002 %) |
 | SFINCS BMI wrapper, coupler, command `model couple` (`engines/sfincs/{bmi,layout}.py`, `coupling/{coupler,worker,process}.py`, `operations/couple.py`) | done | ADR-0005; the coupled run is a worker process; live tests on the local `libsfincs` of SFINCS v2.4.1 (`ms`) and `main` (`m3s`); a wrong unit is flagged by the balance |
 | Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %); contract tests against `hydrolog.testing` (ADR-0010) run in the gate |
-| Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `5fa22b35` (`feature/routing-schematic`, 1.0.0.dev0) and IMGWTools `6bd35a49` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the earlier IMGWTools pin `3f7de36` (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `0719c41` (tables equal the fixture of 081fda2), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
+| Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `2a5ba1ac` (`feature/routing-schematic`, 1.0.0.dev0) and IMGWTools `71bae778` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the earlier IMGWTools pin `4faf884` (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `6bf2c5f` (tables equal the fixture of 10f8c44), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
 | `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
 | Field run on a real catchment (Kamiennik, 37.22 km2, 2026-11-01/02) | done | Next 9: runs 1 to 3 done; run 3 (24 h, p = 1 %) is in Hydrograf production as `sfincs-kamiennik-24h-p1` (the 12 h result removed); compared with Hydrolog and ISOK MZP; eight findings for `model build`, `model run`, `results` and `rainfall build`, none fixed in the code yet |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
@@ -76,7 +76,7 @@ a Python string that holds backslashes.
    `terrain download` once Kartograf has plain mode.
 7. **Hand-off of Hydrolog's `route network` tables, USAGE and the last review**:
    1. Done (commit `test(swmm)`): the tables of `hydrolog route network -o DIR` (checked
-      on Hydrolog `feature/routing-network`, 081fda2, 2026-10-25) are the hydrograph
+      on Hydrolog `feature/routing-network`, 10f8c44, 2026-10-25) are the hydrograph
       table that `swmm run --inflow` reads. The fixture `tests/fixtures/hydrolog` was
       made by the real command; the tests read every table with the peak, time and
       volume that Hydrolog reports and run it through the real SWMM; the live test
@@ -101,8 +101,8 @@ a Python string that holds backslashes.
       no `HYDRAULIK_LANG` (Polish only in `i18n.pl` of the catalog and in human output,
       which defaults to `pl`); the gate passes on a clean clone.
 8. **Resolving the pins** (ADR-0011). The `rainfall` extra pins Hydrolog
-   `5fa22b35e5e1ec9076c41d0be04d2a99458f5049` (`feature/routing-schematic`) and IMGWTools
-   `6bd35a49b329f99b591ffdee39367daec0e75af7` (`feature/data-output`) in
+   `2a5ba1ac175cc710a8d6a23f477e09ca7257974a` (`feature/routing-schematic`) and IMGWTools
+   `71bae778a6573019a0b8da6498b4429f0e03ddfb` (`feature/data-output`) in
    `[tool.uv.sources]`; both commits are on GitHub, so `uv lock`, `uv sync --locked`, the CI
    jobs and a Docker build resolve them without a local git cache. When the tags exist, the
    release pull request narrows the ranges to `>=1.0.0,<2` and `>=3.0.0,<4`, replaces the two
@@ -274,8 +274,8 @@ a Python string that holds backslashes.
      `exchange_oscillation` notice (31 sign flips) and the street volume is 1.3 % off
      the 1 s run, but 75 min take 16 s instead of 81 s. Is 5 s acceptable as a
      documented speed option?
-  5. Closed by ADR-0011: the `rainfall` extra pins Hydrolog `5fa22b35` (`feature/routing-schematic`)
-     and IMGWTools `6bd35a49` (`feature/data-output`) by commit, so `route network` and
+  5. Closed by ADR-0011: the `rainfall` extra pins Hydrolog `2a5ba1ac` (`feature/routing-schematic`)
+     and IMGWTools `71bae778` (`feature/data-output`) by commit, so `route network` and
      `hydrolog.testing` are there and `tests/contract/test_hydrolog_testing.py` runs in the
      gate. Still open: the weekly live workflow (it needs `libsfincs` built with
      `--enable-shared`) that runs `test_hydrolog_live.py`, and the tags that replace the
@@ -294,7 +294,7 @@ a Python string that holds backslashes.
 ## Merge plan
 
 State on 2026-10-25, read only. The main tree `~/workspace/Hydraulik` is on `develop` at
-`de97009` (Initial commit: README, LICENSE, CONTRIBUTING, CONTRIBUTORS, `docs/CLA.md`).
+`3703913` (Initial commit: README, LICENSE, CONTRIBUTING, CONTRIBUTORS, `docs/CLA.md`).
 `feature/sfincs-swmm` is 29 commits ahead of that same commit, so `develop` can
 fast-forward to it. Nothing here was pushed, tagged or merged.
 
@@ -306,7 +306,7 @@ fast-forward to it. Nothing here was pushed, tagged or merged.
 | `CLAUDE.md` | 25 lines, Polish, "Faza badawcza, brak kodu"; hydromt_sfincs adapter, container only | 114 lines, English, the working rules of the code | path collision; its statements are out of date |
 | `docs/PROGRESS.md` | 50 lines, Polish: the research (2026-08-19) and brainstorming (2026-08-20) sessions, spec "waits for review" | the progress of this branch | path collision; their sessions exist nowhere on the branch |
 | `docs/PRD.md`, `docs/SCOPE.md`, `docs/research/`, `docs/superpowers/` | the product requirements, the MVP scope, the feasibility report, the design spec | none | no collision; they stay as untracked files |
-| `.claude/worktrees/poc-poznan-screening` | the proof of concept, branch `worktree-poc-poznan-screening` at `de97009`, uncommitted | none | see below |
+| `.claude/worktrees/poc-poznan-screening` | the proof of concept, branch `worktree-poc-poznan-screening` at `3703913`, uncommitted | none | see below |
 
 Git refuses to overwrite the three colliding untracked files (tried in a scratch clone:
 `git merge --ff-only` stops and names `.gitignore`, `CLAUDE.md`, `docs/PROGRESS.md`).
