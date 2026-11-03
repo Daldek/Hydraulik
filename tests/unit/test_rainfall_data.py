@@ -1,11 +1,11 @@
-"""Design rain from Hydrolog and IMGWTools: the library routes and their documents.
+"""Design rain from Hydrolog and Obserwator: the library routes and their documents.
 
 ``hietogram_euler_ii.json`` is the output of ``hydrolog precip hietogram
 --hietogram-type euler_ii --total-mm 40 --duration-min 60 --timestep-min 10 --json
 --lang en`` as Hydrolog prints it, with its ``inputs`` member (Hydrolog
 ``feature/routing-network``, 0719c41, 1.0.0.dev0, recorded 2026-10-25);
-``pmaxtp_fetch.json`` has the layout that ``imgw pmaxtp fetch --json`` prints
-(IMGWTools' own command code made it), with synthetic depths.
+``pmaxtp_fetch.json`` has the layout that ``obserwator pmaxtp fetch`` prints
+(Obserwator's own command code made it), with synthetic depths.
 """
 
 import json
@@ -215,11 +215,11 @@ def test_a_document_without_quantiles_is_a_data_error(
     assert caught.value.details["reason"] == "invalid_pmaxtp"
 
 
-def test_the_point_is_fetched_through_the_public_function_of_imgwtools(
+def test_the_point_is_fetched_through_the_public_function_of_obserwator(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import imgwtools
-    from imgwtools import PMaXTPData, PMaXTPResult
+    import obserwator
+    from obserwator import PMaXTPData, PMaXTPResult
 
     calls: list[tuple[Any, ...]] = []
 
@@ -232,7 +232,7 @@ def test_the_point_is_fetched_through_the_public_function_of_imgwtools(
             data=PMaXTPData(ks={"60": {"10": 31.5}}, sg={"60": {"10": 35.0}}),
         )
 
-    monkeypatch.setattr(imgwtools, "fetch_pmaxtp", fake)
+    monkeypatch.setattr(obserwator, "fetch_pmaxtp", fake)
 
     pmaxtp = fetch_pmaxtp(52.1, 21.0, "AMP")
 
@@ -262,23 +262,23 @@ def test_a_fractional_probability_of_the_full_pmaxtp_table_stays_apart_from_a_wh
 @pytest.mark.parametrize(
     ("failure", "expected", "reason"),
     [
-        ("IMGWValidationError", InvalidInputError, "out_of_range"),
-        ("IMGWConnectionError", SourceUnavailableError, "source_unreachable"),
-        ("IMGWDataError", InputDataError, "source_data"),
+        ("ObserwatorValidationError", InvalidInputError, "out_of_range"),
+        ("ObserwatorConnectionError", SourceUnavailableError, "source_unreachable"),
+        ("ObserwatorDataError", InputDataError, "source_data"),
     ],
 )
-def test_the_failures_of_imgwtools_become_registry_errors(
+def test_the_failures_of_obserwator_become_registry_errors(
     monkeypatch: pytest.MonkeyPatch,
     failure: str,
     expected: type[Exception],
     reason: str,
 ) -> None:
-    import imgwtools
+    import obserwator
 
     def fake(latitude: float, longitude: float, *, method: str = "POT") -> None:
-        raise getattr(imgwtools, failure)("it failed")
+        raise getattr(obserwator, failure)("it failed")
 
-    monkeypatch.setattr(imgwtools, "fetch_pmaxtp", fake)
+    monkeypatch.setattr(obserwator, "fetch_pmaxtp", fake)
 
     with pytest.raises(expected) as caught:
         fetch_pmaxtp(10.0, 10.0)

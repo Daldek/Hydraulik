@@ -1,4 +1,4 @@
-"""Design rain from Hydrolog and IMGWTools, through their public interfaces only.
+"""Design rain from Hydrolog and Obserwator, through their public interfaces only.
 
 Hydraulik makes the rain table of a model (:mod:`hydraulik.data.tables`) from
 
@@ -8,12 +8,12 @@ Hydraulik makes the rain table of a model (:mod:`hydraulik.data.tables`) from
   ``hydrolog precip hietogram --json`` prints (``hydrolog-precip-hietogram/1``, either
   the whole ``hydrolog-result/1`` envelope or its ``result``);
 * a **depth** that is given, or the PMAXTP depth of IMGW-PIB for a duration and a
-  probability, from ``imgwtools.fetch_pmaxtp`` (the library, needs the network) or from
-  the document that ``imgw pmaxtp fetch --json`` prints (``imgw-result/1`` whose
+  probability, from ``obserwator.fetch_pmaxtp`` (the library, needs the network) or from
+  the document that ``obserwator pmaxtp fetch`` prints (``obserwator-result/1`` whose
   ``result`` is the PMAXTP result).
 
 Nothing here reaches into the internals of either tool, and nothing is imported until a
-function needs it, so the documents are read without Hydrolog or IMGWTools installed.
+function needs it, so the documents are read without Hydrolog or Obserwator installed.
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ PMAXTP_METHODS: Final = ("POT", "AMP")
 """The estimation methods of PMAXTP (peak over threshold, annual maxima)."""
 
 PMAXTP_DURATIONS_MIN: Final = (15, 30, 45, 60, 90, 120, 180)
-"""Durations that PMAXTP gives [min] (documented by ``imgwtools.fetch_pmaxtp``)."""
+"""Durations that PMAXTP gives [min] (documented by ``obserwator.fetch_pmaxtp``)."""
 
 PMAXTP_PROBABILITIES_PERCENT: Final = (1, 2, 5, 10, 20, 50)
 """Probabilities of exceedance that PMAXTP gives [percent]."""
@@ -358,7 +358,7 @@ def _pmaxtp_from(body: Mapping[str, Any], name: str, details: dict[str, Any]) ->
         raise InputDataError(
             f"{name}: no PMAXTP quantiles (data.ks)",
             details=details,
-            hint="Give the result of `imgw pmaxtp fetch --json`.",
+            hint="Give the result of `obserwator pmaxtp fetch`.",
             reason="invalid_pmaxtp",
         )
 
@@ -378,12 +378,12 @@ def _pmaxtp_from(body: Mapping[str, Any], name: str, details: dict[str, Any]) ->
 
 
 def read_pmaxtp_document(path: str | os.PathLike[str]) -> Pmaxtp:
-    """Read the PMAXTP document ``imgw pmaxtp fetch --json`` prints.
+    """Read the PMAXTP document ``obserwator pmaxtp fetch`` prints.
 
     Parameters
     ----------
     path : path-like
-        A JSON file: the ``imgw-result/1`` envelope or its ``result``
+        A JSON file: the ``obserwator-result/1`` envelope or its ``result``
         (``method``, ``latitude``, ``longitude`` and ``data`` with ``ks``).
 
     Returns
@@ -406,14 +406,14 @@ def read_pmaxtp_document(path: str | os.PathLike[str]) -> Pmaxtp:
 
 
 def fetch_pmaxtp(latitude: float, longitude: float, method: str = "POT") -> Pmaxtp:
-    """Fetch the PMAXTP quantiles of a point with ``imgwtools.fetch_pmaxtp``.
+    """Fetch the PMAXTP quantiles of a point with ``obserwator.fetch_pmaxtp``.
 
     Parameters
     ----------
     latitude, longitude : float
         The point [degrees], in Poland.
     method : {"POT", "AMP"}, optional
-        The estimation method; ``POT`` is the one IMGWTools recommends.
+        The estimation method; ``POT`` is the one Obserwator recommends.
 
     Returns
     -------
@@ -423,7 +423,7 @@ def fetch_pmaxtp(latitude: float, longitude: float, method: str = "POT") -> Pmax
     Raises
     ------
     MissingDependencyError
-        If IMGWTools is not installed (extra ``rainfall``).
+        If Obserwator is not installed (extra ``rainfall``).
     InvalidInputError
         If the point is outside Poland (reason ``out_of_range``).
     SourceUnavailableError
@@ -431,24 +431,24 @@ def fetch_pmaxtp(latitude: float, longitude: float, method: str = "POT") -> Pmax
     InputDataError
         If its answer cannot be read (reason ``source_data``).
     """
-    imgwtools = require("imgwtools", "rainfall")
+    obserwator = require("obserwator", "rainfall")
     try:
-        result = imgwtools.fetch_pmaxtp(latitude, longitude, method=method)
-    except imgwtools.IMGWValidationError as exc:
+        result = obserwator.fetch_pmaxtp(latitude, longitude, method=method)
+    except obserwator.ObserwatorValidationError as exc:
         raise InvalidInputError(
             str(exc),
             details={"option": "latitude", "value": latitude},
             hint="PMAXTP covers Poland: latitude 49 to 55, longitude 14 to 24.5.",
             reason="out_of_range",
         ) from exc
-    except imgwtools.IMGWConnectionError as exc:
+    except obserwator.ObserwatorConnectionError as exc:
         raise SourceUnavailableError(
             f"IMGW-PIB did not answer the PMAXTP request: {exc}",
             details={"source": "imgw-pmaxtp"},
             hint="Check the network, or give the depth with --total-mm or --pmaxtp.",
             reason="source_unreachable",
         ) from exc
-    except imgwtools.IMGWError as exc:
+    except obserwator.ObserwatorError as exc:
         raise InputDataError(
             f"the PMAXTP answer could not be read: {exc}",
             details={"source": "imgw-pmaxtp"},

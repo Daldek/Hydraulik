@@ -254,7 +254,7 @@ def build_rainfall(
     Two ways to a rain table. **Design**: a Hydrolog hyetograph shape
     (``hietogram_type``) with a depth that is given (``total_mm``), or the PMAXTP depth
     of IMGW-PIB for ``duration_min`` and ``probability_percent``, read from a document
-    of ``imgw pmaxtp fetch --json`` (``pmaxtp``) or fetched for a point with IMGWTools
+    of ``obserwator pmaxtp fetch`` (``pmaxtp``) or fetched for a point with Obserwator
     (``latitude`` and ``longitude``, needs the network). **Document**: the result of
     ``hydrolog precip hietogram --json`` (``hietogram``), converted as it is.
 
@@ -269,7 +269,7 @@ def build_rainfall(
     total_mm : float or None, optional
         Depth of the rain [mm]. One of ``total_mm``, ``pmaxtp`` and ``latitude``.
     pmaxtp : path-like or None, optional
-        A PMAXTP document of IMGWTools (``imgw-result/1`` or its ``result``).
+        A PMAXTP document of Obserwator (``obserwator-result/1`` or its ``result``).
     latitude, longitude : float or None, optional
         A point in Poland [degrees]; PMAXTP is fetched from IMGW-PIB.
     method : {"POT", "AMP"} or None, optional
@@ -303,7 +303,7 @@ def build_rainfall(
     InvalidInputError
         If the combination of options is wrong (reasons ``missing_option``,
         ``exclusive_options``, ``option_not_applicable``), a value is not allowed, or
-        Hydrolog or IMGWTools refuse it (``out_of_range``).
+        Hydrolog or Obserwator refuse it (``out_of_range``).
     NotFoundError, InputDataError
         If a document is missing or malformed (``invalid_hietogram``,
         ``invalid_pmaxtp``).
@@ -312,7 +312,7 @@ def build_rainfall(
     SourceUnavailableError
         If IMGW-PIB does not answer (reason ``source_unreachable``).
     MissingDependencyError
-        If Hydrolog or IMGWTools is not installed (extra ``rainfall``).
+        If Hydrolog or Obserwator is not installed (extra ``rainfall``).
     ConflictError
         If ``output`` exists without ``force`` or lies inside a store.
 
@@ -389,7 +389,7 @@ def build_rainfall(
     if design is not None:
         packages.append("hydrolog")
         if design.point is not None:
-            packages.append("imgwtools")
+            packages.append("obserwator")
         if design.pmaxtp_path is not None and design.probability_percent is not None:
             document_pmaxtp = read_pmaxtp_document(design.pmaxtp_path)
             document_depth = pmaxtp_depth(

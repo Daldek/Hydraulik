@@ -67,9 +67,9 @@ follows [Semantic Versioning](https://semver.org/).
   (`time_min,depth_mm`) of a model from a Hydrolog hyetograph shape (`block`,
   `triangular`, `beta`, `euler_ii`, the options of `hydrolog precip hietogram`) with a
   given depth or the PMAXTP depth of IMGW-PIB for a duration and a probability, taken
-  from the document of `imgw pmaxtp fetch --json` or fetched for a point through
-  IMGWTools; or the result of `hydrolog precip hietogram --json` converted as it is.
-  Hydrolog and IMGWTools are used through their public classes, functions and
+  from the document of `obserwator pmaxtp fetch` or fetched for a point through
+  Obserwator; or the result of `hydrolog precip hietogram --json` converted as it is.
+  Hydrolog and Obserwator are used through their public classes, functions and
   documents only. The result `hydraulik-rain/1` says how the depth was found; a PMAXTP
   depth comes with a notice to name IMGW-PIB; `--check` fetches nothing. The rain table
   now has six decimals per step.
@@ -173,11 +173,20 @@ follows [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The `rainfall` extra declares the supported ranges `hydrolog>=1.0.0.dev0,<2` and
-  `imgwtools>=3.0.0.dev0,<4` (REL-5.6) and pins the producers' development heads by commit in
+  `obserwator>=3.0.0.dev0,<4` (REL-5.6) and pins the producers' development heads by commit in
   `[tool.uv.sources]`: Hydrolog `2a5ba1ac` (`feature/routing-schematic`, 1.0.0.dev0) and
-  IMGWTools `71bae778` (`feature/data-output`, 3.0.0), both on GitHub, instead of the tags
+  Obserwator `651d4d73` (`feature/obserwator`, 3.0.0), both on GitHub, instead of the tags
   v0.7.0 and v2.1.1 (REL-5.3, ADR-0011). `tests/fixtures/rain/hietogram_euler_ii.json` is recorded
   again from the real command.
+- **Breaking:** IMGWTools is called Obserwator (Nogat ECO-057, ADR-0011 erratum 3). The
+  `rainfall` extra installs `obserwator` instead of `imgwtools` (same repository URL); a point
+  is fetched with `obserwator.fetch_pmaxtp` and its `ObserwatorError` subclasses become the
+  registry errors as before; `--pmaxtp` is described as the `obserwator-result/1` envelope
+  that `obserwator pmaxtp fetch` prints (the reader takes any `*-result/1` envelope or its
+  `result`, so its behaviour is unchanged); the writer refuses a directory inside an Obserwator store
+  by its marker `obserwator-store.json` instead of `imgw-store.json`; `missing_dependency`
+  names the module `obserwator`. The texts of the catalog, the messages and the guides name
+  Obserwator; the pip-audit loop of CI skips `obserwator`.
 
 ### Fixed
 
@@ -187,5 +196,5 @@ follows [Semantic Versioning](https://semver.org/).
   `sfincs.obs`; the writer quotes it (an unquoted name became `station_001`) and refuses
   a name that is empty or holds a quote.
 - `rainfall build --latitude` passed `method` to `imgwtools.fetch_pmaxtp` by position;
-  IMGWTools 3.0.0 made it keyword-only, so the call failed with `TypeError` against the
-  real function (the fakes of the tests accepted a positional argument).
+  IMGWTools (now Obserwator) 3.0.0 made it keyword-only, so the call failed with `TypeError`
+  against the real function (the fakes of the tests accepted a positional argument).

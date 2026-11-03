@@ -1,6 +1,6 @@
 # Hydraulik: agent guide
 
-> Builds SFINCS flood models from Kartograf terrain and Hydrolog or IMGWTools rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library.
+> Builds SFINCS flood models from Kartograf terrain and Hydrolog or Obserwator rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library.
 
 ## Purpose and scope
 
@@ -10,7 +10,7 @@ balance, and optionally couple SFINCS with an EPA SWMM sewer network.
 
 Do not use it for operational forecasts, for river bathymetry or subgrid and
 quadtree models (regular grids only), to download geodata (Kartograf), to look
-up design rainfall depths (IMGWTools), to design a hyetograph shape alone
+up design rainfall depths (Obserwator), to design a hyetograph shape alone
 (Hydrolog) or to edit a sewer network (SWMM, QGIS).
 
 ## Install
@@ -18,7 +18,7 @@ up design rainfall depths (IMGWTools), to design a hyetograph shape alone
 - CLI: `uv tool install git+https://github.com/Daldek/Hydraulik`
 - Library: `uv add git+https://github.com/Daldek/Hydraulik`
 - Extras: `model` (rasters and vectors), `sfincs` (read results), `swmm`
-  (pyswmm), `rainfall` (Hydrolog and IMGWTools), `all`. Python 3.12 or newer.
+  (pyswmm), `rainfall` (Hydrolog and Obserwator), `all`. Python 3.12 or newer.
 - The engines are not part of the package and are never installed by it; a
   missing one is `missing_dependency` and the hint names how to install it.
 
@@ -94,7 +94,7 @@ Codes come from the shared registry
 
 **Make the design rain of a model**
 
-1. Write a rain table from a Hydrolog shape and a depth, or from a Hydrolog or IMGWTools document (add --check to plan, it fetches nothing): `hydraulik rainfall build --hietogram-type euler_ii --total-mm 40 --duration-min 120 --output ./rain.csv --json`
+1. Write a rain table from a Hydrolog shape and a depth, or from a Hydrolog or Obserwator document (add --check to plan, it fetches nothing): `hydraulik rainfall build --hietogram-type euler_ii --total-mm 40 --duration-min 120 --output ./rain.csv --json`
 
 **Build a model from your terrain**
 

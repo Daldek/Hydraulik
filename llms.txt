@@ -1,6 +1,6 @@
 # Hydraulik
 
-> Builds SFINCS flood models from Kartograf terrain and Hydrolog or IMGWTools rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library.
+> Builds SFINCS flood models from Kartograf terrain and Hydrolog or Obserwator rainfall, runs the external SFINCS engine and couples it with an EPA SWMM sewer network. CLI and library.
 
 Hydraulik builds SFINCS flood models from terrain, land cover and design
 rainfall, runs the external SFINCS engine and reads its results, and can couple

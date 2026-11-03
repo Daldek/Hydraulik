@@ -66,7 +66,7 @@ src/hydraulik/
   operations/                              functions behind the commands
   engines/{detect,sfincs,swmm}             find, write, run and read the engines
   coupling/                                exchange laws, coupler, balance, diagnostics
-  data/                                    Kartograf CLI, IMGWTools PMAXTP, Hydrolog rain
+  data/                                    Kartograf CLI, Obserwator PMAXTP, Hydrolog rain
   terrain/, model/                         DEM and land cover to model files
   schemas/                                 JSON Schemas of the result documents
 tests/{unit,integration,contract,fixtures}
@@ -93,7 +93,7 @@ of a public interface or of more than one module (DEV-17.4). End: update
 ## Cross-project context
 
 Registry entry: <https://github.com/Daldek/Nogat/blob/develop/ecosystem.yaml>
-(Hydraulik). Kartograf is called as a CLI subprocess, IMGWTools and Hydrolog as
+(Hydraulik). Kartograf is called as a CLI subprocess, Obserwator and Hydrolog as
 libraries, all optional.
 
 ## Deviations

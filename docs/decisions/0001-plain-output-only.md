@@ -39,8 +39,9 @@ lists `files[]`.
 - No `--root`, no `store init`, no marker file of Hydraulik, no `--upgrade` or
   `--plan` options (DEV-19.17 applies to stores only). `--root` is an unknown
   option and `validation_error`.
-- Hydraulik still refuses to write into a store of Kartograf or IMGWTools,
-  recognised by the marker file names alone (DEV-19.11, DEV-19.12).
+- Hydraulik still refuses to write into a store of Kartograf or IMGWTools (now
+  Obserwator, marker `obserwator-store.json`), recognised by the marker file
+  names alone (DEV-19.11, DEV-19.12).
 - A model directory is plain files: `model build` writes it, `model run` reads
   it (`path_role` input) and writes the results into its own `--output-dir`.
 - `config show` reports no store and no credentials (DEV-18.6).

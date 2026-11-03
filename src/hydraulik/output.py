@@ -65,7 +65,7 @@ __all__ = [
 STAGING_DIR: Final = ".hydraulik-incoming"
 """Name of the staging directory inside the output directory (DEV-19.7)."""
 
-STORE_MARKERS: Final = ("kartograf-store.json", "imgw-store.json")
+STORE_MARKERS: Final = ("kartograf-store.json", "obserwator-store.json")
 """Marker file names of the stores of the other Nogat tools (DEV-19.12)."""
 
 _STALE_AFTER_S: Final = 24 * 3600

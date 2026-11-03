@@ -25,7 +25,7 @@ def test_importing_the_package_loads_no_heavy_dependency() -> None:
     code = (
         "import sys, hydraulik;"
         "heavy = {'numpy','rasterio','geopandas','netCDF4','pyswmm','hydrolog',"
-        "'imgwtools','pandas','shapely'};"
+        "'obserwator','pandas','shapely'};"
         "print(sorted(heavy & set(sys.modules)))"
     )
 
