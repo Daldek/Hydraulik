@@ -25,7 +25,7 @@
 | Hydrolog hand-off: the tables of `hydrolog route network` as the inflow of `swmm run` and `model couple` (`--inflow`, `--inflow-node`) | done | ADR-0009; a fixture made by the real command (`tests/fixtures/hydrolog`), tests on the real SWMM, a live test that makes the tables again, and a live coupled run on both local SFINCS builds: 279 m3 fill a 0.15 m pipe until the manhole floods, the street holds 0.44 m, the balance closes (-0.23 %); contract tests against `hydrolog.testing` (ADR-0010) run in the gate |
 | Producer pins of the `rainfall` extra | done | ADR-0011: Hydrolog `5fa22b35` (`feature/routing-schematic`, 1.0.0.dev0) and IMGWTools `6bd35a49` (`feature/data-output`, 3.0.0) by commit in `[tool.uv.sources]`, ranges `>=1.0.0.dev0,<2` and `>=3.0.0.dev0,<4` (REL-5.6); both commits are on GitHub, the tags replace them (Next 8). Gate on the earlier IMGWTools pin `3f7de36` (2026-10-25): 822 passed, 1 skipped (the python blocks of USAGE, none exist), 17 live deselected; `pytest -m live`: the Hydrolog test passed against the earlier pin `0719c41` (tables equal the fixture of 081fda2), 16 skip (SFINCS, `libsfincs` and Kartograf are not on this machine) |
 | `docs/USAGE.md`, the README links, the last review | done | the task guide with offline examples run by `tests/contract/test_docs_examples.py`; README links absolute; no `TODO`, stub or alias left; three definitions without a caller removed; the agent surfaces are English whatever `LANG` is; `--inp` run live on both SFINCS builds; gate on a clean clone |
-| Field run on a real catchment (Kamiennik, 37.22 km2, 2026-11-01/02) | in progress | Next 9: runs 1 and 2 done, run 3 running; eight findings for `model build`, `model run`, `results` and `rainfall build`, none fixed in the code yet |
+| Field run on a real catchment (Kamiennik, 37.22 km2, 2026-11-01/02) | done | Next 9: runs 1 to 3 done; run 3 (24 h, p = 1 %) is in Hydrograf production as `sfincs-kamiennik-24h-p1` (the 12 h result removed); compared with Hydrolog and ISOK MZP; eight findings for `model build`, `model run`, `results` and `rainfall build`, none fixed in the code yet |
 | Weekly live workflow for the library tests | planned | Next 6; ADR-0005 is written |
 | Phase 2 items that need the author | blocked | see Open questions |
 
@@ -116,10 +116,13 @@ a Python string that holds backslashes.
    `~/hydraulik-work/kamiennik-12h-p1/` (outside the repository). Run 1: 12 h, p = 1 %,
    105 mm, the default `huthresh` 0.05. Run 2: the same with `huthresh` 0.001. Run 3: 24
    h, p = 1 %, 134.5 mm and 12 h after (`tstop` 36 h), hourly maps and seven
-   cross-sections, running since 2026-11-02 01:03 (45 % at 06:52, end expected about
-   13:00); its comparison with the Hydrolog hydrographs of the sections
-   (`compare_sections.py` in the work directory) comes after it. Every finding below was
-   worked around by hand outside Hydraulik; the fix of each is a proposal.
+   cross-sections, started 2026-11-02 01:03 and finished. Run 3 is published in Hydrograf
+   production as `sfincs-kamiennik-24h-p1` (reservoir maximum 281.43 m a.s.l.); the 12 h
+   result was removed from Hydrograf. Its comparison with the Hydrolog hydrographs of the
+   sections (`compare_sections.py` in the work directory) and with the ISOK flood hazard
+   map (MZP) is done: the IoU of the flooded area is 0.55 in the river corridor and 0.94
+   at the reservoir; SFINCS levels are about 0.9 m higher, mainly from Manning `n`. Every
+   finding below was worked around by hand outside Hydraulik; the fix of each is a proposal.
    1. **`huthresh` 0.05 m does not suit rain on the grid.** Run 1 kept the water under 5
       cm where it fell: 1.7 thousand m3 left through the outlet (0.04 % of the rain), the
       deepest cell 2.27 m, 0.57 km2 deeper than 0.1 m, the reservoir station 0.05 m, the
