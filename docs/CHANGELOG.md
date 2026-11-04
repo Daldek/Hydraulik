@@ -172,6 +172,11 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Obserwator is pinned at `1ee5457` of the Nogat release set `candidate-1` (3.0.0.dev0, the
+  result and error documents of the standard 1.0); the texts that name the PMAXTP document
+  call `obserwator pmaxtp fetch --json`, because the command prints a summary for a person
+  without it.
+
 - The `obserwator` source in `[tool.uv.sources]` and the README point to the
   renamed repository `https://github.com/Daldek/Obserwator` (was
   `Daldek/IMGWTools`), the same commit `ea158dc`.

@@ -66,7 +66,7 @@ hydraulik rainfall build --pmaxtp tests/fixtures/rain/pmaxtp_fetch.json --hietog
 ```
 
 The second call takes the depth for a 60 minute rain of probability 10 % from the
-document of `obserwator pmaxtp fetch`; with `--latitude` and `--longitude` instead of
+document of `obserwator pmaxtp fetch --json`; with `--latitude` and `--longitude` instead of
 `--pmaxtp` and with Obserwator installed it fetches the depth for a point (that needs the
 network). A PMAXTP depth comes with a notice to name IMGW-PIB as its source. A shape
 that Hydrolog already computed (`hydrolog precip hietogram --json`) goes in with
