@@ -172,6 +172,10 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The `obserwator` source in `[tool.uv.sources]` and the README point to the
+  renamed repository `https://github.com/Daldek/Obserwator` (was
+  `Daldek/IMGWTools`), the same commit `ea158dc`.
+
 - The `rainfall` extra declares the supported ranges `hydrolog>=1.0.0.dev0,<2` and
   `obserwator>=3.0.0.dev0,<4` (REL-5.6) and pins the producers' development heads by commit in
   `[tool.uv.sources]`: Hydrolog `2eb8bd0c` (`develop`, 1.0.0.dev0) and

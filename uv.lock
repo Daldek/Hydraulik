@@ -409,8 +409,8 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'all'", specifier = ">=1.26" },
     { name = "numpy", marker = "extra == 'model'", specifier = ">=1.26" },
     { name = "numpy", marker = "extra == 'sfincs'", specifier = ">=1.26" },
-    { name = "obserwator", marker = "extra == 'all'", git = "https://github.com/Daldek/IMGWTools?rev=ea158dc6f703a5ababd91ff54e7ddec35b4f389b" },
-    { name = "obserwator", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/IMGWTools?rev=ea158dc6f703a5ababd91ff54e7ddec35b4f389b" },
+    { name = "obserwator", marker = "extra == 'all'", git = "https://github.com/Daldek/Obserwator?rev=ea158dc6f703a5ababd91ff54e7ddec35b4f389b" },
+    { name = "obserwator", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/Obserwator?rev=ea158dc6f703a5ababd91ff54e7ddec35b4f389b" },
     { name = "platformdirs", specifier = ">=4" },
     { name = "pyproj", marker = "extra == 'all'", specifier = ">=3.6" },
     { name = "pyproj", marker = "extra == 'model'", specifier = ">=3.6" },
@@ -772,7 +772,7 @@ wheels = [
 [[package]]
 name = "obserwator"
 version = "3.0.0"
-source = { git = "https://github.com/Daldek/IMGWTools?rev=ea158dc6f703a5ababd91ff54e7ddec35b4f389b#ea158dc6f703a5ababd91ff54e7ddec35b4f389b" }
+source = { git = "https://github.com/Daldek/Obserwator?rev=ea158dc6f703a5ababd91ff54e7ddec35b4f389b#ea158dc6f703a5ababd91ff54e7ddec35b4f389b" }
 dependencies = [
     { name = "httpx" },
     { name = "platformdirs" },
