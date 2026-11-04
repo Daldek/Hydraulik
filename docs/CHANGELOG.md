@@ -174,8 +174,8 @@ follows [Semantic Versioning](https://semver.org/).
 
 - The `rainfall` extra declares the supported ranges `hydrolog>=1.0.0.dev0,<2` and
   `obserwator>=3.0.0.dev0,<4` (REL-5.6) and pins the producers' development heads by commit in
-  `[tool.uv.sources]`: Hydrolog `2a5ba1ac` (`feature/routing-schematic`, 1.0.0.dev0) and
-  Obserwator `651d4d73` (`feature/obserwator`, 3.0.0), both on GitHub, instead of the tags
+  `[tool.uv.sources]`: Hydrolog `2eb8bd0c` (`develop`, 1.0.0.dev0) and
+  Obserwator `ea158dc6` (`develop`, 3.0.0), the commits of Nogat's release set `candidate-1` (`ecosystem.py set apply`), both on GitHub, instead of the tags
   v0.7.0 and v2.1.1 (REL-5.3, ADR-0011). `tests/fixtures/rain/hietogram_euler_ii.json` is recorded
   again from the real command.
 - **Breaking:** IMGWTools is called Obserwator (Nogat ECO-057, ADR-0011 erratum 3). The
