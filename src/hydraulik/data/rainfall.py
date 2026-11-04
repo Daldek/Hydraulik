@@ -9,8 +9,8 @@ Hydraulik makes the rain table of a model (:mod:`hydraulik.data.tables`) from
   the whole ``hydrolog-result/1`` envelope or its ``result``);
 * a **depth** that is given, or the PMAXTP depth of IMGW-PIB for a duration and a
   probability, from ``obserwator.fetch_pmaxtp`` (the library, needs the network) or from
-  the document that ``obserwator pmaxtp fetch`` prints (``obserwator-result/1`` whose
-  ``result`` is the PMAXTP result).
+  the document that ``obserwator pmaxtp fetch --json`` prints (``obserwator-result/1``
+  whose ``result`` is the PMAXTP result).
 
 Nothing here reaches into the internals of either tool, and nothing is imported until a
 function needs it, so the documents are read without Hydrolog or Obserwator installed.
@@ -358,7 +358,7 @@ def _pmaxtp_from(body: Mapping[str, Any], name: str, details: dict[str, Any]) ->
         raise InputDataError(
             f"{name}: no PMAXTP quantiles (data.ks)",
             details=details,
-            hint="Give the result of `obserwator pmaxtp fetch`.",
+            hint="Give the result of `obserwator pmaxtp fetch --json`.",
             reason="invalid_pmaxtp",
         )
 
@@ -378,7 +378,7 @@ def _pmaxtp_from(body: Mapping[str, Any], name: str, details: dict[str, Any]) ->
 
 
 def read_pmaxtp_document(path: str | os.PathLike[str]) -> Pmaxtp:
-    """Read the PMAXTP document ``obserwator pmaxtp fetch`` prints.
+    """Read the PMAXTP document ``obserwator pmaxtp fetch --json`` prints.
 
     Parameters
     ----------

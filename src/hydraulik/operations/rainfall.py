@@ -254,9 +254,9 @@ def build_rainfall(
     Two ways to a rain table. **Design**: a Hydrolog hyetograph shape
     (``hietogram_type``) with a depth that is given (``total_mm``), or the PMAXTP depth
     of IMGW-PIB for ``duration_min`` and ``probability_percent``, read from a document
-    of ``obserwator pmaxtp fetch`` (``pmaxtp``) or fetched for a point with Obserwator
-    (``latitude`` and ``longitude``, needs the network). **Document**: the result of
-    ``hydrolog precip hietogram --json`` (``hietogram``), converted as it is.
+    of ``obserwator pmaxtp fetch --json`` (``pmaxtp``) or fetched for a point with
+    Obserwator (``latitude`` and ``longitude``, needs the network). **Document**: the
+    result of ``hydrolog precip hietogram --json`` (``hietogram``), converted as it is.
 
     Parameters
     ----------

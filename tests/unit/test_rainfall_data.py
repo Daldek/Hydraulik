@@ -4,7 +4,7 @@
 --hietogram-type euler_ii --total-mm 40 --duration-min 60 --timestep-min 10 --json
 --lang en`` as Hydrolog prints it, with its ``inputs`` member (Hydrolog
 ``feature/routing-network``, 0719c41, 1.0.0.dev0, recorded 2026-10-25);
-``pmaxtp_fetch.json`` has the layout that ``obserwator pmaxtp fetch`` prints
+``pmaxtp_fetch.json`` has the layout that ``obserwator pmaxtp fetch --json`` prints
 (Obserwator's own command code made it), with synthetic depths.
 """
 
