@@ -87,8 +87,8 @@ dev = [
 [tool.uv.sources]
 # Commit pins of the producers' development heads (REL-5.3), both on GitHub:
 # docs/PROGRESS.md, "Resolving the pins".
-hydrolog = { git = "https://github.com/Daldek/Hydrolog", rev = "2a5ba1ac175cc710a8d6a23f477e09ca7257974a" }
-obserwator = { git = "https://github.com/Daldek/IMGWTools", rev = "651d4d73dc6e6a2a2a75ec8476a35ee050ed787d" }
+hydrolog = { git = "https://github.com/Daldek/Hydrolog", rev = "2eb8bd0c0af7a4219bfe9a0f756c1fa27cc15c52" }
+obserwator = { git = "https://github.com/Daldek/IMGWTools", rev = "ea158dc6f703a5ababd91ff54e7ddec35b4f389b" }
 
 [tool.hatch.version]
 path = "src/hydraulik/__init__.py"
