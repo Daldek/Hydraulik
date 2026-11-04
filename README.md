@@ -136,7 +136,7 @@ Generic drivers for any command: `hydraulik.validate_command`,
 
 - [Kartograf](https://github.com/Daldek/Kartograf) downloads the terrain and land
   cover that a model is built from; Hydraulik calls it as a program.
-- [Obserwator](https://github.com/Daldek/IMGWTools) gives design rainfall depths
+- [Obserwator](https://github.com/Daldek/Obserwator) gives design rainfall depths
   (PMAXTP) and [Hydrolog](https://github.com/Daldek/Hydrolog) the hyetograph
   shapes; Hydraulik uses both as libraries.
 - Prefer HydroMT-SFINCS (GPL-3.0) for SFINCS models with subgrid tables or
