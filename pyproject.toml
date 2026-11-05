@@ -87,7 +87,7 @@ dev = [
 [tool.uv.sources]
 # Commit pins of the producers' development heads (REL-5.3), both on GitHub:
 # docs/PROGRESS.md, "Resolving the pins".
-hydrolog = { git = "https://github.com/Daldek/Hydrolog", rev = "2eb8bd0c0af7a4219bfe9a0f756c1fa27cc15c52" }
+hydrolog = { git = "https://github.com/Daldek/Hydrolog", rev = "1ffcd6b6badcd75e7ace9f2d59d4640830e176ff" }
 obserwator = { git = "https://github.com/Daldek/Obserwator", rev = "1ee54573453473392f21e2c8bb34f76e4976e03f" }
 
 [tool.hatch.version]
