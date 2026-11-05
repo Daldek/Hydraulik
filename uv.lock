@@ -402,8 +402,8 @@ dev = [
 requires-dist = [
     { name = "geopandas", marker = "extra == 'all'", specifier = ">=1.0" },
     { name = "geopandas", marker = "extra == 'model'", specifier = ">=1.0" },
-    { name = "hydrolog", marker = "extra == 'all'", git = "https://github.com/Daldek/Hydrolog?rev=2eb8bd0c0af7a4219bfe9a0f756c1fa27cc15c52" },
-    { name = "hydrolog", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/Hydrolog?rev=2eb8bd0c0af7a4219bfe9a0f756c1fa27cc15c52" },
+    { name = "hydrolog", marker = "extra == 'all'", git = "https://github.com/Daldek/Hydrolog?rev=1ffcd6b6badcd75e7ace9f2d59d4640830e176ff" },
+    { name = "hydrolog", marker = "extra == 'rainfall'", git = "https://github.com/Daldek/Hydrolog?rev=1ffcd6b6badcd75e7ace9f2d59d4640830e176ff" },
     { name = "netcdf4", marker = "extra == 'all'", specifier = ">=1.7" },
     { name = "netcdf4", marker = "extra == 'sfincs'", specifier = ">=1.7" },
     { name = "numpy", marker = "extra == 'all'", specifier = ">=1.26" },
@@ -436,7 +436,7 @@ dev = [
 [[package]]
 name = "hydrolog"
 version = "1.0.0.dev0"
-source = { git = "https://github.com/Daldek/Hydrolog?rev=2eb8bd0c0af7a4219bfe9a0f756c1fa27cc15c52#2eb8bd0c0af7a4219bfe9a0f756c1fa27cc15c52" }
+source = { git = "https://github.com/Daldek/Hydrolog?rev=1ffcd6b6badcd75e7ace9f2d59d4640830e176ff#1ffcd6b6badcd75e7ace9f2d59d4640830e176ff" }
 dependencies = [
     { name = "numpy" },
     { name = "platformdirs" },
