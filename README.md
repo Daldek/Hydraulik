@@ -160,9 +160,9 @@ Codes come from the shared registry
 
 ## Data and licensing
 
-Hydraulik is MIT. Data keeps its own terms: NMT and BDOT10k from GUGiK (free
-reuse with attribution), PMAXTP from IMGW-PIB (attribution required), OpenStreetMap
-under ODbL. Results are written only where you point `--output-dir` or `--output`.
+Hydraulik is MIT. Data keeps its own terms: NMT and BDOT10k (land cover, roads)
+from GUGiK (free reuse with attribution), PMAXTP from IMGW-PIB (attribution
+required). Results are written only where you point `--output-dir` or `--output`.
 
 ## Documentation
 
