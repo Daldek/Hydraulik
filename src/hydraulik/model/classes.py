@@ -292,7 +292,7 @@ def load_classes(override: str | Path | None = None) -> ClassTable:
     --------
     >>> table = load_classes()
     >>> table.index("water"), table.classes[table.index("water")].curve_numbers
-    (0, (100.0, 100.0, 100.0, 100.0))
+    (0, (98.0, 98.0, 98.0, 98.0))
     """
     table = _shipped_classes()
     if override is None:

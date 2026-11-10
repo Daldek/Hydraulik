@@ -83,7 +83,7 @@ def expected_cn() -> Float:
     """The composite curve number of every cell: grass B, forest D, a pond, roofs 98."""
     cn = np.full((4, 8), 69.0)
     cn[:, 4:] = 77.0
-    cn[3, 4:] = 100.0
+    cn[3, 4:] = 98.0
     cn[0, 0] = 98.0
     cn[0, 1] = 0.4 * 69.0 + 0.6 * 98.0
     cn[0, 2] = 0.6 * 69.0 + 0.4 * 98.0
