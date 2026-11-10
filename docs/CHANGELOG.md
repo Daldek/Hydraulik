@@ -172,6 +172,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Hydrolog and Obserwator are pinned at the Nogat release set `candidate-2` (Nogat
+  `587c909`, `ecosystem.py set apply`): Hydrolog `1ffcd6b` -> `759d7ef`, Obserwator
+  `1ee5457` -> `f9f4ee7`. Hydrolog gives open water CN 98 instead of 100 (NEH 630 ch. 9),
+  so the shipped `water` class of `model build` takes CN 98 in every soil group and its
+  cells keep an SCS storage of about 0.2 inch (5.2 mm) instead of none; `--classes` sets
+  the old value back.
+
 - Obserwator is pinned at `1ee5457` of the Nogat release set `candidate-1` (3.0.0.dev0, the
   result and error documents of the standard 1.0); the texts that name the PMAXTP document
   call `obserwator pmaxtp fetch --json`, because the command prints a summary for a person

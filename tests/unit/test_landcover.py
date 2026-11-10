@@ -141,14 +141,14 @@ def test_an_override_replaces_the_values_it_gives_and_keeps_the_others(
 
 def test_a_file_saved_by_a_polish_spreadsheet_is_read(tmp_path: Path) -> None:
     path = tmp_path / "klasy.csv"
-    path.write_text("\ufeffclass;manning_n;cn_a\nwater;0,045;99\n", encoding="utf-8")
+    path.write_text("\ufeffclass;manning_n;cn_a\nwater;0,045;97\n", encoding="utf-8")
 
     water = load_classes(path).classes[0]
 
     assert (water.name, water.manning_n, water.curve_numbers[0]) == (
         "water",
         0.045,
-        99.0,
+        97.0,
     )
 
 
@@ -240,7 +240,7 @@ def test_each_cell_gets_the_n_and_the_curve_number_of_the_classes_under_it(
     )
     np.testing.assert_allclose(
         result.curve_number,
-        [[0.8 * 69 + 0.2 * 98, 0.8 * 100 + 0.2 * 98], [0.5 * 55 + 0.5 * 98, 100.0]],
+        [[0.8 * 69 + 0.2 * 98, 98.0], [0.5 * 55 + 0.5 * 98, 98.0]],
     )
     assert result.building_fraction.tolist() == [[0.0, 0.0], [0.5, 0.0]]
     areas = {item["class"]: item["area_m2"] for item in result.report["classes"]}
@@ -290,7 +290,7 @@ def test_an_unknown_soil_group_leaves_the_curve_number_of_that_cell_open(
     assert cn is not None
     assert np.isnan(cn[0, 1]) and np.isfinite(result.manning[0, 1])
     assert cn[1, 0] == pytest.approx(0.5 * 77 + 0.5 * 98)  # forest D and roof
-    assert cn[1, 1] == 100.0 and cn[0, 0] == pytest.approx(0.8 * 69 + 0.2 * 98)
+    assert cn[1, 1] == 98.0 and cn[0, 0] == pytest.approx(0.8 * 69 + 0.2 * 98)
     assert _paint(bdot, soil=None).curve_number is None
 
 

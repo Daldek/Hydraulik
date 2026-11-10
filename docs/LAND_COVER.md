@@ -73,7 +73,7 @@ others.
 
 | class | n | CN A | CN B | CN C | CN D |
 |---|---|---|---|---|---|
-| `water` | 0.035 | 100 | 100 | 100 | 100 |
+| `water` | 0.035 | 98 | 98 | 98 | 98 |
 | `forest` | 0.4 | 30 | 55 | 70 | 77 |
 | `shrub` | 0.4 | 35 | 56 | 70 | 77 |
 | `grass` | 0.15 | 49 | 69 | 79 | 84 |
@@ -99,7 +99,7 @@ Nuclear Regulatory Commission publishes (ML14219A437).
 
 | class | Manning `n` | curve number |
 |---|---|---|
-| `water` | HEC-RAS 2D manual (Chow 1959): open water 0.025 to 0.05; 0.035 is the typical value of `r.manning` | water is impervious, CN 100 (Hydrolog `WATER`) |
+| `water` | HEC-RAS 2D manual (Chow 1959): open water 0.025 to 0.05; 0.035 is the typical value of `r.manning` | NEH 630 ch. 9, p. 9-1: impervious and water surfaces are assigned CN 98 (Hydrolog `WATER`) |
 | `forest` | TR-55 table 3-1: woods, light underbrush 0.40 (dense underbrush 0.80); Kalyanapu: mixed forest 0.40 | table 2-2c: woods, good condition (protected from grazing, litter and brush cover the soil) |
 | `shrub` | Kalyanapu: shrub/scrub 0.40 (TR-55 has no brush row for sheet flow) | table 2-2c: brush-weed-grass mixture, fair condition |
 | `grass` | TR-55 table 3-1: short grass prairie 0.15 (dense grasses 0.24, Bermudagrass 0.41) | table 2-2c: pasture, grassland or range, fair condition |
