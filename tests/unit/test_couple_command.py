@@ -245,7 +245,7 @@ def test_the_model_and_the_inflow_hand_their_attribution_on_to_the_run(
     inflow = tmp_path / "inflow.csv"
     inflow.write_text(
         "time_min,discharge_m3s,attribution,terms_notice\n"
-        '0,0,Inflow source,"Regulamin: https://example.org/terms"\n'
+        '0,0,Inflow source,"Regulamin przykładowy: https://example.org/terms"\n'
         "5,0.05,,\n10,0,,\n",
         encoding="utf-8",
     )
@@ -255,7 +255,9 @@ def test_the_model_and_the_inflow_hand_their_attribution_on_to_the_run(
 
     expected = Attribution.of(
         PMAXTP,
-        Attribution(("Inflow source",), ("Regulamin: https://example.org/terms",)),
+        Attribution(
+            ("Inflow source",), ("Regulamin przykładowy: https://example.org/terms",)
+        ),
     )
     assert document.attribution == list(expected.lines)
     assert document.terms_notice == list(expected.notice)

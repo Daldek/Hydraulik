@@ -133,7 +133,9 @@ def test_the_attribution_of_a_run_is_read_and_written_into_every_export(
     with table.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert [r["attribution"] for r in rows[: len(PMAXTP.lines)]] == list(PMAXTP.lines)
-    assert [r["terms_notice"] for r in rows[:2]] == list(PMAXTP.notice)
+    assert [r["terms_notice"] for r in rows[: len(PMAXTP.notice)]] == list(
+        PMAXTP.notice
+    )
     assert rows[0]["station"] == "outlet"
     with rasterio.open(raster_path) as opened:
         tags = opened.tags()

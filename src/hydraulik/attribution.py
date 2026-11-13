@@ -5,10 +5,10 @@ rainfall depths of IMGW-PIB, has terms of its own (the „Regulamin udostępnian
 projektu PMAXTP” on https://klimat.imgw.pl/opady-maksymalne): every work made with the
 data names the source with the address of the page, cites the monograph of the project
 and, once the data are processed, says so. A design rain, a model, a run and every map
-or table made from them are processed data, so they carry all three lines. IMGW-PIB
-data may be used free of charge for private purposes only, so a product with them also
-carries the terms notice: the conditions in one sentence and the terms that apply. The
-lines are Polish and verbatim (Nogat DEV-20); they are never translated.
+or table made from them are processed data, so they carry all three lines, and the
+terms notice links the PMAXTP terms (Nogat DEV-20.7, ECO-065): the line names whose
+terms it opens, and no product restates them. The lines are Polish and verbatim (Nogat
+DEV-20); they are never translated.
 
 Both travel with the data as lists of lines, in the forms of DEV-20.5:
 
@@ -22,20 +22,23 @@ Both travel with the data as lists of lines, in the forms of DEV-20.5:
 * a directory (a model, a run, a network run): the file :data:`ATTRIBUTION_NAME`, the
   attribution and then the notice, one line per line, which ``model run``,
   ``model couple`` and ``results`` read back. There the two lists are told apart by the
-  notice lines' own form: the sentence :data:`IMGW_TERMS_NOTICE` and the lines that
-  begin with ``Regulamin: ``;
+  terms lines' own form, „Regulamin <whose terms>: <address>”;
 * GeoTIFF: the metadata tags ``attribution`` and ``terms_notice``, lines joined by
   newlines.
 
 Lines from several inputs are merged without duplicates: the lines of DEV-20 in the
-order of DEV-20.4 (S, P, H, PS, PP, M, C, CP; N, RD, RH, RK), any other line after them
-in the order first seen.
+order of DEV-20.4 and DEV-20.7 (S, P, PS, PP, M, C, CP; RD, RH, RK), any other line
+after them in the order first seen. Lines that ECO-065 retired, which older products
+and stored files still hold, are dropped as they are read: the hydro.imgw.pl line H,
+the sentence N on the conditions of use and the terms lines of the old form
+„Regulamin: <address>”, of which the three of DEV-20 are read as their new form.
 """
 
 from __future__ import annotations
 
 import csv
 import io
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -44,7 +47,6 @@ from typing import Final
 __all__ = [
     "ATTRIBUTION_NAME",
     "CSV_COLUMNS",
-    "IMGW_TERMS_NOTICE",
     "PMAXTP",
     "PMAXTP_MONOGRAPH",
     "PMAXTP_PROCESSED",
@@ -77,18 +79,42 @@ PMAXTP_MONOGRAPH: Final = (
 )
 """The monograph of the PMAXTP project that ust. 1 of the terms asks to cite."""
 
-IMGW_TERMS_NOTICE: Final = (
-    "Dane IMGW-PIB można wykorzystywać nieodpłatnie do celów prywatnych "
-    "(niezarobkowych). Wykorzystanie w działalności gospodarczej, na stronach z "
-    "reklamami lub do celów wymienionych w regulaminie (m.in. planowanie w "
-    "gospodarowaniu wodami, art. 317 Prawa wodnego) wymaga umowy z IMGW-PIB."
+_TERMS_FORM: Final = re.compile(r"Regulamin [^:]+: \S+")
+"""A terms line of DEV-20.7: „Regulamin <whose terms>: <address>”."""
+
+_TERMS_DANEPUBLICZNE: Final = (
+    "Regulamin danych IMGW-PIB: https://danepubliczne.imgw.pl/regulations"
 )
-"""The conditions of use of IMGW-PIB data, for the person who receives a product."""
+_TERMS_HYDRO: Final = (
+    "Regulamin serwisu hydrologicznego IMGW-PIB: https://hydro.imgw.pl/#/regulamin"
+)
 
-_TERMS_PREFIX: Final = "Regulamin: "
+PMAXTP_TERMS: Final = "Regulamin danych PMAXTP: https://klimat.imgw.pl/opady-maksymalne"
+"""The terms of PMAXTP, the line RK of the terms notice."""
 
-PMAXTP_TERMS: Final = f"{_TERMS_PREFIX}https://klimat.imgw.pl/opady-maksymalne"
-"""The terms of PMAXTP, a line of the terms notice."""
+_RETIRED_TERMS_PREFIX: Final = "Regulamin: "
+
+_RETIRED: Final[Mapping[str, str]] = {
+    f"{_RETIRED_TERMS_PREFIX}https://danepubliczne.imgw.pl/regulations": (
+        _TERMS_DANEPUBLICZNE
+    ),
+    f"{_RETIRED_TERMS_PREFIX}https://hydro.imgw.pl/#/regulamin": _TERMS_HYDRO,
+    f"{_RETIRED_TERMS_PREFIX}https://klimat.imgw.pl/opady-maksymalne": PMAXTP_TERMS,
+}
+"""The old terms lines of DEV-20 and the lines that replace them (ECO-065)."""
+
+_DROPPED: Final = frozenset(
+    {
+        "Dane pochodzą z serwisu hydrologicznego IMGW-PIB https://hydro.imgw.pl",
+        (
+            "Dane IMGW-PIB można wykorzystywać nieodpłatnie do celów prywatnych "
+            "(niezarobkowych). Wykorzystanie w działalności gospodarczej, na stronach "
+            "z reklamami lub do celów wymienionych w regulaminie (m.in. planowanie w "
+            "gospodarowaniu wodami, art. 317 Prawa wodnego) wymaga umowy z IMGW-PIB."
+        ),
+    }
+)
+"""The lines H and N, retired by ECO-065, which no product carries any more."""
 
 ATTRIBUTION_NAME: Final = "ATTRIBUTION.txt"
 """The file of a model or run directory that holds the attribution of its data."""
@@ -107,7 +133,6 @@ _ORDER: Final = (
         "Dane Instytutu Meteorologii i Gospodarki Wodnej – Państwowego Instytutu "
         "Badawczego zostały przetworzone"
     ),
-    "Dane pochodzą z serwisu hydrologicznego IMGW-PIB https://hydro.imgw.pl",
     PMAXTP_SOURCE,
     PMAXTP_PROCESSED,
     PMAXTP_MONOGRAPH,
@@ -117,20 +142,30 @@ _ORDER: Final = (
         "(https://creativecommons.org/licenses/by/4.0/)"
     ),
     "Dane ČHMÚ zostały przetworzone",
-    IMGW_TERMS_NOTICE,
-    f"{_TERMS_PREFIX}https://danepubliczne.imgw.pl/regulations",
-    f"{_TERMS_PREFIX}https://hydro.imgw.pl/#/regulamin",
+    _TERMS_DANEPUBLICZNE,
+    _TERMS_HYDRO,
     PMAXTP_TERMS,
 )
-"""The lines of Nogat DEV-20 in their order (S, P, H, PS, PP, M, C, CP; N, RD, RH, RK);
+"""The lines of Nogat DEV-20 in their order (S, P, PS, PP, M, C, CP; RD, RH, RK);
 the ČHMÚ processed mark CP is matched by its beginning, it names what was done."""
+
+_CP_INDEX: Final = 6
 
 
 def _rank(line: str) -> int:
     for index, known in enumerate(_ORDER):
-        if line == known or (index == 7 and line.startswith(known)):
+        if line == known or (index == _CP_INDEX and line.startswith(known)):
             return index
     return len(_ORDER)
+
+
+def _current(line: str) -> str | None:
+    """Return the line as DEV-20 has it now; ``None`` for a line ECO-065 retired."""
+    if line in _DROPPED:
+        return None
+    if line.startswith(_RETIRED_TERMS_PREFIX):
+        return _RETIRED.get(line)
+    return line
 
 
 def _merge(groups: Iterable[Iterable[str]]) -> tuple[str, ...]:
@@ -138,14 +173,14 @@ def _merge(groups: Iterable[Iterable[str]]) -> tuple[str, ...]:
     found: dict[str, None] = {}
     for group in groups:
         for line in group:
-            text = line.strip()
+            text = _current(line.strip())
             if text:
                 found.setdefault(text)
     return tuple(sorted(found, key=_rank))
 
 
-def _is_notice(line: str) -> bool:
-    return line == IMGW_TERMS_NOTICE or line.startswith(_TERMS_PREFIX)
+def _is_terms(line: str) -> bool:
+    return _TERMS_FORM.fullmatch(line) is not None
 
 
 def _cells(lines: Sequence[str], rows: int) -> list[str]:
@@ -166,7 +201,7 @@ class Attribution:
     lines : tuple of str
         The attribution (``attribution``): source, processed mark, monograph.
     notice : tuple of str
-        The terms notice (``terms_notice``): the conditions of use and the terms.
+        The terms notice (``terms_notice``): the links to the terms that apply.
 
     Examples
     --------
@@ -201,7 +236,7 @@ class Attribution:
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> Attribution:
-        """Read the lines of a file: notice lines go to ``notice``, others to ``lines``.
+        """Read the lines of a file: terms lines go to ``notice``, others to ``lines``.
 
         Parameters
         ----------
@@ -216,12 +251,12 @@ class Attribution:
         Examples
         --------
         >>> Attribution.from_lines([PMAXTP_SOURCE, PMAXTP_TERMS]).notice
-        ('Regulamin: https://klimat.imgw.pl/opady-maksymalne',)
+        ('Regulamin danych PMAXTP: https://klimat.imgw.pl/opady-maksymalne',)
         """
         merged = _merge([lines])
         return cls(
-            tuple(line for line in merged if not _is_notice(line)),
-            tuple(line for line in merged if _is_notice(line)),
+            tuple(line for line in merged if not _is_terms(line)),
+            tuple(line for line in merged if _is_terms(line)),
         )
 
     @classmethod
@@ -317,7 +352,7 @@ class Attribution:
 
 PMAXTP: Final = Attribution(
     (PMAXTP_SOURCE, PMAXTP_PROCESSED, PMAXTP_MONOGRAPH),
-    (IMGW_TERMS_NOTICE, PMAXTP_TERMS),
+    (PMAXTP_TERMS,),
 )
 """What a product made from PMAXTP data carries, in the order of Nogat DEV-20."""
 

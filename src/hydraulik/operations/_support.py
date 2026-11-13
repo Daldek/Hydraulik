@@ -250,7 +250,8 @@ def attribution_names(
     """Return the attribution file to plan in an output directory, if it needs one.
 
     A later write merges into the file that is there (Nogat DEV-20.5), so the file is
-    planned only when the lines add something to it; plan it with
+    planned only when the merge changes its text: the lines add something to it, or
+    it still holds lines that ECO-065 retired, which the merge drops. Plan it with
     ``merged=(ATTRIBUTION_NAME,)`` so that an existing one is replaced without
     ``--force``.
 
@@ -266,8 +267,10 @@ def attribution_names(
     tuple of str
         ``(ATTRIBUTION_NAME,)`` or nothing.
     """
-    there = read_attribution_file(Path(output_dir))
-    if not attribution or Attribution.of(there, attribution) == there:
+    path = Path(output_dir) / ATTRIBUTION_NAME
+    text = path.read_text(encoding="utf-8-sig") if path.is_file() else ""
+    there = Attribution.from_lines(text.splitlines())
+    if not attribution or Attribution.of(there, attribution).to_file() == text:
         return ()
     return (ATTRIBUTION_NAME,)
 

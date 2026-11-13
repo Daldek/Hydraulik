@@ -167,7 +167,7 @@ class _Attributed:
         from them (Polish, verbatim; :mod:`hydraulik.attribution`); empty when no
         such data went in.
     terms_notice : list of str
-        The conditions of use of that data and the terms that apply; empty when none.
+        The links to the terms of that data that apply; empty when none.
     """
 
     attribution: list[str] = field(default_factory=list, kw_only=True)

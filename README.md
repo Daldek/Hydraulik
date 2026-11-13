@@ -166,13 +166,9 @@ from GUGiK (free reuse with attribution), PMAXTP from IMGW-PIB under the
 (<https://klimat.imgw.pl/opady-maksymalne>). Results are written only where you point
 `--output-dir` or `--output`.
 
-IMGW-PIB data may be used free of charge for private (non-profit) purposes; business
-use, websites with advertising and the purposes the terms list (among them water
-management planning, art. 317 of the Water Law) need an agreement with IMGW-PIB.
-
 Every product made from a PMAXTP depth carries, verbatim and in Polish, the source
 line with the address of the PMAXTP page, the mark that the data were processed, the
-citation of the PMAXTP monograph and the terms notice: the rain table, the model
+citation of the PMAXTP monograph and the link to the PMAXTP terms: the rain table, the model
 directory, the run and every exported map or table (the fields `attribution` and
 `terms_notice` of the result, the trailing CSV columns of the same names, the GeoTIFF
 tags of the same names, `ATTRIBUTION.txt` in a model or run directory; see

@@ -1,7 +1,8 @@
 # ADR-0012: The attribution of provider data travels with the data, from the rain table to every export
 
 - Status: accepted (the author's order of 2026-11-13: every product with IMGW-PIB data
-  carries the attribution its terms require)
+  carries the attribution its terms require); amended 2026-11-13 by Nogat ECO-065 (see
+  Amendment)
 - Date: 2026-11-13
 - Requirements: Nogat DEV §20 and ECO-060 (fields `attribution` and `terms_notice`, the
   file forms of DEV-20.5, the order of the lines); AGI-4.1 (an optional field keeps the
@@ -15,8 +16,8 @@ pmaxtp fetch --json` or through Obserwator for a point). PMAXTP has terms of its
 ust. 1 asks for the source with the address of the page and the citation of the
 monograph of the project, ust. 2 for the mark of processed data. A design rain made from
 a quantile is processed data, and so is everything made from it: the model, the run, the
-flood maps and the station series. IMGW-PIB data may be used free of charge for private
-purposes only, so a product with them also tells its reader the conditions of use.
+flood maps and the station series. A product with them also links the terms that apply,
+so its reader finds the conditions of use at the provider.
 
 Before this decision only the result of `rainfall build` had a notice (`pmaxtp_attribution`,
 an English sentence pointing at the general terms of danepubliczne.imgw.pl). The rain
@@ -34,7 +35,7 @@ table, the model directory, the run and the exports said nothing.
 ## Decision
 
 Option A. `hydraulik.attribution` holds the texts, verbatim and Polish (PS, PP and the
-monograph M; the notice N and RK of DEV-20), and the forms:
+monograph M; the terms line RK of DEV-20), and the forms:
 
 - `rainfall build` gives a PMAXTP rain the PMAXTP lines, merged with the `attribution`
   and `terms_notice` of the Obserwator document; a Hydrolog hyetograph document passes
@@ -56,10 +57,10 @@ monograph M; the notice N and RK of DEV-20), and the forms:
   `-swmm/1` and `-couple/1` have the two fields; both are empty without provider data. The
   version stays `/1` (an optional field, AGI-4.1).
 
-In `ATTRIBUTION.txt` the notice lines are recognised by their form (the sentence N and the
-lines that begin with `Regulamin: `), so one file holds both lists.
+In `ATTRIBUTION.txt` the terms lines are recognised by their form, „Regulamin <whose
+terms>: <address>” (DEV §20), so one file holds both lists.
 Lines merged from several inputs are kept once each, the lines of DEV-20 in the order of
-DEV-20.4 and DEV-20.7 (S, P, H, PS, PP, M, C, CP; N, RD, RH, RK), any other line after
+DEV-20.4 and DEV-20.7 (S, P, PS, PP, M, C, CP; RD, RH, RK), any other line after
 them.
 
 ## Consequences
@@ -71,3 +72,26 @@ them.
   More attribution than needed, never less.
 - `terrain download` keeps its `sources` (GUGiK, ISRIC): those providers are not under
   DEV §20.
+
+## Amendment (2026-11-13, Nogat ECO-065)
+
+Nogat ECO-065 („Tam, gdzie się da, odsyłamy do regulaminu dostawcy danych; treści w
+naszych produktach ograniczone do minimum”) dropped the line H and the sentence N, which
+restated the IMGW-PIB terms, and renamed the terms lines after the terms they open: RD
+„Regulamin danych IMGW-PIB: https://danepubliczne.imgw.pl/regulations”, RH „Regulamin
+serwisu hydrologicznego IMGW-PIB: https://hydro.imgw.pl/#/regulamin”, RK „Regulamin
+danych PMAXTP: https://klimat.imgw.pl/opady-maksymalne”. This record says so above. In
+Hydraulik:
+
+- `hydraulik.attribution` has no `IMGW_TERMS_NOTICE`; a PMAXTP product carries RK alone in
+  `terms_notice`, and the terms lines are recognised by the new form instead of the
+  sentence N and the prefix `Regulamin: `.
+- Lines that older producers and files still hold are read as DEV-20 has them now: H and
+  N are dropped, and the three old terms lines `Regulamin: <address>` of RD, RH and RK
+  are read as their new form; any other line of the old form is dropped too. Hydraulik
+  takes every line from its inputs, so this is where the old lines stop.
+- A model, run or network-run directory written before keeps the old lines in its
+  `ATTRIBUTION.txt` until a later write to it: that write replaces the file without them,
+  even when it adds no line. The commands that read the directory (`model run`, `model
+  couple`, `results`) carry only the new lines on; the file needs no rebuild by hand.
+- Exports already handed out (CSV, GeoTIFF) keep the lines they had.

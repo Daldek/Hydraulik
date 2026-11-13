@@ -130,11 +130,7 @@ def test_an_attribution_file_already_there_is_merged_into_without_force(
     station = (
         "Źródłem pochodzenia danych jest Instytut Meteorologii i Gospodarki Wodnej – "
         "Państwowy Instytut Badawczy\n"
-        "Regulamin: https://danepubliczne.imgw.pl/regulations\n"
-        "Dane IMGW-PIB można wykorzystywać nieodpłatnie do celów prywatnych "
-        "(niezarobkowych). Wykorzystanie w działalności gospodarczej, na stronach z "
-        "reklamami lub do celów wymienionych w regulaminie (m.in. planowanie w "
-        "gospodarowaniu wodami, art. 317 Prawa wodnego) wymaga umowy z IMGW-PIB.\n"
+        "Regulamin danych IMGW-PIB: https://danepubliczne.imgw.pl/regulations\n"
     )
     model = tmp_path / "model"
     model.mkdir()
@@ -145,13 +141,41 @@ def test_an_attribution_file_already_there_is_merged_into_without_force(
     document = build(tmp_path, dem, attributed)
 
     lines = (model / "ATTRIBUTION.txt").read_text(encoding="utf-8").splitlines()
-    s, rd, n = station.splitlines()
-    assert lines == [s, *PMAXTP.lines, n, rd, PMAXTP.notice[1]]
+    s, rd = station.splitlines()
+    assert lines == [s, *PMAXTP.lines, rd, *PMAXTP.notice]
     assert [Path(f["path"]).name for f in document.files][-1] == "ATTRIBUTION.txt"
     assert document.files[-1]["status"] == "replaced"
     # a second build adds nothing, so the file is not written again
     again = build(tmp_path, dem, attributed, force=True)
     assert "ATTRIBUTION.txt" not in [Path(f["path"]).name for f in again.files]
+
+
+def test_a_file_from_before_eco_065_is_rewritten_without_the_retired_lines(
+    tmp_path: Path, dem: Path
+) -> None:
+    # the same PMAXTP lines as the rain brings, with N and the old form of RK
+    stored = "".join(f"{line}\n" for line in PMAXTP.lines) + (
+        "Dane IMGW-PIB można wykorzystywać nieodpłatnie do celów prywatnych "
+        "(niezarobkowych). Wykorzystanie w działalności gospodarczej, na stronach z "
+        "reklamami lub do celów wymienionych w regulaminie (m.in. planowanie w "
+        "gospodarowaniu wodami, art. 317 Prawa wodnego) wymaga umowy z IMGW-PIB.\n"
+        "Regulamin: https://klimat.imgw.pl/opady-maksymalne\n"
+    )
+    model = tmp_path / "model"
+    model.mkdir()
+    (model / "ATTRIBUTION.txt").write_text(stored, encoding="utf-8")
+    attributed = tmp_path / "pmaxtp_rain.csv"
+    attributed.write_text(render_rain_table(5.0, [2.5] * 12, PMAXTP), encoding="utf-8")
+
+    document = build(tmp_path, dem, attributed)
+
+    lines = (model / "ATTRIBUTION.txt").read_text(encoding="utf-8").splitlines()
+    assert lines == [
+        *PMAXTP.lines,
+        "Regulamin danych PMAXTP: https://klimat.imgw.pl/opady-maksymalne",
+    ]
+    assert document.files[-1]["status"] == "replaced"
+    assert document.terms_notice == list(PMAXTP.notice)
 
 
 def test_a_rain_without_provider_data_writes_no_attribution(
