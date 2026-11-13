@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Final, Literal
 
 from hydraulik.attribution import (
+    ATTRIBUTION_NAME,
     Attribution,
     read_attribution_file,
     read_csv_attribution,
@@ -721,17 +722,14 @@ def couple_model(
         routing_step_s=routing_step_s,
         surcharge_method=surcharge_method,
     )
-    carried = read_attribution_file(job.folder)
     attribution = Attribution.of(
-        carried,
+        read_attribution_file(job.folder),
         Attribution()
         if job.inflow_path is None
         else read_csv_attribution(job.inflow_path),
     )
-    names = job.outputs + attribution_names(
-        attribution, output_dir, job.folder if attribution == carried else None
-    )
-    plan = plan_directory(output_dir, names, force=force)
+    names = job.outputs + attribution_names(attribution, output_dir)
+    plan = plan_directory(output_dir, names, force=force, merged=(ATTRIBUTION_NAME,))
     settings = load_settings()
     library = detect_sfincs_library(settings)
     if check:

@@ -44,9 +44,12 @@ monograph M; the notice N and RK of DEV-20), and the forms:
   cell of a short table; the readers take the value columns by name.
 - `model build` reads them from the rain table and writes `ATTRIBUTION.txt` (the
   attribution, then the notice, one line per line).
-- `model run` and `model couple` copy it to the output directory (not when the output is
-  the model directory and nothing changes); `model couple` and `swmm run` add the lines of
-  the inflow table (Hydrolog's `route network` tables).
+- `model run` and `model couple` copy it to the output directory; `model couple` and
+  `swmm run` add the lines of the inflow table (Hydrolog's `route network` tables).
+- A write of `ATTRIBUTION.txt` to a directory that has one merges into it (Nogat
+  DEV-20.5, 6f75180): each line once, in the order of DEV-20.4 and DEV-20.7; it needs no
+  `--force` (the plain writer's `merged` targets), and when the lines add nothing the
+  file is not written at all (a run into the model directory).
 - `results read` and `results export` read `ATTRIBUTION.txt` beside the map; the export
   writes the trailing CSV columns or the GeoTIFF tags.
 - The documents `hydraulik-rain/1`, `-model/1`, `-run/1`, `-results/1`, `-export/1`,
@@ -63,8 +66,8 @@ them.
 
 - A product made from a PMAXTP depth carries the lines in every file Hydraulik writes;
   whoever publishes it has the text to print.
-- A model rebuilt with `--force` into a directory that had `ATTRIBUTION.txt`, from a rain
-  without provider data, keeps the old file (the writer replaces only planned files);
-  more attribution than needed, never less.
+- A model rebuilt into a directory that had `ATTRIBUTION.txt`, from a rain without
+  provider data, keeps the old file; a rain with provider data adds its lines to it.
+  More attribution than needed, never less.
 - `terrain download` keeps its `sources` (GUGiK, ISRIC): those providers are not under
   DEV §20.

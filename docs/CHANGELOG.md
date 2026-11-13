@@ -180,6 +180,8 @@ follows [Semantic Versioning](https://semver.org/).
   network-run directory and in the tags of an exported GeoTIFF. A Hydrolog hyetograph
   document, an Obserwator PMAXTP document and a hydrograph table (`--inflow`) pass their
   own lines on.
+  A later write of `ATTRIBUTION.txt` merges into the file already there (Nogat DEV-20.5),
+  each line once and in the order of the standard, without `--force`.
 
 ### Changed
 

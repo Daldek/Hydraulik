@@ -6,7 +6,7 @@ import logging
 import os
 from pathlib import Path
 
-from hydraulik.attribution import read_attribution_file
+from hydraulik.attribution import ATTRIBUTION_NAME, read_attribution_file
 from hydraulik.documents import PlanDocument, RunDocument
 from hydraulik.engines.detect import detect_sfincs
 from hydraulik.engines.sfincs.inp import (
@@ -103,8 +103,8 @@ def run_model(
         )
     outputs = planned_outputs(inp)
     attribution = read_attribution_file(folder)
-    names = outputs + attribution_names(attribution, output_dir, carried=folder)
-    plan = plan_directory(output_dir, names, force=force)
+    names = outputs + attribution_names(attribution, output_dir)
+    plan = plan_directory(output_dir, names, force=force, merged=(ATTRIBUTION_NAME,))
     settings = load_settings()
     status, install = detect_sfincs(settings)
     timeout_s = float(settings.value("sfincs.timeout_s"))

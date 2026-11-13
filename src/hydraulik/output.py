@@ -144,6 +144,9 @@ class WritePlan:
         Names that occur more than once.
     force : bool
         Whether existing targets are replaced.
+    merged : tuple of str
+        Names whose existing file the command merges into rather than overwrites
+        (``ATTRIBUTION.txt``, Nogat DEV-20.5): replaced without ``force``.
     """
 
     directory: Path
@@ -151,6 +154,7 @@ class WritePlan:
     store_paths: tuple[Path, ...] = ()
     duplicates: tuple[str, ...] = ()
     force: bool = False
+    merged: tuple[str, ...] = ()
 
     @property
     def conflicts(self) -> tuple[str, ...]:
@@ -257,6 +261,7 @@ def plan_directory(
     names: Iterable[str],
     *,
     force: bool = False,
+    merged: Iterable[str] = (),
 ) -> WritePlan:
     """Plan a plain write of ``names`` into a directory (DEV-19.6, DEV-19.10).
 
@@ -271,6 +276,9 @@ def plan_directory(
         (DEV-19.5).
     force : bool, optional
         Replace existing targets instead of reporting a conflict.
+    merged : iterable of str, optional
+        Names the command merges into an existing file, which loses nothing: an
+        existing one is ``replace`` without ``force``.
 
     Returns
     -------
@@ -298,6 +306,7 @@ def plan_directory(
             reason="not_a_directory",
         )
     cleaned = [_clean_name(name) for name in names]
+    merging = {_clean_name(name) for name in merged}
     seen: set[str] = set()
     duplicates: list[str] = []
     for name in cleaned:
@@ -318,12 +327,19 @@ def plan_directory(
             )
         if not path.exists():
             targets.append(PlannedTarget(name, path, "write"))
-        elif force and path.is_file():
+        elif (force or name in merging) and path.is_file():
             targets.append(PlannedTarget(name, path, "replace"))
         else:
             targets.append(PlannedTarget(name, path, "conflict", "output_exists"))
     unique_store = tuple(dict.fromkeys(store_paths))
-    return WritePlan(directory, tuple(targets), unique_store, tuple(duplicates), force)
+    return WritePlan(
+        directory,
+        tuple(targets),
+        unique_store,
+        tuple(duplicates),
+        force,
+        tuple(sorted(merging & set(cleaned))),
+    )
 
 
 def plan_file(output: str | os.PathLike[str], *, force: bool = False) -> WritePlan:
@@ -598,7 +614,7 @@ class Writer:
                     reason="output_size_mismatch",
                 )
             existed = target.path.exists()
-            if existed and not self.plan.force:
+            if existed and not self.plan.force and target.name not in self.plan.merged:
                 raise ConflictError(
                     f"{target.path} appeared during the run",
                     reason="output_exists",

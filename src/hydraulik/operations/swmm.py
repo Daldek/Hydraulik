@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, Literal
 
-from hydraulik.attribution import Attribution, read_csv_attribution
+from hydraulik.attribution import (
+    ATTRIBUTION_NAME,
+    Attribution,
+    read_csv_attribution,
+)
 from hydraulik.data.tables import Hydrograph, read_hydrograph
 from hydraulik.documents import PlanDocument, SwmmDocument, notice
 from hydraulik.engines.swmm import inp as inp_module
@@ -307,7 +311,7 @@ def run_network(
         else read_csv_attribution(job.inflow_path)
     )
     names = OUTPUT_NAMES + attribution_names(attribution, output_dir)
-    plan = plan_directory(output_dir, names, force=force)
+    plan = plan_directory(output_dir, names, force=force, merged=(ATTRIBUTION_NAME,))
     version = extra_version("pyswmm")
     if check:
         generated = job.kind == "network"

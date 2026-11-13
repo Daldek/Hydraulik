@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
-from hydraulik.attribution import read_csv_attribution
+from hydraulik.attribution import ATTRIBUTION_NAME, read_csv_attribution
 from hydraulik.documents import ModelDocument, PlanDocument
 from hydraulik.exceptions import InvalidInputError, NotFoundError
 from hydraulik.model.classes import HSG_LETTERS, load_classes
@@ -395,7 +395,7 @@ required
     )
     attribution = read_csv_attribution(options.rain)
     names = options.planned_names() + attribution_names(attribution, output_dir)
-    plan = plan_directory(output_dir, names, force=force)
+    plan = plan_directory(output_dir, names, force=force, merged=(ATTRIBUTION_NAME,))
     missing = missing_extras(_PACKAGES)
     if check:
         steps = [
