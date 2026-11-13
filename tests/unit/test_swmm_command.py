@@ -214,7 +214,8 @@ def test_an_inflow_table_with_an_attribution_plans_its_attribution_file(
     inflow = tmp_path / "inflow.csv"
     inflow.write_text(
         "time_min,discharge_m3s,attribution,terms_notice\n"
-        '0,0,"Source line\nProcessed line",Regulamin: https://example.org/terms\n'
+        '0,0,"Source line\nProcessed line",'
+        "Regulamin przykładowy: https://example.org/terms\n"
         "5,0.05,,\n10,0,,\n",
         encoding="utf-8",
     )

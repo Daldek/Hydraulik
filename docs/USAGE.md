@@ -71,11 +71,12 @@ The second call takes the depth for a 60 minute rain of probability 10 % from th
 document of `obserwator pmaxtp fetch --json`; with `--latitude` and `--longitude` instead of
 `--pmaxtp` and with Obserwator installed it fetches the depth for a point (that needs the
 network). A PMAXTP depth brings the lines the PMAXTP terms require (the source with the
-page of PMAXTP, the mark of processed data, the monograph, the terms notice): they are in
-`attribution` and `terms_notice` of the result and of the table, and they follow the rain
-into the model (`ATTRIBUTION.txt`), the run and every map or table exported from it. A
-shape that Hydrolog already computed (`hydrolog precip hietogram --json`) goes in with
-`--hietogram FILE`, its own `attribution` and `terms_notice` with it.
+page of PMAXTP, the mark of processed data, the monograph, the link to the PMAXTP
+terms): they are in `attribution` and `terms_notice` of the result and of the table, and
+they follow the rain into the model (`ATTRIBUTION.txt`), the run and every map or table
+exported from it. A shape that Hydrolog already computed (`hydrolog precip hietogram
+--json`) goes in with `--hietogram FILE`, its own `attribution` and `terms_notice` with
+it.
 
 ```sh
 hydraulik rainfall build --hietogram-type euler_ii --latitude 52.23 --longitude 21.01 \

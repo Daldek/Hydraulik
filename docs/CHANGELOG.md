@@ -222,6 +222,15 @@ follows [Semantic Versioning](https://semver.org/).
   `attribution` and `terms_notice` replace it (ADR-0012).
 - The rain and hydrograph tables are read with the CSV quoting rules over the whole file,
   so a quoted cell may hold a line break (the attribution columns of Hydrolog's tables).
+- The terms notice only links the providers' terms (Nogat ECO-065, DEV-20.7, ADR-0012
+  amendment): a PMAXTP product carries „Regulamin danych PMAXTP:
+  https://klimat.imgw.pl/opady-maksymalne” in `terms_notice`, and the sentence N on the
+  conditions of use of IMGW-PIB data is gone (`IMGW_TERMS_NOTICE` is removed from
+  `hydraulik.attribution`). Terms lines are told apart by the form „Regulamin <whose
+  terms>: <address>”. Lines that older producers and stored files still hold are read
+  without the lines H and N, and their „Regulamin: <address>” lines of DEV-20 as the new
+  RD, RH and RK; a later write of `ATTRIBUTION.txt` to a directory whose file holds them
+  rewrites it without them, even when it adds no line.
 
 ### Fixed
 

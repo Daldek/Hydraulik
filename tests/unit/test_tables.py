@@ -73,14 +73,16 @@ def test_a_hydrograph_with_attribution_columns_reads_its_values_and_its_lines(
     path = _write(
         tmp_path,
         "time_min,discharge_m3s,attribution,terms_notice\n"
-        '0,0,S,"Regulamin: a"\n'
+        '0,0,S,"Regulamin przykładowy: a"\n'
         '1,2,"P\nM",\n',
     )
 
     series = read_hydrograph(path)
 
     assert series.volume_m3 == 60.0
-    assert read_csv_attribution(path) == Attribution(("S", "P", "M"), ("Regulamin: a",))
+    assert read_csv_attribution(path) == Attribution(
+        ("S", "P", "M"), ("Regulamin przykładowy: a",)
+    )
 
 
 def test_the_attribution_columns_of_obserwator_are_read_as_attribution(

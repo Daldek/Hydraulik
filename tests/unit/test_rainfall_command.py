@@ -34,11 +34,7 @@ PMAXTP_ATTRIBUTION = [
     "Badawczy, Warszawa 2022",
 ]
 PMAXTP_TERMS_NOTICE = [
-    "Dane IMGW-PIB można wykorzystywać nieodpłatnie do celów prywatnych "
-    "(niezarobkowych). Wykorzystanie w działalności gospodarczej, na stronach z "
-    "reklamami lub do celów wymienionych w regulaminie (m.in. planowanie w "
-    "gospodarowaniu wodami, art. 317 Prawa wodnego) wymaga umowy z IMGW-PIB.",
-    "Regulamin: https://klimat.imgw.pl/opady-maksymalne",
+    "Regulamin danych PMAXTP: https://klimat.imgw.pl/opady-maksymalne",
 ]
 
 
@@ -125,7 +121,7 @@ def test_a_pmaxtp_depth_carries_the_pmaxtp_terms_in_the_document_and_the_table(
     with out.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert [row["attribution"] for row in rows[:3]] == PMAXTP_ATTRIBUTION
-    assert [row["terms_notice"] for row in rows[:2]] == PMAXTP_TERMS_NOTICE
+    assert [row["terms_notice"] for row in rows[:3]] == [*PMAXTP_TERMS_NOTICE, "", ""]
     assert all(row["attribution"] == row["terms_notice"] == "" for row in rows[3:])
     assert read_rain_table(out).total_mm == pytest.approx(38.8, abs=1e-3)
 

@@ -8,7 +8,7 @@
   "properties": {
     "schema": {"const": "hydraulik-run/1"},
     "attribution": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "What the data providers' terms require with the results: source, processed mark, monograph (Polish, verbatim; Nogat DEV-20). Empty when no such data went in."},
-    "terms_notice": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "The conditions of use of the providers' data and the terms that apply (Nogat DEV-20). Empty when none."},
+    "terms_notice": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "The links to the providers' terms that apply, one line each, „Regulamin <whose terms>: <address>” (Nogat DEV-20.7). Empty when none."},
     "engine": {
       "type": "object",
       "required": ["kind"],
