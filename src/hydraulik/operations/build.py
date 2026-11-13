@@ -7,16 +7,19 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
+from hydraulik.attribution import read_csv_attribution
 from hydraulik.documents import ModelDocument, PlanDocument
 from hydraulik.exceptions import InvalidInputError, NotFoundError
 from hydraulik.model.classes import HSG_LETTERS, load_classes
 from hydraulik.model.options import DEFAULT_RECESSION_MIN, BuildOptions
 from hydraulik.operations._support import (
+    attribution_names,
     extra_blocker,
     file_dicts,
     missing_extras,
     refuse_option,
     require_extras,
+    write_attribution,
 )
 from hydraulik.output import Writer, plan_directory
 
@@ -390,7 +393,9 @@ required
         classes=classes,
         building_raise_m=building_raise_m,
     )
-    plan = plan_directory(output_dir, options.planned_names(), force=force)
+    attribution = read_csv_attribution(options.rain)
+    names = options.planned_names() + attribution_names(attribution, output_dir)
+    plan = plan_directory(output_dir, names, force=force)
     missing = missing_extras(_PACKAGES)
     if check:
         steps = [
@@ -398,7 +403,7 @@ required
             f"{options.dx_m:g} m cells",
             "fill the domain, Manning n, the curve number, the outlet and the stations",
             f"read {options.rain} and write its rain, then the files of the model",
-            f"move {', '.join(options.planned_names())} into {plan.directory}",
+            f"move {', '.join(names)} into {plan.directory}",
         ]
         if options.landcover is not None:
             steps.insert(1, _landcover_step(options))
@@ -426,7 +431,9 @@ required
             write_grid_raster(
                 writer.staging / name, built.inputs.grid, values, tags=tags
             )
+        write_attribution(writer, attribution)
         records = writer.commit()
     document = ModelDocument(**built.report, files=file_dicts(records))
+    document.attribute(attribution)
     document.notices.extend(built.notices)
     return document

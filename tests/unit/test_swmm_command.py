@@ -208,6 +208,32 @@ def test_check_plans_the_two_files_and_the_steps_and_writes_nothing(
     assert not out.exists()
 
 
+def test_an_inflow_table_with_an_attribution_plans_its_attribution_file(
+    tmp_path: Path,
+) -> None:
+    inflow = tmp_path / "inflow.csv"
+    inflow.write_text(
+        "time_min,discharge_m3s,attribution,terms_notice\n"
+        '0,0,"Source line\nProcessed line",Regulamin: https://example.org/terms\n'
+        "5,0.05,,\n10,0,,\n",
+        encoding="utf-8",
+    )
+
+    plan = check_command(
+        "swmm run",
+        network=str(NETWORK),
+        inflow=str(inflow),
+        inflow_node="J1",
+        output_dir=str(tmp_path / "swmm"),
+    )
+
+    assert [t["name"] for t in plan.to_dict()["targets"]] == [
+        "network.inp",
+        "network.rpt",
+        "ATTRIBUTION.txt",
+    ]
+
+
 def test_check_lists_an_existing_output_as_a_conflict_that_force_turns_into_replace(
     tmp_path: Path, inp: Path
 ) -> None:

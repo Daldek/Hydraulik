@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from hydraulik.attribution import read_attribution_file
 from hydraulik.documents import ExportDocument, PlanDocument, ResultsDocument
 from hydraulik.exceptions import InvalidInputError, NotFoundError
 from hydraulik.operations._results import locate_results, summarise
@@ -104,7 +105,10 @@ def export_results(
     Returns
     -------
     ExportDocument or PlanDocument
-        ``hydraulik-export/1``, or the ``hydraulik-plan/1`` of ``check``.
+        ``hydraulik-export/1``, or the ``hydraulik-plan/1`` of ``check``. When the run
+        has an ``ATTRIBUTION.txt``, the document carries its lines and the file carries
+        them too: the GeoTIFF tags ``attribution`` and ``terms_notice``, or the trailing
+        CSV columns of the same names.
 
     Raises
     ------
@@ -159,17 +163,20 @@ def export_results(
         write_stations_csv,
     )
 
+    attribution = read_attribution_file(map_path.parent)
     with Writer(plan) as writer:
         staged = writer.staged_path(name)
         if variable == "stations":
             assert stations_path is not None
-            write_stations_csv(read_stations(stations_path), staged)
+            write_stations_csv(read_stations(stations_path), staged, attribution)
         else:
-            export_geotiff(read_map(map_path), variable, staged)
+            export_geotiff(read_map(map_path), variable, staged, attribution)
         records = writer.commit()
-    return ExportDocument(
+    document = ExportDocument(
         variable=variable,
         format="csv" if variable == "stations" else "geotiff",
         source=str(map_path),
         files=file_dicts(records),
     )
+    document.attribute(attribution)
+    return document

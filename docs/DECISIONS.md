@@ -16,3 +16,4 @@ Architecture decision records (DOC §8). Each ADR is a file in
 | [ADR-0009](decisions/0009-network-inflow-of-model-couple.md) | A hydrograph enters one node of the coupled network, and the balance has a term for it | accepted | 2026-10-25 |
 | [ADR-0010](decisions/0010-producer-testing-modules.md) | Test against the testing modules of the producers where they build what Hydraulik reads | accepted | 2026-10-25 |
 | [ADR-0011](decisions/0011-producer-commit-pins.md) | The `rainfall` extra pins the producers' development heads by commit and declares their development range | accepted | 2026-10-25 |
+| [ADR-0012](decisions/0012-provider-attribution.md) | The attribution of provider data travels with the data, from the rain table to every export | accepted | 2026-11-13 |

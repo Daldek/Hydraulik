@@ -60,6 +60,7 @@ src/hydraulik/
   settings.py                              nogat.toml, HYDRAULIK_*, config show
   output.py                                plain-mode writer (preflight, staging, files[])
   documents.py                             typed result documents (to_dict, to_json)
+  attribution.py                           provider attribution texts and forms (ADR-0012)
   catalog/{spec,commands,validate,envelope,dispatch}.py   the command catalog (AGI §2)
   cli/{parser,render,messages}.py          argparse CLI generated from the catalog
   agent_guide.py, _data/agents/            AGENTS.md, llms.txt, the block for consumers

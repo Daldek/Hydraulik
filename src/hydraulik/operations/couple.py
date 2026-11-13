@@ -9,6 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, Literal
 
+from hydraulik.attribution import (
+    Attribution,
+    read_attribution_file,
+    read_csv_attribution,
+)
 from hydraulik.coupling.coupler import CouplerSettings, ExchangeNode
 from hydraulik.coupling.laws import (
     DEFAULT_NODE_AREA_M2,
@@ -42,6 +47,7 @@ from hydraulik.exceptions import (
     UnsupportedError,
 )
 from hydraulik.operations._support import (
+    attribution_names,
     blocker,
     extra_blocker,
     extra_found,
@@ -52,6 +58,7 @@ from hydraulik.operations._support import (
     require_extras,
     stage_model,
     unknown_inflow_node,
+    write_attribution,
 )
 from hydraulik.operations.swmm import CONTINUITY_WARNING_PERCENT
 from hydraulik.output import Writer, plan_directory
@@ -668,7 +675,9 @@ def couple_model(
     -------
     CoupleDocument or PlanDocument
         ``hydraulik-couple/1`` with the water balance, the surface and network results
-        and the exchange of every node, or the ``hydraulik-plan/1`` of ``check``.
+        and the exchange of every node, or the ``hydraulik-plan/1`` of ``check``. The
+        attribution of the model and of the inflow table is in the document and in
+        the ``ATTRIBUTION.txt`` of ``output_dir``.
 
     Raises
     ------
@@ -712,7 +721,17 @@ def couple_model(
         routing_step_s=routing_step_s,
         surcharge_method=surcharge_method,
     )
-    plan = plan_directory(output_dir, job.outputs, force=force)
+    carried = read_attribution_file(job.folder)
+    attribution = Attribution.of(
+        carried,
+        Attribution()
+        if job.inflow_path is None
+        else read_csv_attribution(job.inflow_path),
+    )
+    names = job.outputs + attribution_names(
+        attribution, output_dir, job.folder if attribution == carried else None
+    )
+    plan = plan_directory(output_dir, names, force=force)
     settings = load_settings()
     library = detect_sfincs_library(settings)
     if check:
@@ -742,7 +761,7 @@ def couple_model(
         steps += [
             f"couple SFINCS ({library.location or 'library not found'}) and SWMM "
             f"every {job.settings.interval_s} s in a process of its own",
-            f"write {', '.join(job.outputs)} and move them into {plan.directory}",
+            f"write {', '.join(names)} and move them into {plan.directory}",
         ]
         return PlanDocument.from_write_plan(plan, steps=steps, blockers=blockers)
     if not library.found:
@@ -805,5 +824,7 @@ def couple_model(
             qext_unit=qext_unit,
             elapsed_s=time.monotonic() - started,
         )
+        document.attribute(attribution)
+        write_attribution(writer, attribution)
         document.files = file_dicts(writer.commit())
     return document

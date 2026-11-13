@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
+from hydraulik.attribution import PMAXTP, Attribution
 from hydraulik.data.rainfall import (
     HIETOGRAM_TYPES,
     PMAXTP_DURATIONS_MIN,
@@ -37,8 +38,6 @@ __all__ = ["build_rainfall"]
 
 DEFAULT_TIMESTEP_MIN: Final = 5.0
 """Length of a step when ``timestep_min`` is not given [min]; Hydrolog's default."""
-
-IMGW_TERMS_URL: Final = "https://danepubliczne.imgw.pl/regulations"
 
 _DESIGN_ONLY: Final = (
     "hietogram_type",
@@ -295,8 +294,10 @@ def build_rainfall(
     Returns
     -------
     RainDocument or PlanDocument
-        ``hydraulik-rain/1`` (the notices carry the IMGW-PIB attribution and a duration
-        that was shortened to whole steps), or the ``hydraulik-plan/1`` of ``check``.
+        ``hydraulik-rain/1`` (its ``attribution`` and ``terms_notice`` carry what the
+        PMAXTP terms require, also written as the comment lines of the table; the
+        notices carry a duration that was shortened to whole steps), or the
+        ``hydraulik-plan/1`` of ``check``.
 
     Raises
     ------
@@ -446,6 +447,11 @@ def build_rainfall(
         kind: str | None = design.hietogram_type
         parameters: dict[str, Any] = dict(design.parameters)
         depth_block: dict[str, Any] | None = _depth_block(design, pmaxtp_result, depth)
+        attribution = (
+            Attribution()
+            if pmaxtp_result is None
+            else Attribution.of(pmaxtp_result.attribution, PMAXTP)
+        )
     else:
         assert document is not None
         table = document.table
@@ -454,9 +460,11 @@ def build_rainfall(
             document.parameters,
             None,
         )
+        attribution = document.attribution
     with Writer(plan) as writer:
         writer.staged_path(name).write_text(
-            render_rain_table(table.step_min, table.depth_mm), encoding="utf-8"
+            render_rain_table(table.step_min, table.depth_mm, attribution),
+            encoding="utf-8",
         )
         records = writer.commit()
     result = RainDocument(
@@ -471,13 +479,12 @@ def build_rainfall(
         depth=depth_block,
         files=file_dicts(records),
     )
-    result.notices.extend(_notices(design, depth, table))
+    result.attribute(attribution)
+    result.notices.extend(_notices(design, table))
     return result
 
 
-def _notices(
-    design: _Design | None, depth: PmaxtpDepth | None, table: RainTable
-) -> list[dict[str, str]]:
+def _notices(design: _Design | None, table: RainTable) -> list[dict[str, str]]:
     found: list[dict[str, str]] = []
     if design is not None and not math.isclose(
         table.duration_min, design.duration_min, rel_tol=1e-9
@@ -489,15 +496,6 @@ def _notices(
                 f"{design.duration_min:g} min is not a multiple of the step "
                 f"{design.timestep_min:g} min: the rain lasts {table.duration_min:g} "
                 f"min, with the whole depth of {table.total_mm:.1f} mm",
-            )
-        )
-    if depth is not None:
-        found.append(
-            notice(
-                "info",
-                "pmaxtp_attribution",
-                "the depth is a PMAXTP quantile of IMGW-PIB: name IMGW-PIB as its "
-                f"source; see {IMGW_TERMS_URL}",
             )
         )
     return found

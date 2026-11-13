@@ -14,6 +14,7 @@ pytest.importorskip("geopandas")
 from shapely.geometry import LineString, Point, box  # noqa: E402
 
 from hydraulik import build_model, run_command  # noqa: E402
+from hydraulik.attribution import PMAXTP  # noqa: E402
 from hydraulik.cli import main  # noqa: E402
 from hydraulik.data.tables import render_rain_table  # noqa: E402
 from hydraulik.documents import ModelDocument, PlanDocument  # noqa: E402
@@ -106,6 +107,30 @@ def test_a_fine_terrain_is_averaged_onto_a_grid_aligned_to_the_cell_size(
     assert z[0, 1] < z[3, 1] and z[0, 1] < z[0, 6]
     assert document.elevation["sources"][0]["resampling"] == "average"
     assert document.elevation["sources"][0]["cell_size_m"] == 1.0
+
+
+def test_a_rain_with_provider_data_gives_the_model_its_attribution_file(
+    tmp_path: Path, dem: Path
+) -> None:
+    attributed = tmp_path / "pmaxtp_rain.csv"
+    attributed.write_text(render_rain_table(5.0, [2.5] * 12, PMAXTP), encoding="utf-8")
+
+    document = build(tmp_path, dem, attributed)
+
+    lines = (tmp_path / "model" / "ATTRIBUTION.txt").read_text(encoding="utf-8")
+    assert lines.splitlines() == [*PMAXTP.lines, *PMAXTP.notice]
+    assert document.attribution == list(PMAXTP.lines)
+    assert document.terms_notice == list(PMAXTP.notice)
+    assert document.rain["total_mm"] == pytest.approx(30.0)
+
+
+def test_a_rain_without_provider_data_writes_no_attribution(
+    tmp_path: Path, dem: Path, rain: Path
+) -> None:
+    document = build(tmp_path, dem, rain)
+
+    assert not (tmp_path / "model" / "ATTRIBUTION.txt").exists()
+    assert document.attribution == [] and document.terms_notice == []
 
 
 def test_a_coarser_terrain_is_interpolated_not_averaged(

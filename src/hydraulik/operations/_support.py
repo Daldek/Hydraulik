@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import importlib.metadata
 import importlib.util
+import os
 import shutil
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Final
 
+from hydraulik.attribution import ATTRIBUTION_NAME, Attribution
 from hydraulik.exceptions import InvalidInputError, MissingDependencyError
-from hydraulik.output import STAGING_DIR, FileRecord
+from hydraulik.output import STAGING_DIR, FileRecord, Writer
 
 __all__ = [
     "EXTRAS",
+    "attribution_names",
     "blocker",
     "extra_blocker",
     "extra_found",
@@ -24,6 +27,7 @@ __all__ = [
     "require_extras",
     "stage_model",
     "unknown_inflow_node",
+    "write_attribution",
 ]
 
 EXTRAS: Final[dict[str, tuple[str, str]]] = {
@@ -234,3 +238,49 @@ def stage_model(model: Path, staging: Path, outputs: Iterable[str]) -> None:
             shutil.copytree(entry, target)
         else:
             shutil.copy2(entry, target)
+
+
+def attribution_names(
+    attribution: Attribution,
+    output_dir: str | os.PathLike[str],
+    carried: Path | None = None,
+) -> tuple[str, ...]:
+    """Return the attribution file to plan in an output directory, if it needs one.
+
+    Parameters
+    ----------
+    attribution : Attribution
+        What the outputs must carry.
+    output_dir : path-like
+        Where the outputs go.
+    carried : Path or None, optional
+        A directory whose :data:`~hydraulik.attribution.ATTRIBUTION_NAME` already says
+        exactly this (the model directory of a run); when it is ``output_dir`` itself,
+        nothing more is written.
+
+    Returns
+    -------
+    tuple of str
+        ``(ATTRIBUTION_NAME,)`` or nothing.
+    """
+    if not attribution:
+        return ()
+    if carried is not None and Path(output_dir).resolve() == carried.resolve():
+        return ()
+    return (ATTRIBUTION_NAME,)
+
+
+def write_attribution(writer: Writer, attribution: Attribution) -> None:
+    """Write the attribution file into staging when the plan has it.
+
+    Parameters
+    ----------
+    writer : Writer
+        The writer of the command, inside its ``with`` block.
+    attribution : Attribution
+        What the outputs must carry.
+    """
+    if ATTRIBUTION_NAME in {target.name for target in writer.plan.targets}:
+        writer.staged_path(ATTRIBUTION_NAME).write_text(
+            attribution.to_file(), encoding="utf-8"
+        )

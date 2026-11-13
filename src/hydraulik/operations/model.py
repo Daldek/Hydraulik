@@ -6,6 +6,7 @@ import logging
 import os
 from pathlib import Path
 
+from hydraulik.attribution import read_attribution_file
 from hydraulik.documents import PlanDocument, RunDocument
 from hydraulik.engines.detect import detect_sfincs
 from hydraulik.engines.sfincs.inp import (
@@ -18,12 +19,14 @@ from hydraulik.engines.sfincs.run import run_sfincs
 from hydraulik.exceptions import EngineError, MissingDependencyError, UnsupportedError
 from hydraulik.operations._results import summarise
 from hydraulik.operations._support import (
+    attribution_names,
     blocker,
     extra_blocker,
     file_dicts,
     missing_extras,
     require_extras,
     stage_model,
+    write_attribution,
 )
 from hydraulik.output import Writer, plan_directory
 from hydraulik.settings import load_settings
@@ -53,8 +56,9 @@ def run_model(
         The model directory (``hydraulik model build``), with ``sfincs.inp``.
     output_dir : path-like
         Directory for ``sfincs_map.nc``, ``sfincs_his.nc`` (when the model has
-        observation points) and ``sfincs.log``; created when missing. It may be the
-        model directory itself.
+        observation points) and ``sfincs.log``, and the ``ATTRIBUTION.txt`` of the
+        model when it has one; created when missing. It may be the model directory
+        itself.
     force : bool, optional
         Replace result files that exist.
     check : bool, optional
@@ -64,7 +68,8 @@ def run_model(
     Returns
     -------
     RunDocument or PlanDocument
-        ``hydraulik-run/1``, or the ``hydraulik-plan/1`` of ``check``.
+        ``hydraulik-run/1`` (with the ``attribution`` and ``terms_notice`` of the
+        model), or the ``hydraulik-plan/1`` of ``check``.
 
     Raises
     ------
@@ -97,7 +102,9 @@ def run_model(
             reason="output_format",
         )
     outputs = planned_outputs(inp)
-    plan = plan_directory(output_dir, outputs, force=force)
+    attribution = read_attribution_file(folder)
+    names = outputs + attribution_names(attribution, output_dir, carried=folder)
+    plan = plan_directory(output_dir, names, force=force)
     settings = load_settings()
     status, install = detect_sfincs(settings)
     timeout_s = float(settings.value("sfincs.timeout_s"))
@@ -121,7 +128,7 @@ def run_model(
                 f"copy the files of {folder} to the staging directory",
                 f"run {where} with a timeout of {timeout_s:g} s",
                 f"read {MAP_NAME}: maxima, flooded areas and the water balance",
-                f"move {', '.join(outputs)} into {plan.directory}",
+                f"move {', '.join(names)} into {plan.directory}",
             ],
             blockers=blockers,
         )
@@ -165,6 +172,7 @@ def run_model(
             writer.staging / outputs[1] if len(outputs) == 3 else None,
             expected_rain_mm=expected_rain_mm,
             source=plan.directory / MAP_NAME,
+            attribution=attribution,
         )
         if results.engine["status"] not in (None, 0):
             raise EngineError(
@@ -173,6 +181,7 @@ def run_model(
                 hint="Read details.log_tail and sfincs.log of the model.",
                 reason="engine_failed",
             )
+        write_attribution(writer, attribution)
         records = writer.commit()
     document = RunDocument(
         engine={
@@ -185,5 +194,6 @@ def run_model(
         results=results.to_dict(),
         files=file_dicts(records),
     )
+    document.attribute(attribution)
     document.notices.extend(results.notices)
     return document

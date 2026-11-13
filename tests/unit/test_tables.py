@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from hydraulik.attribution import Attribution, read_csv_attribution
 from hydraulik.data.tables import (
     Hydrograph,
     read_hydrograph,
@@ -63,6 +64,36 @@ def test_an_invalid_rain_table_is_a_data_error_that_names_the_file(
 
     assert caught.value.details["reason"] == "invalid_rain_table"
     assert "rain.csv" in str(caught.value)
+
+
+def test_a_hydrograph_with_attribution_columns_reads_its_values_and_its_lines(
+    tmp_path: Path,
+) -> None:
+    # the form of Hydrolog's tables: a cell holds the lines left over, joined by \n
+    path = _write(
+        tmp_path,
+        "time_min,discharge_m3s,attribution,terms_notice\n"
+        '0,0,S,"Regulamin: a"\n'
+        '1,2,"P\nM",\n',
+    )
+
+    series = read_hydrograph(path)
+
+    assert series.volume_m3 == 60.0
+    assert read_csv_attribution(path) == Attribution(("S", "P", "M"), ("Regulamin: a",))
+
+
+def test_the_attribution_columns_of_obserwator_are_read_as_attribution(
+    tmp_path: Path,
+) -> None:
+    path = _write(
+        tmp_path,
+        "time_min,depth_mm,attribution_source,attribution_processed\n"
+        "5,1,Source,Processed\n10,2,Source,Processed\n",
+    )
+
+    assert read_csv_attribution(path) == Attribution(("Source", "Processed"))
+    assert read_rain_table(path).total_mm == 3.0
 
 
 def test_a_missing_table_is_not_found(tmp_path: Path) -> None:
