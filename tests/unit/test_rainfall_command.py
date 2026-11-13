@@ -1,5 +1,6 @@
 """``rainfall build``: the routes to a rain table, the refusals, plan and the CLI."""
 
+import csv
 import json
 from pathlib import Path
 from typing import Any
@@ -7,6 +8,7 @@ from typing import Any
 import pytest
 
 from hydraulik import build_rainfall, check_command, run_command
+from hydraulik.attribution import read_csv_attribution
 from hydraulik.cli import main
 from hydraulik.data.tables import read_rain_table
 from hydraulik.exceptions import (
@@ -18,6 +20,26 @@ from hydraulik.exceptions import (
 )
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "rain"
+
+PMAXTP_ATTRIBUTION = [
+    "Źródłem pochodzenia danych jest Instytut Meteorologii i Gospodarki Wodnej – "
+    "Państwowy Instytut Badawczy, dane pochodzą ze strony "
+    "https://klimat.imgw.pl/opady-maksymalne",
+    "Dane Instytutu Meteorologii i Gospodarki Wodnej – Państwowego Instytutu "
+    "Badawczego pochodzące ze strony https://klimat.imgw.pl/opady-maksymalne "
+    "zostały przetworzone",
+    "„Modele probabilistyczne opadów maksymalnych o określonym czasie trwania i "
+    "prawdopodobieństwie przewyższenia – Projekt PMAXTP”, red. Bogdan "
+    "Ozga-Zieliński, Instytut Meteorologii i Gospodarki Wodnej – Państwowy Instytut "
+    "Badawczy, Warszawa 2022",
+]
+PMAXTP_TERMS_NOTICE = [
+    "Dane IMGW-PIB można wykorzystywać nieodpłatnie do celów prywatnych "
+    "(niezarobkowych). Wykorzystanie w działalności gospodarczej, na stronach z "
+    "reklamami lub do celów wymienionych w regulaminie (m.in. planowanie w "
+    "gospodarowaniu wodami, art. 317 Prawa wodnego) wymaga umowy z IMGW-PIB.",
+    "Regulamin: https://klimat.imgw.pl/opady-maksymalne",
+]
 
 
 def _reason(caught: pytest.ExceptionInfo[InvalidInputError]) -> object:
@@ -68,12 +90,14 @@ def test_a_given_depth_makes_a_rain_table_that_reads_back_with_the_same_depth(
     assert [f["status"] for f in body["files"]] == ["written"]
     assert body["files"][0]["path"] == str(out.resolve())
     assert document.notices == []
+    assert body["attribution"] == [] and body["terms_notice"] == []
     assert out.read_text(encoding="utf-8").startswith("time_min,depth_mm\n5,")
 
 
-def test_the_pmaxtp_document_gives_the_depth_and_the_attribution_comes_with_it(
+def test_a_pmaxtp_depth_carries_the_pmaxtp_terms_in_the_document_and_the_table(
     tmp_path: Path,
 ) -> None:
+    out = tmp_path / "rain.csv"
     document = build_rainfall(
         hietogram_type="beta",
         pmaxtp=FIXTURES / "pmaxtp_fetch.json",
@@ -82,7 +106,7 @@ def test_the_pmaxtp_document_gives_the_depth_and_the_attribution_comes_with_it(
         timestep_min=10.0,
         alpha=2.0,
         beta=5.0,
-        output=tmp_path / "rain.csv",
+        output=out,
     )
 
     body = document.to_dict()
@@ -96,9 +120,51 @@ def test_the_pmaxtp_document_gives_the_depth_and_the_attribution_comes_with_it(
     )
     assert body["depth"]["method"] == "POT" and body["depth"]["error_mm"] == 3.1
     assert body["depth"]["path"].endswith("pmaxtp_fetch.json")
-    [attribution] = document.notices
-    assert (attribution["level"], attribution["code"]) == ("info", "pmaxtp_attribution")
-    assert "IMGW-PIB" in attribution["message"]
+    assert body["attribution"] == PMAXTP_ATTRIBUTION
+    assert body["terms_notice"] == PMAXTP_TERMS_NOTICE
+    with out.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    assert [row["attribution"] for row in rows[:3]] == PMAXTP_ATTRIBUTION
+    assert [row["terms_notice"] for row in rows[:2]] == PMAXTP_TERMS_NOTICE
+    assert all(row["attribution"] == row["terms_notice"] == "" for row in rows[3:])
+    assert read_rain_table(out).total_mm == pytest.approx(38.8, abs=1e-3)
+
+
+def test_a_short_table_joins_the_rest_of_the_attribution_into_its_last_cell(
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "rain.csv"
+    build_rainfall(
+        hietogram_type="block",
+        pmaxtp=FIXTURES / "pmaxtp_fetch.json",
+        probability_percent=10,
+        duration_min=60.0,
+        timestep_min=30.0,
+        output=out,
+    )
+
+    with out.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    assert len(rows) == 2
+    assert rows[0]["attribution"] == PMAXTP_ATTRIBUTION[0]
+    assert rows[1]["attribution"].split("\n") == PMAXTP_ATTRIBUTION[1:]
+    assert read_csv_attribution(out).lines == tuple(PMAXTP_ATTRIBUTION)
+
+
+def test_a_hietogram_document_passes_its_attribution_on(tmp_path: Path) -> None:
+    source = json.loads(
+        (FIXTURES / "hietogram_euler_ii.json").read_text(encoding="utf-8")
+    )
+    source["attribution"] = PMAXTP_ATTRIBUTION
+    source["terms_notice"] = PMAXTP_TERMS_NOTICE
+    given = tmp_path / "hietogram.json"
+    given.write_text(json.dumps(source), encoding="utf-8")
+
+    document = build_rainfall(hietogram=given, output=tmp_path / "rain.csv")
+
+    body = document.to_dict()
+    assert body["attribution"] == PMAXTP_ATTRIBUTION
+    assert body["terms_notice"] == PMAXTP_TERMS_NOTICE
 
 
 def test_a_point_is_fetched_once_through_obserwator_and_not_while_planning(
@@ -125,7 +191,9 @@ def test_a_point_is_fetched_once_through_obserwator_and_not_while_planning(
     assert body["depth"]["via"] == "library" and "path" not in body["depth"]
     assert (body["depth"]["latitude"], body["depth"]["longitude"]) == (52.1, 21.0)
     assert any("network" in step for step in plan.to_dict()["steps"])
-    assert [n["code"] for n in document.notices] == ["pmaxtp_attribution"]
+    assert document.notices == []
+    assert body["attribution"] == PMAXTP_ATTRIBUTION
+    assert body["terms_notice"] == PMAXTP_TERMS_NOTICE
 
 
 def test_the_method_of_a_point_is_passed_on_and_a_missing_pair_is_no_data(

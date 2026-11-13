@@ -4,16 +4,23 @@ from __future__ import annotations
 
 import importlib.metadata
 import importlib.util
+import os
 import shutil
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Final
 
+from hydraulik.attribution import (
+    ATTRIBUTION_NAME,
+    Attribution,
+    read_attribution_file,
+)
 from hydraulik.exceptions import InvalidInputError, MissingDependencyError
-from hydraulik.output import STAGING_DIR, FileRecord
+from hydraulik.output import STAGING_DIR, FileRecord, Writer
 
 __all__ = [
     "EXTRAS",
+    "attribution_names",
     "blocker",
     "extra_blocker",
     "extra_found",
@@ -24,6 +31,7 @@ __all__ = [
     "require_extras",
     "stage_model",
     "unknown_inflow_node",
+    "write_attribution",
 ]
 
 EXTRAS: Final[dict[str, tuple[str, str]]] = {
@@ -234,3 +242,51 @@ def stage_model(model: Path, staging: Path, outputs: Iterable[str]) -> None:
             shutil.copytree(entry, target)
         else:
             shutil.copy2(entry, target)
+
+
+def attribution_names(
+    attribution: Attribution, output_dir: str | os.PathLike[str]
+) -> tuple[str, ...]:
+    """Return the attribution file to plan in an output directory, if it needs one.
+
+    A later write merges into the file that is there (Nogat DEV-20.5), so the file is
+    planned only when the lines add something to it; plan it with
+    ``merged=(ATTRIBUTION_NAME,)`` so that an existing one is replaced without
+    ``--force``.
+
+    Parameters
+    ----------
+    attribution : Attribution
+        What the outputs must carry.
+    output_dir : path-like
+        Where the outputs go.
+
+    Returns
+    -------
+    tuple of str
+        ``(ATTRIBUTION_NAME,)`` or nothing.
+    """
+    there = read_attribution_file(Path(output_dir))
+    if not attribution or Attribution.of(there, attribution) == there:
+        return ()
+    return (ATTRIBUTION_NAME,)
+
+
+def write_attribution(writer: Writer, attribution: Attribution) -> None:
+    """Write the attribution file into staging when the plan has it.
+
+    The lines are merged with those of the file already in the output directory,
+    each once and in the order of Nogat DEV-20.4 and DEV-20.7.
+
+    Parameters
+    ----------
+    writer : Writer
+        The writer of the command, inside its ``with`` block.
+    attribution : Attribution
+        What the outputs must carry.
+    """
+    if ATTRIBUTION_NAME in {target.name for target in writer.plan.targets}:
+        there = read_attribution_file(writer.plan.directory)
+        writer.staged_path(ATTRIBUTION_NAME).write_text(
+            Attribution.of(there, attribution).to_file(), encoding="utf-8"
+        )

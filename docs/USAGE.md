@@ -58,7 +58,9 @@ refused, and `engines check --require 'terrain download'` says which one you hav
 ## 3. Make the design rain
 
 A rain table has the columns `time_min,depth_mm`. Its shape is a Hydrolog hyetograph
-type, its depth is yours or the PMAXTP depth of IMGW-PIB.
+type, its depth is yours or the PMAXTP depth of IMGW-PIB. A table made from provider
+data has two more columns, `attribution` and `terms_notice`, with the lines the
+provider's terms require.
 
 ```bash
 hydraulik rainfall build --hietogram-type euler_ii --total-mm 40 --duration-min 120 --output ./rain.csv --check
@@ -68,9 +70,12 @@ hydraulik rainfall build --pmaxtp tests/fixtures/rain/pmaxtp_fetch.json --hietog
 The second call takes the depth for a 60 minute rain of probability 10 % from the
 document of `obserwator pmaxtp fetch --json`; with `--latitude` and `--longitude` instead of
 `--pmaxtp` and with Obserwator installed it fetches the depth for a point (that needs the
-network). A PMAXTP depth comes with a notice to name IMGW-PIB as its source. A shape
-that Hydrolog already computed (`hydrolog precip hietogram --json`) goes in with
-`--hietogram FILE`.
+network). A PMAXTP depth brings the lines the PMAXTP terms require (the source with the
+page of PMAXTP, the mark of processed data, the monograph, the terms notice): they are in
+`attribution` and `terms_notice` of the result and of the table, and they follow the rain
+into the model (`ATTRIBUTION.txt`), the run and every map or table exported from it. A
+shape that Hydrolog already computed (`hydrolog precip hietogram --json`) goes in with
+`--hietogram FILE`, its own `attribution` and `terms_notice` with it.
 
 ```sh
 hydraulik rainfall build --hietogram-type euler_ii --latitude 52.23 --longitude 21.01 \

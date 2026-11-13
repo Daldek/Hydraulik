@@ -1789,7 +1789,8 @@ _RAINFALL_BUILD = CommandSpec(
         "Take the depth from one source: --total-mm, --pmaxtp or --latitude with "
         "--longitude.",
         "PMAXTP gives 15, 30, 45, 60, 90, 120 and 180 min at 1, 2, 5, 10, 20 and 50 %.",
-        "Name IMGW-PIB as the source of a PMAXTP depth (a notice says so).",
+        "Keep attribution and terms_notice with everything made from a PMAXTP depth: "
+        "the PMAXTP terms require them; the table and the model carry them on.",
     ),
     examples=(
         Example(
@@ -1844,7 +1845,9 @@ _RAINFALL_BUILD = CommandSpec(
             "--longitude.",
             "PMAXTP daje 15, 30, 45, 60, 90, 120 i 180 min przy 1, 2, 5, 10, 20 i "
             "50 %.",
-            "Podaj IMGW-PIB jako źródło wysokości PMAXTP (mówi o tym uwaga).",
+            "Zachowaj attribution i terms_notice przy wszystkim, co powstaje z "
+            "wysokości PMAXTP: wymaga ich regulamin PMAXTP; tabela i model niosą je "
+            "dalej.",
         ],
     },
 )

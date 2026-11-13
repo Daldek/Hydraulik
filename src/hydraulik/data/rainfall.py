@@ -22,11 +22,12 @@ import json
 import os
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Final
 
 from hydraulik._optional import require
+from hydraulik.attribution import Attribution
 from hydraulik.data.tables import RainTable, rain_table_from_series
 from hydraulik.exceptions import (
     CalculationError,
@@ -224,11 +225,14 @@ class HyetographDocument:
         The shape the document says it has.
     parameters : dict
         The shape parameters the document lists.
+    attribution : Attribution
+        The ``attribution`` and ``terms_notice`` of the document.
     """
 
     table: RainTable
     hietogram_type: str | None
     parameters: dict[str, Any] = field(default_factory=dict)
+    attribution: Attribution = field(default_factory=Attribution)
 
 
 def read_hietogram_document(path: str | os.PathLike[str]) -> HyetographDocument:
@@ -263,9 +267,8 @@ def read_hietogram_document(path: str | os.PathLike[str]) -> HyetographDocument:
     4.0
     """
     source = Path(path)
-    body = _document_body(
-        _load_json(source, "invalid_hietogram"), source.name, "invalid_hietogram"
-    )
+    raw = _load_json(source, "invalid_hietogram")
+    body = _document_body(raw, source.name, "invalid_hietogram")
     times, depths = body.get("times_min"), body.get("depths_mm")
     if not isinstance(times, list) or not isinstance(depths, list):
         raise InputDataError(
@@ -294,6 +297,7 @@ def read_hietogram_document(path: str | os.PathLike[str]) -> HyetographDocument:
         table,
         kind if isinstance(kind, str) else None,
         dict(parameters) if isinstance(parameters, Mapping) else {},
+        Attribution.from_document(raw),
     )
 
 
@@ -342,6 +346,8 @@ class Pmaxtp:
     upper_bound_mm, error_mm : dict
         The same layout for the upper confidence bound (``sg``) and the estimation
         error (``rb``).
+    attribution : Attribution
+        The ``attribution`` and ``terms_notice`` of the document it was read from.
     """
 
     method: str | None
@@ -350,6 +356,7 @@ class Pmaxtp:
     quantiles_mm: dict[int, dict[float, float]]
     upper_bound_mm: dict[int, dict[float, float]] = field(default_factory=dict)
     error_mm: dict[int, dict[float, float]] = field(default_factory=dict)
+    attribution: Attribution = field(default_factory=Attribution)
 
 
 def _pmaxtp_from(body: Mapping[str, Any], name: str, details: dict[str, Any]) -> Pmaxtp:
@@ -399,10 +406,10 @@ def read_pmaxtp_document(path: str | os.PathLike[str]) -> Pmaxtp:
         If it is not JSON or has no quantiles (reason ``invalid_pmaxtp``).
     """
     source = Path(path)
-    body = _document_body(
-        _load_json(source, "invalid_pmaxtp"), source.name, "invalid_pmaxtp"
-    )
-    return _pmaxtp_from(body, source.name, {"path": str(source)})
+    raw = _load_json(source, "invalid_pmaxtp")
+    body = _document_body(raw, source.name, "invalid_pmaxtp")
+    pmaxtp = _pmaxtp_from(body, source.name, {"path": str(source)})
+    return replace(pmaxtp, attribution=Attribution.from_document(raw))
 
 
 def fetch_pmaxtp(latitude: float, longitude: float, method: str = "POT") -> Pmaxtp:

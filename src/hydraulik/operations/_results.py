@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Final
 
+from hydraulik.attribution import Attribution, read_attribution_file
 from hydraulik.documents import ResultsDocument, notice
 from hydraulik.engines.sfincs.inp import MAP_NAME, STATIONS_NAME
 from hydraulik.exceptions import NotFoundError
@@ -122,6 +123,7 @@ def summarise(
     thresholds_m: Sequence[float] | None = None,
     expected_rain_mm: float | None = None,
     source: Path | None = None,
+    attribution: Attribution | None = None,
 ) -> ResultsDocument:
     """Read a run and build its ``hydraulik-results/1`` document.
 
@@ -136,6 +138,9 @@ def summarise(
     source : Path or None, optional
         The path to name in the document when the files were read from a staging
         directory that is about to be moved.
+    attribution : Attribution or None, optional
+        What the run's data require to be said; read from the ``ATTRIBUTION.txt``
+        beside the map when ``None``.
 
     Returns
     -------
@@ -176,6 +181,9 @@ def summarise(
             "flags": list(balance.flags),
         },
         stations=describe_stations(stations),
+    )
+    document.attribute(
+        read_attribution_file(map_path.parent) if attribution is None else attribution
     )
     for flag in balance.flags:
         document.notices.append(

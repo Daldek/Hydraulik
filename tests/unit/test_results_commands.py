@@ -1,5 +1,6 @@
 """``results read`` and ``results export`` on synthetic results, library and CLI."""
 
+import csv
 import json
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import numpy as np
 import pytest
 
 from hydraulik import check_command, export_results, read_results
+from hydraulik.attribution import PMAXTP
 from hydraulik.cli import main
 from hydraulik.exceptions import (
     ConflictError,
@@ -112,6 +114,31 @@ def test_the_stations_are_exported_as_a_table(run: Path, tmp_path: Path) -> None
 
     assert body["format"] == "csv"
     assert target.read_text().splitlines()[0] == "time_s,station,level_m,depth_m"
+
+
+def test_the_attribution_of_a_run_is_read_and_written_into_every_export(
+    run: Path, tmp_path: Path
+) -> None:
+    rasterio = pytest.importorskip("rasterio")
+    (run / "ATTRIBUTION.txt").write_text(PMAXTP.to_file(), encoding="utf-8")
+    table, raster_path = tmp_path / "stations.csv", tmp_path / "hmax.tif"
+
+    read = read_results(run=run).to_dict()
+    stations = export_results(run=run, variable="stations", output=table).to_dict()
+    raster = export_results(run=run, variable="max_depth", output=raster_path)
+
+    for body in (read, stations, raster.to_dict()):
+        assert body["attribution"] == list(PMAXTP.lines)
+        assert body["terms_notice"] == list(PMAXTP.notice)
+    with table.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    assert [r["attribution"] for r in rows[: len(PMAXTP.lines)]] == list(PMAXTP.lines)
+    assert [r["terms_notice"] for r in rows[:2]] == list(PMAXTP.notice)
+    assert rows[0]["station"] == "outlet"
+    with rasterio.open(raster_path) as opened:
+        tags = opened.tags()
+    assert tags["attribution"].split("\n") == list(PMAXTP.lines)
+    assert tags["terms_notice"].split("\n") == list(PMAXTP.notice)
 
 
 def test_stations_of_a_run_without_a_station_file_are_not_found(

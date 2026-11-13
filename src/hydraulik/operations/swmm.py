@@ -10,6 +10,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, Literal
 
+from hydraulik.attribution import (
+    ATTRIBUTION_NAME,
+    Attribution,
+    read_csv_attribution,
+)
 from hydraulik.data.tables import Hydrograph, read_hydrograph
 from hydraulik.documents import PlanDocument, SwmmDocument, notice
 from hydraulik.engines.swmm import inp as inp_module
@@ -22,12 +27,14 @@ from hydraulik.engines.swmm.network import (
 from hydraulik.engines.swmm.run import SwmmSummary, run_swmm
 from hydraulik.exceptions import InvalidInputError, NotFoundError
 from hydraulik.operations._support import (
+    attribution_names,
     extra_blocker,
     extra_version,
     file_dicts,
     missing_extras,
     require_extras,
     unknown_inflow_node,
+    write_attribution,
 )
 from hydraulik.output import Writer, plan_directory
 
@@ -261,7 +268,9 @@ def run_network(
     SwmmDocument or PlanDocument
         ``hydraulik-swmm/1`` with the totals and the peaks of every node and conduit,
         or the ``hydraulik-plan/1`` of ``check``. The notices carry a continuity error
-        above 5 %, flooded nodes and an inflow that is longer than the run.
+        above 5 %, flooded nodes and an inflow that is longer than the run. When the
+        inflow table carries an attribution, the document has its lines and
+        ``ATTRIBUTION.txt`` is written beside the report.
 
     Raises
     ------
@@ -296,7 +305,13 @@ def run_network(
         routing_step_s=routing_step_s,
         surcharge_method=surcharge_method,
     )
-    plan = plan_directory(output_dir, OUTPUT_NAMES, force=force)
+    attribution = (
+        Attribution()
+        if job.inflow_path is None
+        else read_csv_attribution(job.inflow_path)
+    )
+    names = OUTPUT_NAMES + attribution_names(attribution, output_dir)
+    plan = plan_directory(output_dir, names, force=force, merged=(ATTRIBUTION_NAME,))
     version = extra_version("pyswmm")
     if check:
         generated = job.kind == "network"
@@ -316,7 +331,7 @@ def run_network(
         steps += [
             f"run SWMM through pyswmm {version or '(not installed)'} in strides of 1 s",
             f"write {REPORT_NAME}, read the totals and the peaks of every node",
-            f"move {', '.join(OUTPUT_NAMES)} into {plan.directory}",
+            f"move {', '.join(names)} into {plan.directory}",
         ]
         return PlanDocument.from_write_plan(
             plan,
@@ -343,6 +358,7 @@ def run_network(
             writer.staging / "network.out",
             inflows=inflows,
         )
+        write_attribution(writer, attribution)
         records = writer.commit()
     source: dict[str, Any] = {"kind": job.kind, "path": str(job.path)}
     if job.hydrograph is not None:
@@ -371,5 +387,6 @@ def run_network(
         conduits=[dataclasses.asdict(link) for link in summary.links],
         files=file_dicts(records),
     )
+    document.attribute(attribution)
     document.notices.extend(_notices(job, summary))
     return document

@@ -20,6 +20,7 @@ that left, and only a negative residual (water gained) is an error. Output needs
 
 from __future__ import annotations
 
+import csv
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from hydraulik._optional import require
+from hydraulik.attribution import Attribution
 from hydraulik.engines.sfincs.model import RegularGrid
 from hydraulik.exceptions import (
     InputDataError,
@@ -563,7 +565,9 @@ def read_stations(path: str | Path) -> tuple[Station, ...]:
         return tuple(stations)
 
 
-def write_stations_csv(stations: Sequence[Station], path: Path) -> None:
+def write_stations_csv(
+    stations: Sequence[Station], path: Path, attribution: Attribution | None = None
+) -> None:
     """Write the series of the stations as ``time_s,station,level_m,depth_m``.
 
     Parameters
@@ -572,17 +576,28 @@ def write_stations_csv(stations: Sequence[Station], path: Path) -> None:
         The series.
     path : Path
         The file to create.
+    attribution : Attribution or None, optional
+        What the data of the run require to be said: the trailing columns
+        ``attribution`` and ``terms_notice``.
     """
+    extra = attribution or Attribution()
+    rows = [
+        (f"{time_s:g}", station.name, f"{level:.4f}", f"{depth:.4f}")
+        for station in stations
+        for time_s, level, depth in zip(
+            station.times_s, station.level_m, station.depth_m, strict=True
+        )
+    ]
     with path.open("w", encoding="utf-8", newline="") as stream:
-        stream.write("time_s,station,level_m,depth_m\n")
-        for station in stations:
-            for time_s, level, depth in zip(
-                station.times_s, station.level_m, station.depth_m, strict=True
-            ):
-                stream.write(f"{time_s:g},{station.name},{level:.4f},{depth:.4f}\n")
+        writer = csv.writer(stream, lineterminator="\n")
+        writer.writerow(("time_s", "station", "level_m", "depth_m", *extra.header()))
+        for row, cells in zip(rows, extra.columns(len(rows)), strict=True):
+            writer.writerow((*row, *cells))
 
 
-def export_geotiff(run: MapRun, variable: str, path: Path) -> None:
+def export_geotiff(
+    run: MapRun, variable: str, path: Path, attribution: Attribution | None = None
+) -> None:
     """Write one map of the run as a GeoTIFF in the CRS of the model.
 
     Parameters
@@ -593,6 +608,9 @@ def export_geotiff(run: MapRun, variable: str, path: Path) -> None:
         Which map (see :data:`EXPORT_VARIABLES`).
     path : Path
         The file to create; it is overwritten.
+    attribution : Attribution or None, optional
+        What the data of the run require to be said: the tags ``attribution`` and
+        ``terms_notice``.
 
     Raises
     ------
@@ -621,5 +639,6 @@ def export_geotiff(run: MapRun, variable: str, path: Path) -> None:
             "variable": variable,
             "description": EXPORT_VARIABLES[variable],
             "source": run.path.name,
+            **(attribution or Attribution()).to_tags(),
         },
     )

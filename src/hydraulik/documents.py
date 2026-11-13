@@ -17,6 +17,8 @@ from enum import Enum
 from pathlib import PurePath
 from typing import Any, ClassVar
 
+from hydraulik.attribution import Attribution
+
 __all__ = [
     "CommandsDocument",
     "ConfigDocument",
@@ -152,6 +154,29 @@ class _Carrier:
         self.notices: list[dict[str, str]] = []
         self.items: list[dict[str, Any]] = []
         self.status = "ok"
+
+
+@dataclass
+class _Attributed:
+    """Mixin for a document that may carry data of a provider whose terms need words.
+
+    Attributes
+    ----------
+    attribution : list of str
+        The lines the providers' terms require with the data or with what was made
+        from them (Polish, verbatim; :mod:`hydraulik.attribution`); empty when no
+        such data went in.
+    terms_notice : list of str
+        The conditions of use of that data and the terms that apply; empty when none.
+    """
+
+    attribution: list[str] = field(default_factory=list, kw_only=True)
+    terms_notice: list[str] = field(default_factory=list, kw_only=True)
+
+    def attribute(self, attribution: Attribution) -> None:
+        """Set both lists from an :class:`~hydraulik.attribution.Attribution`."""
+        self.attribution = list(attribution.lines)
+        self.terms_notice = list(attribution.notice)
 
 
 @dataclass
@@ -294,7 +319,7 @@ class EnginesDocument(_Carrier, Document):
 
 
 @dataclass
-class ResultsDocument(_Carrier, Document):
+class ResultsDocument(_Carrier, _Attributed, Document):
     """``hydraulik-results/1``: what a SFINCS run computed.
 
     Attributes
@@ -326,7 +351,7 @@ class ResultsDocument(_Carrier, Document):
 
 
 @dataclass
-class RunDocument(_Carrier, Document):
+class RunDocument(_Carrier, _Attributed, Document):
     """``hydraulik-run/1``: one SFINCS run and what it computed.
 
     Attributes
@@ -350,7 +375,7 @@ class RunDocument(_Carrier, Document):
 
 
 @dataclass
-class ExportDocument(_Carrier, Document):
+class ExportDocument(_Carrier, _Attributed, Document):
     """``hydraulik-export/1``: a map or a table written from the results of a run.
 
     Attributes
@@ -374,7 +399,7 @@ class ExportDocument(_Carrier, Document):
 
 
 @dataclass
-class SwmmDocument(_Carrier, Document):
+class SwmmDocument(_Carrier, _Attributed, Document):
     """``hydraulik-swmm/1``: one SWMM run and what it computed.
 
     Attributes
@@ -410,7 +435,7 @@ class SwmmDocument(_Carrier, Document):
 
 
 @dataclass
-class RainDocument(_Carrier, Document):
+class RainDocument(_Carrier, _Attributed, Document):
     """``hydraulik-rain/1``: a design rain written as a rain table.
 
     Attributes
@@ -453,7 +478,7 @@ class RainDocument(_Carrier, Document):
 
 
 @dataclass
-class ModelDocument(_Carrier, Document):
+class ModelDocument(_Carrier, _Attributed, Document):
     """``hydraulik-model/1``: a SFINCS model written from rasters (`model build`).
 
     Attributes
@@ -512,7 +537,7 @@ class ModelDocument(_Carrier, Document):
 
 
 @dataclass
-class CoupleDocument(_Carrier, Document):
+class CoupleDocument(_Carrier, _Attributed, Document):
     """``hydraulik-couple/1``: one coupled SFINCS and SWMM run (`model couple`).
 
     Attributes

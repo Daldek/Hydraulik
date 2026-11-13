@@ -13,6 +13,7 @@ pytest.importorskip("pyswmm")
 from jsonschema import Draft202012Validator  # noqa: E402
 
 from hydraulik import check_command, couple_model, run_command  # noqa: E402
+from hydraulik.attribution import PMAXTP, Attribution  # noqa: E402
 from hydraulik.cli import main  # noqa: E402
 from hydraulik.documents import CoupleDocument, PlanDocument  # noqa: E402
 from hydraulik.engines.detect import EngineStatus  # noqa: E402
@@ -235,6 +236,32 @@ def test_a_coupled_run_publishes_its_files_and_books_the_water(
     assert "coupling-job.json" in seen["files"] and "sfincs.precip" in seen["files"]
     assert seen["inp"]["dtmax"] == "1.0"  # kept at most the exchange interval
     assert seen["timeout_s"] == 7200.0 and seen["threads"] is None
+
+
+def test_the_model_and_the_inflow_hand_their_attribution_on_to_the_run(
+    tmp_path: Path, model: Path, network: Path, worker: Worker
+) -> None:
+    (model / "ATTRIBUTION.txt").write_text(PMAXTP.to_file(), encoding="utf-8")
+    inflow = tmp_path / "inflow.csv"
+    inflow.write_text(
+        "time_min,discharge_m3s,attribution,terms_notice\n"
+        '0,0,Inflow source,"Regulamin: https://example.org/terms"\n'
+        "5,0.05,,\n10,0,,\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "coupled"
+
+    document = couple(model, network, out, inflow=inflow, inflow_node="J1")
+
+    expected = Attribution.of(
+        PMAXTP,
+        Attribution(("Inflow source",), ("Regulamin: https://example.org/terms",)),
+    )
+    assert document.attribution == list(expected.lines)
+    assert document.terms_notice == list(expected.notice)
+    written = (out / "ATTRIBUTION.txt").read_text(encoding="utf-8")
+    assert written == expected.to_file()
+    assert "ATTRIBUTION.txt" in [Path(f["path"]).name for f in document.files]
 
 
 def test_the_document_validates_and_the_job_carries_the_defaults(

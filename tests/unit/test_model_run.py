@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from hydraulik import check_command, run_command, run_model
+from hydraulik.attribution import PMAXTP
 from hydraulik.engines.detect import EngineStatus, SfincsInstall
 from hydraulik.exceptions import (
     ConflictError,
@@ -167,6 +168,24 @@ def test_the_output_may_be_the_model_directory_and_the_inputs_stay_as_they_were(
         "sfincs_map.nc",
     ]
     assert (model / "sfincs.dep").read_bytes() == b"\x00" * 80
+
+
+def test_the_attribution_of_the_model_goes_with_the_run(
+    tmp_path: Path, model: Path, engine: SfincsInstall
+) -> None:
+    (model / "ATTRIBUTION.txt").write_text(PMAXTP.to_file(), encoding="utf-8")
+    out = tmp_path / "run"
+
+    body = run_model(model=model, output_dir=out).to_dict()
+
+    assert (out / "ATTRIBUTION.txt").read_text(encoding="utf-8") == PMAXTP.to_file()
+    assert body["attribution"] == list(PMAXTP.lines)
+    assert body["terms_notice"] == list(PMAXTP.notice)
+    assert body["results"]["attribution"] == list(PMAXTP.lines)
+    # a run into the model directory keeps the file it has, without a conflict
+    again = run_model(model=model, output_dir=model).to_dict()
+    assert again["attribution"] == list(PMAXTP.lines)
+    assert "ATTRIBUTION.txt" not in [Path(f["path"]).name for f in again["files"]]
 
 
 def test_existing_results_are_a_conflict_until_force_replaces_them(

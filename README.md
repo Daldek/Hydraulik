@@ -161,8 +161,23 @@ Codes come from the shared registry
 ## Data and licensing
 
 Hydraulik is MIT. Data keeps its own terms: NMT and BDOT10k (land cover, roads)
-from GUGiK (free reuse with attribution), PMAXTP from IMGW-PIB (attribution
-required). Results are written only where you point `--output-dir` or `--output`.
+from GUGiK (free reuse with attribution), PMAXTP from IMGW-PIB under the
+„Regulamin udostępniania danych projektu PMAXTP”
+(<https://klimat.imgw.pl/opady-maksymalne>). Results are written only where you point
+`--output-dir` or `--output`.
+
+IMGW-PIB data may be used free of charge for private (non-profit) purposes; business
+use, websites with advertising and the purposes the terms list (among them water
+management planning, art. 317 of the Water Law) need an agreement with IMGW-PIB.
+
+Every product made from a PMAXTP depth carries, verbatim and in Polish, the source
+line with the address of the PMAXTP page, the mark that the data were processed, the
+citation of the PMAXTP monograph and the terms notice: the rain table, the model
+directory, the run and every exported map or table (the fields `attribution` and
+`terms_notice` of the result, the trailing CSV columns of the same names, the GeoTIFF
+tags of the same names, `ATTRIBUTION.txt` in a model or run directory; see
+[ADR-0012](https://github.com/Daldek/Hydraulik/blob/main/docs/decisions/0012-provider-attribution.md)).
+Keep them with whatever you publish from these files.
 
 ## Documentation
 

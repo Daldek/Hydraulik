@@ -169,6 +169,19 @@ follows [Semantic Versioning](https://semver.org/).
 - `docs/USAGE.md`: the tasks of a flood study from `terrain download` to `model couple`,
   with the examples that the offline tests run; the long walkthrough that the README
   held moved there, and the links of the README are absolute (DOC-1.4).
+- The attribution that the providers' terms require travels with the data (ADR-0012,
+  Nogat DEV §20, ECO-060): a rain made from a PMAXTP depth carries the PMAXTP source line
+  with the address of the page, the mark of processed data, the citation of the PMAXTP
+  monograph and the terms notice (verbatim, Polish; `hydraulik.attribution` holds the
+  texts), in the fields `attribution` and `terms_notice` of `hydraulik-rain/1`,
+  `-model/1`, `-run/1`, `-results/1`, `-export/1`, `-swmm/1` and `-couple/1` (optional,
+  the versions stay `/1`), in the trailing columns `attribution` and `terms_notice` of the
+  rain table and of the exported station table, in `ATTRIBUTION.txt` of a model, run or
+  network-run directory and in the tags of an exported GeoTIFF. A Hydrolog hyetograph
+  document, an Obserwator PMAXTP document and a hydrograph table (`--inflow`) pass their
+  own lines on.
+  A later write of `ATTRIBUTION.txt` merges into the file already there (Nogat DEV-20.5),
+  each line once and in the order of the standard, without `--force`.
 
 ### Changed
 
@@ -203,6 +216,12 @@ follows [Semantic Versioning](https://semver.org/).
   by its marker `obserwator-store.json` instead of `imgw-store.json`; `missing_dependency`
   names the module `obserwator`. The texts of the catalog, the messages and the guides name
   Obserwator; the pip-audit loop of CI skips `obserwator`.
+
+- The notice `pmaxtp_attribution` of `rainfall build` is gone: it pointed at the terms of
+  danepubliczne.imgw.pl, not at those of PMAXTP, and reached no file; the fields
+  `attribution` and `terms_notice` replace it (ADR-0012).
+- The rain and hydrograph tables are read with the CSV quoting rules over the whole file,
+  so a quoted cell may hold a line break (the attribution columns of Hydrolog's tables).
 
 ### Fixed
 

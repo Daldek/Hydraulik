@@ -15,12 +15,16 @@ All are CSV with a header and the units in the column names (DEV-8.2):
   ``hydraulik model build`` asks SFINCS for the water level.
 
 Only the standard library is needed to read them; a rain table gives the arrays that
-the SFINCS writer takes.
+the SFINCS writer takes. The trailing columns ``attribution`` and ``terms_notice`` of a
+rain or hydrograph table carry what the data providers' terms require
+(:mod:`hydraulik.attribution`); the readers take the value columns by name, and the
+commands read the attribution with :func:`hydraulik.attribution.read_csv_attribution`.
 """
 
 from __future__ import annotations
 
 import csv
+import io
 import math
 from bisect import bisect_left
 from collections.abc import Sequence
@@ -28,6 +32,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
+from hydraulik.attribution import Attribution
 from hydraulik.exceptions import InputDataError, NotFoundError
 
 __all__ = [
@@ -71,7 +76,7 @@ def _read_columns(
         text = path.read_text(encoding="utf-8-sig")
     except UnicodeDecodeError as exc:
         raise fail("not UTF-8 text") from exc
-    reader = csv.reader(text.splitlines())
+    reader = csv.reader(io.StringIO(text, newline=""))
     header = [cell.strip() for cell in next(reader, [])]
     missing = [name for name in columns if name not in header]
     if missing:
@@ -231,7 +236,11 @@ def rain_table_from_series(
     return RainTable(step, tuple(float(depth) for depth in depth_mm))
 
 
-def render_rain_table(step_min: float, depth_mm: Sequence[float]) -> str:
+def render_rain_table(
+    step_min: float,
+    depth_mm: Sequence[float],
+    attribution: Attribution | None = None,
+) -> str:
     """Return the text of a rain table.
 
     Parameters
@@ -240,6 +249,9 @@ def render_rain_table(step_min: float, depth_mm: Sequence[float]) -> str:
         Length of a step [min].
     depth_mm : sequence of float
         Depth of each step [mm].
+    attribution : Attribution or None, optional
+        What the data require to be said: the trailing columns ``attribution`` and
+        ``terms_notice`` (:meth:`hydraulik.attribution.Attribution.columns`).
 
     Returns
     -------
@@ -251,12 +263,15 @@ def render_rain_table(step_min: float, depth_mm: Sequence[float]) -> str:
     >>> render_rain_table(5.0, [1.0, 2.5]).splitlines()
     ['time_min,depth_mm', '5,1.000000', '10,2.500000']
     """
-    lines = [",".join(RAIN_COLUMNS)]
-    lines += [
-        f"{step_min * (index + 1):g},{depth:.6f}"
-        for index, depth in enumerate(depth_mm)
-    ]
-    return "\n".join(lines) + "\n"
+    extra = attribution or Attribution()
+    stream = io.StringIO()
+    writer = csv.writer(stream, lineterminator="\n")
+    writer.writerow((*RAIN_COLUMNS, *extra.header()))
+    for index, (depth, cells) in enumerate(
+        zip(depth_mm, extra.columns(len(depth_mm)), strict=True)
+    ):
+        writer.writerow((f"{step_min * (index + 1):g}", f"{depth:.6f}", *cells))
+    return stream.getvalue()
 
 
 @dataclass(frozen=True)
